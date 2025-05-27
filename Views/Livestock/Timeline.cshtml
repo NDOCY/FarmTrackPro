@@ -1,0 +1,768 @@
+﻿@*@model IEnumerable<FarmTrack.Models.TaskUpdate>
+    @{
+        ViewBag.Title = "Task Status Timeline";
+        var ascending = ViewBag.Order == "asc";
+    }
+
+    <style>
+        /* Custom Color Scheme */
+        :root {
+            --color-earth: #8B7355; /* Primary */
+            --color-soil: #654321; /* Secondary */
+            --color-foliage: #4CAF50; /* Tertiary */
+            --color-wheat: #F5DEB3; /* Accent */
+            --color-danger: #FF6B6B; /* Error */
+            --color-white: #FFFFFF; /* Neutral */
+            --color-bib: #b17474; /* Neutral */
+            --color-completed: #4CAF50; /* Completed status */
+            --color-in-progress: #FFC107; /* In progress status */
+            --color-on-hold: #6c757d; /* On hold status */
+            --color-cancelled: #dc3545; /* Cancelled status */
+            --color-new: #3F88C5; /* New status */
+        }
+
+        /* Page Header */
+        .page-header {
+            background-color: var(--color-wheat);
+            padding: 15px 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+            .page-header h2 {
+                color: var(--color-soil);
+                font-weight: 700;
+                margin: 0;
+            }
+
+            .page-header .task-info {
+                color: var(--color-earth);
+                font-size: 1rem;
+                margin-top: 5px;
+            }
+
+        /* Button Styling */
+        .btn-farm {
+            padding: 8px 16px;
+            border-radius: 4px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+
+        .btn-order {
+            background-color: var(--color-white);
+            border: 1px solid var(--color-earth);
+            color: var(--color-earth);
+        }
+
+            .btn-order:hover {
+                background-color: var(--color-earth);
+                color: var(--color-white);
+            }
+
+        .btn-add {
+            background-color: var(--color-foliage);
+            border: 1px solid var(--color-foliage);
+            color: var(--color-white);
+        }
+
+            .btn-add:hover {
+                background-color: #3d8b40; /* Darker shade of foliage */
+                border-color: #3d8b40;
+            }
+
+        .btn-back {
+            background-color: var(--color-earth);
+            border: 1px solid var(--color-earth);
+            color: var(--color-white);
+        }
+
+            .btn-back:hover {
+                background-color: var(--color-soil);
+                border-color: var(--color-soil);
+            }
+
+        /* Timeline Styling */
+        .timeline-container {
+            position: relative;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+            .timeline-container::after {
+                content: '';
+                position: absolute;
+                width: 4px;
+                background-color: var(--color-wheat);
+                top: 0;
+                bottom: 0;
+                left: 20px;
+                margin-left: -2px;
+            }
+
+        .timeline-item {
+            position: relative;
+            padding-left: 40px;
+            margin-bottom: 20px;
+        }
+
+            .timeline-item::before {
+                content: '';
+                position: absolute;
+                width: 16px;
+                height: 16px;
+                left: 12px;
+                top: 15px;
+                border-radius: 50%;
+                z-index: 1;
+            }
+
+            .timeline-item.status-completed::before {
+                background-color: var(--color-completed);
+            }
+
+            .timeline-item.status-in-progress::before {
+                background-color: var(--color-in-progress);
+            }
+
+            .timeline-item.status-on-hold::before {
+                background-color: var(--color-on-hold);
+            }
+
+            .timeline-item.status-cancelled::before {
+                background-color: var(--color-cancelled);
+            }
+
+            .timeline-item.status-new::before {
+                background-color: var(--color-new);
+            }
+
+        /* Card Styling */
+        .task-card {
+            border: 1px solid var(--color-wheat);
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            background-color: var(--color-white);
+        }
+
+        .task-card-body {
+            padding: 15px 20px;
+        }
+
+        .task-card-title {
+            color: var(--color-soil);
+            font-weight: 600;
+            margin-bottom: 5px;
+            display: flex;
+            align-items: center;
+        }
+
+        .task-card-subtitle {
+            color: var(--color-earth);
+            font-size: 0.9rem;
+            margin-bottom: 12px;
+        }
+
+        .task-card-text {
+            color: #333;
+            margin-bottom: 15px;
+        }
+
+        /* Status Badges */
+        .status-badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 12px;
+            font-size: 0.875rem;
+            font-weight: 500;
+            margin-left: 10px;
+            color: var(--color-white);
+        }
+
+        .status-completed {
+            background-color: var(--color-completed);
+        }
+
+        .status-in-progress {
+            background-color: var(--color-in-progress);
+        }
+
+        .status-on-hold {
+            background-color: var(--color-on-hold);
+        }
+
+        .status-cancelled {
+            background-color: var(--color-cancelled);
+        }
+
+        .status-new {
+            background-color: var(--color-new);
+        }
+
+        /* Progress Bar */
+        .progress {
+            height: 8px;
+            border-radius: 4px;
+            background-color: #e9ecef;
+            margin-bottom: 15px;
+        }
+
+        .progress-bar {
+            background-color: var(--color-foliage);
+            border-radius: 4px;
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            background-color: var(--color-white);
+            border: 1px solid var(--color-wheat);
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        }
+
+            .empty-state p {
+                color: var(--color-soil);
+                font-size: 1.1rem;
+                margin: 0;
+            }
+
+        /* Action Buttons Container */
+        .action-buttons {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            margin-top: 20px;
+        }
+    </style>
+
+    <!-- Page Header -->
+    <div class="page-header">
+        <div>
+            <h2>Task Status Timeline</h2>
+            @if (ViewBag.Task != null)
+            {
+                <div class="task-info">
+                    <i class="fas fa-tasks"></i> @ViewBag.Task.Title
+                    @if (ViewBag.Task.Id != null)
+                    {
+                        <span>(ID: @ViewBag.Task.Id)</span>
+                    }
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="action-buttons">
+        <a href="@Url.Action("Timeline", new { taskId = ViewBag.Task.Id, order = ascending ? "desc" : "asc" })"
+           class="btn-farm btn-order">
+            <i class="fas fa-sort"></i> View @(!ascending ? "Oldest First" : "Newest First")
+        </a>
+        <a href="@Url.Action("UpdateStatus", "Tasks", new { id = ViewBag.Task.Id })"
+           class="btn-farm btn-add">
+            <i class="fas fa-plus-circle"></i> Update Status
+        </a>
+    </div>
+
+    @if (!Model.Any())
+    {
+        <div class="empty-state">
+            <p><i class="fas fa-clipboard-list"></i> No status updates available for this task.</p>
+        </div>
+    }
+    else
+    {
+        <!-- Timeline Container -->
+        <div class="timeline-container">
+            @foreach (var update in Model)
+            {
+                var statusTypeClass = GetStatusTypeClass(update.TasksStatus);
+                var statusBadgeClass = GetStatusBadgeClass(update.TasksStatus);
+
+                <div class="timeline-item @statusTypeClass">
+                    <div class="task-card mb-3">
+                        <div class="task-card-body">
+                            <h5 class="task-card-title">
+                                @update.TasksStatus
+                                <span class="status-badge @statusBadgeClass">@update.TasksStatus</span>
+                            </h5>
+                            <h6 class="task-card-subtitle text-muted">
+                                <i class="far fa-calendar-alt"></i> @update.DateUpdated.ToString("yyyy-MM-dd HH:mm")
+                            </h6>
+
+                            <div class="progress">
+                                <div class="progress-bar" role="progressbar" style="width: @(update.Progress)%"
+                                     aria-valuenow="@update.Progress" aria-valuemin="0" aria-valuemax="100"></div>
+                            </div>
+                            <p class="task-card-text">Progress: @update.Progress%</p>
+
+                            @if (!string.IsNullOrEmpty(update.Comments))
+                            {
+                                <p class="task-card-text">@update.Comments</p>
+                            }
+
+                            <footer class="blockquote-footer">
+                                <i class="far fa-user"></i> Updated by @(update.User != null ? update.User.FullName : "Unknown user")
+                            </footer>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+
+    <!-- Back Button -->
+    <div class="action-buttons">
+        <a href="@Url.Action("Details", "Tasks", new { id = ViewBag.Task.Id })" class="btn-farm btn-back">
+            <i class="fas fa-arrow-left"></i> Back to Task Details
+        </a>
+    </div>
+
+    <!-- Font Awesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
+    @functions {
+        string GetStatusTypeClass(string status)
+        {
+            if (string.IsNullOrEmpty(status))
+                return "status-new";
+
+            var normalizedStatus = status.ToLower().Trim();
+
+            if (normalizedStatus.Contains("completed"))
+                return "status-completed";
+            else if (normalizedStatus.Contains("in progress"))
+                return "status-in-progress";
+            else if (normalizedStatus.Contains("on hold"))
+                return "status-on-hold";
+            else if (normalizedStatus.Contains("cancelled") || normalizedStatus.Contains("canceled"))
+                return "status-cancelled";
+            else
+                return "status-new";
+        }
+
+        string GetStatusBadgeClass(string status)
+        {
+            if (string.IsNullOrEmpty(status))
+                return "status-new";
+
+            var normalizedStatus = status.ToLower().Trim();
+
+            if (normalizedStatus.Contains("completed"))
+                return "status-completed";
+            else if (normalizedStatus.Contains("in progress"))
+                return "status-in-progress";
+            else if (normalizedStatus.Contains("on hold"))
+                return "status-on-hold";
+            else if (normalizedStatus.Contains("cancelled") || normalizedStatus.Contains("canceled"))
+                return "status-cancelled";
+            else
+                return "status-new";
+        }
+    }*@
+
+@model IEnumerable<FarmTrack.Models.HealthRecord>
+@{
+    ViewBag.Title = "Health Record Timeline";
+    var ascending = ViewBag.Order == "asc";
+}
+
+<style>
+    /* Custom Color Scheme */
+    :root {
+        --color-earth: #8B7355; /* Primary */
+        --color-soil: #654321; /* Secondary */
+        --color-foliage: #4CAF50; /* Tertiary */
+        --color-wheat: #F5DEB3; /* Accent */
+        --color-danger: #FF6B6B; /* Error */
+        --color-white: #FFFFFF; /* Neutral */
+        --color-bib: #b17474; /* Neutral */
+        --color-health: #3F88C5; /* Health specific */
+        --color-vaccination: #8A5A44; /* Vaccination specific */
+        --color-treatment: #725AC1; /* Treatment specific */
+        --color-checkup: #7FB069; /* Checkup specific */
+    }
+
+    /* Page Header */
+    .page-header {
+        background-color: var(--color-wheat);
+        padding: 15px 20px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+    }
+
+        .page-header h2 {
+            color: var(--color-soil);
+            font-weight: 700;
+            margin: 0;
+        }
+
+        .page-header .livestock-info {
+            color: var(--color-earth);
+            font-size: 1rem;
+            margin-top: 5px;
+        }
+
+    /* Button Styling */
+    .btn-farm {
+        padding: 8px 16px;
+        border-radius: 4px;
+        font-weight: 500;
+        transition: all 0.2s ease;
+    }
+
+    .btn-order {
+        background-color: var(--color-white);
+        border: 1px solid var(--color-earth);
+        color: var(--color-earth);
+    }
+
+        .btn-order:hover {
+            background-color: var(--color-earth);
+            color: var(--color-white);
+        }
+
+    .btn-add {
+        background-color: var(--color-soil);
+        border-color: var(--color-soil);
+        color: var(--color-wheat);
+    }
+
+        .btn-add:hover {
+            background-color: var(--color-wheat);
+            border-color: var(--color-wheat);
+            color: var(--color-soil);
+        }
+
+    .btn-back {
+        background-color: var(--color-earth);
+        border: 1px solid var(--color-earth);
+        color: var(--color-white);
+    }
+
+        .btn-back:hover {
+            background-color: var(--color-soil);
+            border-color: var(--color-soil);
+        }
+
+    /* Timeline Styling */
+    .timeline-container {
+        position: relative;
+        max-width: 800px;
+        margin: 0 auto;
+    }
+
+        .timeline-container::after {
+            content: '';
+            position: absolute;
+            width: 4px;
+            background-color: var(--color-wheat);
+            top: 0;
+            bottom: 0;
+            left: 20px;
+            margin-left: -2px;
+        }
+
+    .timeline-item {
+        position: relative;
+        padding-left: 40px;
+        margin-bottom: 20px;
+    }
+
+        .timeline-item::before {
+            content: '';
+            position: absolute;
+            width: 16px;
+            height: 16px;
+            left: 12px;
+            top: 15px;
+            border-radius: 50%;
+            z-index: 1;
+        }
+
+        .timeline-item.health-checkup::before {
+            background-color: var(--color-health);
+        }
+
+        .timeline-item.vaccination::before {
+            background-color: var(--color-vaccination);
+        }
+
+        .timeline-item.treatment::before {
+            background-color: var(--color-treatment);
+        }
+
+        .timeline-item.regular-checkup::before {
+            background-color: var(--color-checkup);
+        }
+
+        .timeline-item.other::before {
+            background-color: var(--color-earth);
+        }
+
+    /* Card Styling */
+    .health-card {
+        border: 1px solid var(--color-wheat);
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        background-color: var(--color-white);
+    }
+
+    .health-card-body {
+        padding: 15px 20px;
+    }
+
+    .health-card-title {
+        color: var(--color-soil);
+        font-weight: 600;
+        margin-bottom: 5px;
+        display: flex;
+        align-items: center;
+    }
+
+    .health-card-subtitle {
+        color: var(--color-earth);
+        font-size: 0.9rem;
+        margin-bottom: 12px;
+    }
+
+    .health-card-text {
+        color: #333;
+        margin-bottom: 15px;
+    }
+
+    /* Event Type Badges */
+    .event-badge {
+        display: inline-block;
+        padding: 0.25rem 0.75rem;
+        border-radius: 12px;
+        font-size: 0.875rem;
+        font-weight: 500;
+        margin-left: 10px;
+        color: var(--color-white);
+    }
+
+    .event-checkup {
+        background-color: var(--color-health);
+    }
+
+    .event-vaccination {
+        background-color: var(--color-vaccination);
+    }
+
+    .event-treatment {
+        background-color: var(--color-treatment);
+    }
+
+    .event-regular {
+        background-color: var(--color-checkup);
+    }
+
+    .event-other {
+        background-color: var(--color-earth);
+    }
+
+    /* Empty State */
+    .empty-state {
+        text-align: center;
+        padding: 40px 20px;
+        background-color: var(--color-white);
+        border: 1px solid var(--color-wheat);
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    }
+
+        .empty-state p {
+            color: var(--color-soil);
+            font-size: 1.1rem;
+            margin: 0;
+        }
+
+    /* Action Buttons Container */
+    .action-buttons {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 20px;
+        margin-top: 20px;
+    }
+
+    .chart-container {
+        width: 100%;
+        max-width: 700px;
+        margin: 0 auto;
+    }
+</style>
+
+<!-- Page Header -->
+<div class="page-header">
+    <div>
+        <h2>Health Record Timeline</h2>
+        @if (ViewBag.LivestockName != null)
+        {
+            <div class="livestock-info">
+                <i class="fas fa-cow"></i> @ViewBag.LivestockName
+                @if (ViewBag.LivestockId != null)
+                {
+                    <span>(ID: @ViewBag.LivestockId)</span>
+                }
+            </div>
+        }
+    </div>
+</div>
+
+<!-- Action Buttons -->
+<div class="action-buttons">
+    <a href="@Url.Action("Timeline", new { livestockId = ViewBag.LivestockId, order = ascending ? "desc" : "asc" })"
+       class="btn-farm btn-order">
+        <i class="fas fa-sort"></i> View @(!ascending ? "Oldest First" : "Newest First")
+    </a>
+    <a href="@Url.Action("Add", "Livestock", new { livestockId = ViewBag.LivestockId })"
+       class="btn-farm btn-add">
+        <i class="fas fa-plus-circle"></i> Add Record
+    </a>
+</div>
+
+@if (!Model.Any())
+{
+    <div class="empty-state">
+        <p><i class="fas fa-notes-medical"></i> No health records available for this livestock.</p>
+    </div>
+}
+else
+{
+    <div class="chart-container mb-4">
+        <canvas id="weightChart" height="100"></canvas>
+    </div>
+
+    <!-- Timeline Container -->
+    <div class="timeline-container">
+        @foreach (var record in Model)
+        {
+            var eventTypeClass = GetEventTypeClass(record.EventType);
+            var eventBadgeClass = GetEventBadgeClass(record.EventType);
+
+            <div class="timeline-item @eventTypeClass">
+                <div class="health-card mb-3">
+                    <div class="health-card-body">
+                        <h5 class="health-card-title">
+                            @record.EventType
+                            <span class="event-badge @eventBadgeClass">@record.EventType</span>
+                        </h5>
+                        <h6 class="health-card-subtitle text-muted">
+                            <i class="far fa-calendar-alt"></i> @record.Date.ToString("yyyy-MM-dd")
+                        </h6>
+
+                        <p class="health-card-text">@record.Weight</p>
+
+                        @if (!string.IsNullOrEmpty(record.Notes))
+                        {
+                            <p class="health-card-text">@record.Notes</p>
+                        }
+
+                        <footer class="blockquote-footer">
+                            <i class="far fa-user"></i> Recorded by @record.RecordedBy
+                        </footer>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+}
+
+
+<!-- Back Button -->
+<div class="action-buttons">
+    <a href="@Url.Action("Details", "Livestock", new { livestockId = ViewBag.LivestockId })" class="btn-farm btn-back">
+        <i class="fas fa-arrow-left"></i> Back to Livestock Details
+    </a>
+</div>
+
+<!-- Font Awesome for Icons -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
+@functions {
+    string GetEventTypeClass(string eventType)
+    {
+        if (string.IsNullOrEmpty(eventType))
+            return "other";
+
+        var normalizedType = eventType.ToLower();
+
+        if (normalizedType.Contains("checkup") || normalizedType.Contains("check-up"))
+            return "health-checkup";
+        else if (normalizedType.Contains("vaccination") || normalizedType.Contains("vaccine"))
+            return "vaccination";
+        else if (normalizedType.Contains("treatment") || normalizedType.Contains("medication"))
+            return "treatment";
+        else if (normalizedType.Contains("regular"))
+            return "regular-checkup";
+        else
+            return "other";
+    }
+
+    string GetEventBadgeClass(string eventType)
+    {
+        if (string.IsNullOrEmpty(eventType))
+            return "event-other";
+
+        var normalizedType = eventType.ToLower();
+
+        if (normalizedType.Contains("checkup") || normalizedType.Contains("check-up"))
+            return "event-checkup";
+        else if (normalizedType.Contains("vaccination") || normalizedType.Contains("vaccine"))
+            return "event-vaccination";
+        else if (normalizedType.Contains("treatment") || normalizedType.Contains("medication"))
+            return "event-treatment";
+        else if (normalizedType.Contains("regular"))
+            return "event-regular";
+        else
+            return "event-other";
+    }
+}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    const chartData = @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(ViewBag.WeightChartData));
+
+    if (chartData && chartData.length > 0) {
+        const ctx = document.getElementById('weightChart').getContext('2d');
+        const weightChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: chartData.map(d => d.Date),
+                datasets: [{
+                    label: 'Livestock Weight (kg)',
+                    data: chartData.map(d => d.Weight),
+                    fill: false,
+                    borderColor: '#4CAF50',
+                    backgroundColor: '#4CAF50',
+                    tension: 0.3
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: { display: true },
+                    tooltip: { mode: 'index', intersect: false }
+                },
+                scales: {
+                    x: { title: { display: true, text: 'Date' } },
+                    y: {
+                        title: { display: true, text: 'Weight (kg)' },
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+    }
+</script>
+

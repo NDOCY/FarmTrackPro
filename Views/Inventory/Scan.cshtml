@@ -1,0 +1,144 @@
+﻿@{
+
+    ViewBag.Title="Scan Barcode";
+
+}
+
+
+<div class="container">
+    <div class="row">
+        <div class="col-md-8 mx-auto">
+            <div class="card">
+                <div class="card-header">
+                    <h2>Scan Barcode</h2>
+                </div>
+                <div class="card-body">
+                    <div class="text-center mb-3">
+                        <video id="preview" style="width: 100%; max-width: 400px; border: 1px solid #ccc; border-radius: 4px;"></video>
+                    </div>
+                    <div class="alert alert-info" id="scan-status">
+                        <i class="fa fa-camera"></i> Position barcode in the scanner view...
+                    </div>
+                    <div class="text-center mt-3">
+                        <button id="start-button" class="btn btn-primary">Start Scanner</button>
+                        <button id="stop-button" class="btn btn-secondary ml-2" style="display: none;">Stop Scanner</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <!-- Use a more reliable barcode scanning library -->
+    <script src="https://unpkg.com/zxing/library@0.19.1"></script>
+    <script>
+        $(document).ready(function () {
+            const videoElement = document.getElementById('preview');
+            const status = document.getElementById('scan-status');
+            const startButton = document.getElementById('start-button');
+            const stopButton = document.getElementById('stop-button');
+
+            let selectedDeviceId;
+            let codeReader;
+
+            // Start with a manual button to trigger camera permission
+            startButton.addEventListener('click', function () {
+                startScanner();
+                startButton.style.display = 'none';
+                stopButton.style.display = 'inline-block';
+            });
+
+            stopButton.addEventListener('click', function () {
+                stopScanner();
+                startButton.style.display = 'inline-block';
+                stopButton.style.display = 'none';
+            });
+
+            function startScanner() {
+                status.className = "alert alert-info";
+                status.innerHTML = '<i class="fa fa-spinner fa-spin"></i> Starting camera...';
+
+                // Create a new instance of the code reader
+                codeReader = new ZXing.BrowserMultiFormatReader();
+
+                // Get available video devices
+                codeReader.listVideoInputDevices()
+                    .then((videoInputDevices) => {
+                        // Select the rear camera if available, otherwise select the first camera
+                        selectedDeviceId = undefined;
+
+                        if (videoInputDevices.length > 0) {
+                            // Try to find back camera
+                            for (const device of videoInputDevices) {
+                                if (device.label.toLowerCase().includes('back') ||
+                                    device.label.toLowerCase().includes('rear')) {
+                                    selectedDeviceId = device.deviceId;
+                                    break;
+                                }
+                            }
+
+                            // If no back camera found, use the first camera
+                            if (!selectedDeviceId) {
+                                selectedDeviceId = videoInputDevices[0].deviceId;
+                            }
+
+                            // Start decoding from the selected device
+                            codeReader.decodeFromVideoDevice(selectedDeviceId, 'preview', (result, err) => {
+                                if (result) {
+                                    // Update status to show we got a barcode
+                                    status.className = "alert alert-success";
+                                    status.innerHTML = '<i class="fa fa-check"></i> Barcode detected: ' + result.text;
+
+                                    // Stop the scanner
+                                    stopScanner();
+
+                                    // Add visual feedback
+                                    $("#scan-status").append('<div class="mt-2"><div class="spinner-border spinner-border-sm text-primary" role="status"></div> Redirecting...</div>');
+
+                                    // Redirect to server-side action after a short delay to show the success message
+                                    setTimeout(() => {
+                                        const scannedBarcode = encodeURIComponent(result.text);
+                                        window.location.href = `/Inventory/FindByBarcode?barcode=${scannedBarcode}`;
+                                    }, 1000);
+                                }
+
+                                if (err && !(err instanceof ZXing.NotFoundException)) {
+                                    console.error(err);
+                                    status.className = "alert alert-danger";
+                                    status.innerHTML = '<i class="fa fa-exclamation-circle"></i> Error: ' + err;
+                                }
+                            })
+                                .catch((err) => {
+                                    console.error(err);
+                                    status.className = "alert alert-danger";
+                                    status.innerHTML = '<i class="fa fa-exclamation-triangle"></i> Error starting scanner: ' + err;
+                                });
+
+                            status.innerHTML = '<i class="fa fa-camera"></i> Position barcode in the scanner view...';
+                        } else {
+                            status.className = "alert alert-danger";
+                            status.innerHTML = '<i class="fa fa-exclamation-triangle"></i> No video input devices found';
+                        }
+                    })
+                    .catch((err) => {
+                        console.error(err);
+                        status.className = "alert alert-danger";
+                        status.innerHTML = '<i class="fa fa-exclamation-triangle"></i> Error accessing video devices: ' + err;
+                    });
+            }
+
+            function stopScanner() {
+                if (codeReader) {
+                    codeReader.reset();
+                    codeReader = undefined;
+                }
+            }
+
+            // Clean up when navigating away
+            $(window).on('beforeunload', function () {
+                stopScanner();
+            });
+        });
+    </script>
+}

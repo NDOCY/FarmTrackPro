@@ -1,0 +1,272 @@
+﻿@model FarmTrack.Models.HealthCheckSchedule
+@{
+    ViewBag.Title = "Schedule Details";
+    var livestock = ViewBag.Livestock as List<FarmTrack.Models.Livestock>;
+}
+
+<style>
+    /* Custom Color Scheme */
+    :root {
+        --color-earth: #8B7355; /* Primary */
+        --color-soil: #654321; /* Secondary */
+        --color-foliage: #4CAF50; /* Tertiary */
+        --color-wheat: #F5DEB3; /* Accent */
+        --color-danger: #FF6B6B; /* Error */
+        --color-white: #FFFFFF; /* Neutral */
+        --color-light-earth: #d9c8b4; /* Light version of primary */
+    }
+
+    /* Page Header */
+    .page-header {
+        background-color: var(--color-wheat);
+        padding: 20px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+        position: relative;
+        overflow: hidden;
+    }
+
+        .page-header h2 {
+            color: var(--color-soil);
+            font-weight: 700;
+            margin-bottom: 0;
+            position: relative;
+            z-index: 1;
+        }
+
+        .page-header:after {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 150px;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2));
+            z-index: 0;
+        }
+
+    /* Content Container */
+    .content-container {
+        background-color: var(--color-white);
+        border: 1px solid var(--color-wheat);
+        border-radius: 8px;
+        padding: 20px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        margin-bottom: 20px;
+    }
+
+    /* Detail Table Styling */
+    .details-table {
+        width: 100%;
+        margin-bottom: 1.5rem;
+        background-color: transparent;
+        border-collapse: collapse;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+        border-radius: 8px;
+        overflow: hidden;
+    }
+
+        .details-table th {
+            background-color: var(--color-earth);
+            color: var(--color-white);
+            border: none;
+            padding: 14px 16px;
+            font-weight: 600;
+            width: 30%;
+            text-align: left;
+        }
+
+        .details-table td {
+            padding: 14px 16px;
+            border-top: 1px solid var(--color-light-earth);
+            background-color: var(--color-white);
+        }
+
+        .details-table tr:nth-child(odd) td {
+            background-color: rgba(245, 222, 179, 0.1);
+        }
+
+    /* Status Styling */
+    .status-badge {
+        display: inline-block;
+        padding: 5px 12px;
+        border-radius: 16px;
+        font-weight: 500;
+        font-size: 0.9rem;
+    }
+
+    .status-pending {
+        background-color: #fff3cd;
+        color: #856404;
+    }
+
+    .status-completed {
+        background-color: #d4edda;
+        color: #155724;
+    }
+
+    /* Livestock List Styling */
+    .livestock-section {
+        margin-top: 30px;
+    }
+
+        .livestock-section h4 {
+            color: var(--color-soil);
+            font-weight: 600;
+            margin-bottom: 15px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid var(--color-light-earth);
+        }
+
+    .livestock-list {
+        padding: 0;
+        list-style: none;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+
+    .livestock-item {
+        background-color: var(--color-light-earth);
+        border-left: 4px solid var(--color-foliage);
+        border-radius: 6px;
+        padding: 10px 15px;
+        display: flex;
+        align-items: center;
+        margin-bottom: 10px;
+        transition: all 0.2s ease;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    }
+
+        .livestock-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .livestock-item i {
+            color: var(--color-foliage);
+            margin-right: 10px;
+            font-size: 1.1rem;
+        }
+
+        .livestock-item strong {
+            color: var(--color-soil);
+            margin-right: 5px;
+        }
+
+        .livestock-item span {
+            color: #6c757d;
+        }
+
+    /* No Livestock Message */
+    .no-livestock {
+        padding: 15px;
+        border: 1px dashed var(--color-wheat);
+        border-radius: 8px;
+        color: #6c757d;
+        text-align: center;
+        background-color: rgba(245, 222, 179, 0.05);
+    }
+
+    /* Button Styling */
+    .btn {
+        border-radius: 6px;
+        padding: 10px 18px;
+        font-weight: 500;
+        text-decoration: none;
+        display: inline-block;
+        transition: all 0.3s ease;
+        margin-top: 20px;
+    }
+
+    .btn-default {
+        background-color: var(--color-wheat);
+        border: none;
+        color: var(--color-soil);
+    }
+
+        .btn-default:hover {
+            background-color: var(--color-earth);
+            color: var(--color-white);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+    .btn i {
+        margin-right: 8px;
+    }
+</style>
+
+<!-- Page Header -->
+<div class="page-header">
+    <h2><i class="fas fa-clipboard-check"></i> Health Schedule Details</h2>
+</div>
+
+<div class="content-container">
+    <table class="details-table">
+        <tr>
+            <th><i class="fas fa-stethoscope"></i> Check Type</th>
+            <td>@Model.CheckType</td>
+        </tr>
+        <tr>
+            <th><i class="fas fa-sticky-note"></i> Notes</th>
+            <td>@(string.IsNullOrEmpty(Model.Notes) ? "No notes provided" : Model.Notes)</td>
+        </tr>
+        <tr>
+            <th><i class="fas fa-calendar-alt"></i> Scheduled Date</th>
+            <td>@Model.ScheduledDate.ToString("MMMM dd, yyyy")</td>
+        </tr>
+        <tr>
+            <th><i class="fas fa-user"></i> Assigned To</th>
+            <td>@($"{Model.AssignedToUser?.FullName ?? "Unassigned"}")</td>
+        </tr>
+        <tr>
+            <th><i class="fas fa-tasks"></i> Status</th>
+            <td>
+                @if (Model.Status == "Pending")
+                {
+                    <span class="status-badge status-pending">
+                        <i class="fas fa-hourglass-half"></i> Pending
+                    </span>
+                }
+                else
+                {
+                    <span class="status-badge status-completed">
+                        <i class="fas fa-check-circle"></i> Completed
+                    </span>
+                }
+            </td>
+        </tr>
+    </table>
+
+    <div class="livestock-section">
+        <h4><i class="fas fa-cow"></i> Associated Livestock</h4>
+
+        @if (livestock != null && livestock.Any())
+        {
+            <ul class="livestock-list">
+                @foreach (var l in livestock)
+                {
+                    <li class="livestock-item">
+                        <i class="fas fa-tag"></i>
+                        <strong>@l.TagNumber</strong>
+                        <span>(@l.Type)</span>
+                    </li>
+                }
+            </ul>
+        }
+        else
+        {
+            <div class="no-livestock">
+                <i class="fas fa-info-circle"></i> No livestock linked to this schedule.
+            </div>
+        }
+    </div>
+
+    <a href="@Url.Action("Index")" class="btn btn-default">
+        <i class="fas fa-arrow-left"></i> Back to List
+    </a>
+</div>
+
+<!-- Font Awesome for Icons -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">

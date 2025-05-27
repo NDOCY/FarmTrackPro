@@ -1,0 +1,333 @@
+﻿@model List<FarmTrack.Models.TaskUpdate>
+@{
+    ViewBag.Title = "Status Updates";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="page-header">
+    <h2>Task Status Updates</h2>
+    <p class="lead">Track changes to task progress over time</p>
+</div>
+
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0">Filter Updates</h5>
+    </div>
+    <div class="card-body">
+        <form method="get" class="filter-form">
+            <div class="row">
+                <div class="col-md-3 mb-3">
+                    <div class="form-group">
+                        <label for="taskId">Task</label>
+                        @Html.DropDownList("taskId", (SelectList)ViewBag.Tasks, "-- All Tasks --", new { @class = "form-control" })
+                    </div>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <div class="form-group">
+                        <label for="userId">User</label>
+                        @Html.DropDownList("userId", (SelectList)ViewBag.Users, "-- All Users --", new { @class = "form-control" })
+                    </div>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <label for="taskStatus">Status</label>
+                    <select name="taskStatus" class="form-control">
+                        <option value="">-- All Statuses --</option>
+                        <option value="Completed">Completed</option>
+                        <option value="In Progress">In Progress</option>
+                        <option value="On Hold">On Hold</option>
+                    </select>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <label for="search">Search</label>
+                    <input type="text" name="search" class="form-control" placeholder="Task or Recorder name" value="@Request.QueryString["search"]" />
+                </div>
+                @*<div class="col-md-2 mb-3">
+            <div class="form-group">
+                <label for="fromDate">From</label>
+                <input type="date" name="fromDate" class="form-control" value="@ViewBag.FromDate" />
+            </div>
+        </div>
+        <div class="col-md-2 mb-3">
+            <div class="form-group">
+                <label for="toDate">To</label>
+                <input type="date" name="toDate" class="form-control" value="@ViewBag.ToDate" />
+            </div>
+        </div>*@
+                <div class="col-md-2 mb-3 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary btn-block">Filter</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+@if (!Model.Any())
+{
+    <div class="alert alert-warning">
+        <i class="fas fa-exclamation-triangle mr-2"></i>
+        No status updates found for the selected criteria.
+    </div>
+}
+else
+{
+    <div class="updates-container">
+        @foreach (var update in Model)
+        {
+            <div class="card mb-3 update-card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <h5 class="card-title">
+                            @update.Task.Title
+                            <span class="badge badge-info">@update.TasksStatus</span>
+                        </h5>
+                        <div class="progress-badge">@update.Progress%</div>
+                    </div>
+
+                    <div class="progress mb-3">
+                        <div class="progress-bar" role="progressbar" style="width: @(update.Progress)%"
+                             aria-valuenow="@update.Progress" aria-valuemin="0" aria-valuemax="100"></div>
+                    </div>
+
+                    @if (!string.IsNullOrWhiteSpace(update.Comments))
+                    {
+                        <p class="card-text comment-text">@update.Comments</p>
+                    }
+
+                    <footer class="update-footer">
+                        Updated by <strong>@(update.User != null ? update.User.FullName : "Unknown")</strong>
+                        on @update.DateUpdated.ToString("dd MMM yyyy hh:mm tt")
+                    </footer>
+                </div>
+            </div>
+        }
+    </div>
+}
+
+<style>
+    /* Custom Color Scheme */
+    :root {
+        --color-earth: #8B7355; /* Primary */
+        --color-soil: #654321; /* Secondary */
+        --color-foliage: #4CAF50; /* Tertiary */
+        --color-wheat: #F5DEB3; /* Accent */
+        --color-danger: #FF6B6B; /* Error */
+        --color-white: #FFFFFF; /* Neutral */
+        --color-bib: #b17474; /* Neutral */
+    }
+
+    /* Page Header */
+    .page-header {
+        background-color: var(--color-wheat);
+        padding: 20px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+    }
+
+    .page-header h2 {
+        color: var(--color-soil);
+        font-weight: 700;
+        margin-bottom: 5px;
+    }
+
+    .page-header p.lead {
+        color: var(--color-soil);
+        opacity: 0.8;
+        margin-bottom: 0;
+    }
+
+    /* Card styling */
+    .card {
+        border: 1px solid var(--color-wheat);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        margin-bottom: 20px;
+    }
+
+    .card-header {
+        background-color: var(--color-wheat);
+        color: var(--color-soil);
+        padding: 12px 20px;
+    }
+
+    .card-header h5 {
+        font-weight: 600;
+        margin-bottom: 0;
+    }
+
+    .card-body {
+        background-color: var(--color-white);
+        padding: 20px;
+    }
+
+    /* Form styling */
+    .filter-form label {
+        font-weight: 500;
+        color: var(--color-soil);
+        display: block;
+        margin-bottom: 5px;
+    }
+
+    .form-control {
+        border: 1px solid var(--color-wheat);
+        border-radius: 4px;
+        padding: 8px 12px;
+    }
+
+    .form-control:focus {
+        border-color: var(--color-earth);
+        box-shadow: 0 0 0 0.2rem rgba(139, 115, 85, 0.25);
+    }
+
+    /* Button styling */
+    .btn-primary {
+        background-color: var(--color-earth);
+        border-color: var(--color-earth);
+        color: var(--color-white);
+    }
+
+    .btn-primary:hover {
+        background-color: var(--color-soil);
+        border-color: var(--color-soil);
+    }
+
+    /* Status updates styling */
+    .update-card {
+        transition: transform 0.2s ease;
+    }
+
+    .update-card:hover {
+        transform: translateY(-3px);
+    }
+
+    .card-title {
+        color: var(--color-soil);
+        font-weight: 600;
+        margin-bottom: 15px;
+    }
+
+    /* Badge styling */
+    .badge-info {
+        background-color: var(--color-earth);
+        color: var(--color-white);
+        font-weight: 500;
+        padding: 5px 10px;
+        border-radius: 4px;
+        font-size: 12px;
+    }
+
+    /* Progress styling */
+    .progress {
+        height: 8px;
+        background-color: rgba(245, 222, 179, 0.3);
+        border-radius: 4px;
+        overflow: hidden;
+    }
+
+    .progress-bar {
+        background-color: var(--color-soil);
+    }
+
+    .progress-badge {
+        background-color: var(--color-earth);
+        color: white;
+        font-weight: bold;
+        padding: 3px 10px;
+        border-radius: 20px;
+        font-size: 14px;
+    }
+
+    /* Comment text styling */
+    .comment-text {
+        background-color: rgba(245, 222, 179, 0.1);
+        padding: 12px 15px;
+        border-radius: 6px;
+        border-left: 3px solid var(--color-wheat);
+        margin-bottom: 15px;
+    }
+
+    /* Footer styling */
+    .update-footer {
+        color: #777;
+        font-size: 13px;
+        padding-top: 10px;
+        border-top: 1px dashed rgba(245, 222, 179, 0.5);
+    }
+
+    .update-footer strong {
+        color: var(--color-soil);
+    }
+
+    /* Alert styling */
+    .alert-warning {
+        background-color: rgba(245, 222, 179, 0.2);
+        border-color: var(--color-wheat);
+        color: var(--color-soil);
+    }
+
+    /* Responsive styling */
+    @@media (max-width: 768px) {
+        .filter-form {
+            flex-direction: column;
+        }
+
+        .filter-form .form-group {
+            margin-bottom: 15px;
+            width: 100%;
+        }
+    }
+
+    /* Layout helpers */
+    .mb-3 {
+        margin-bottom: 1rem;
+    }
+
+    .mb-4 {
+        margin-bottom: 1.5rem;
+    }
+
+    .d-flex {
+        display: flex;
+    }
+
+    .justify-content-between {
+        justify-content: space-between;
+    }
+
+    .align-items-start {
+        align-items: flex-start;
+    }
+
+    .align-items-end {
+        align-items: flex-end;
+    }
+
+    .row {
+        display: flex;
+        flex-wrap: wrap;
+        margin-right: -15px;
+        margin-left: -15px;
+    }
+
+    .col-md-2, .col-md-3 {
+        position: relative;
+        width: 100%;
+        padding-right: 15px;
+        padding-left: 15px;
+    }
+
+    @@media (min-width: 768px) {
+        .col-md-2 {
+            flex: 0 0 16.666667%;
+            max-width: 16.666667%;
+        }
+
+        .col-md-3 {
+            flex: 0 0 25%;
+            max-width: 25%;
+        }
+    }
+
+    .btn-block {
+        display: block;
+        width: 100%;
+    }
+</style>

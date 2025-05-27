@@ -1,0 +1,271 @@
+﻿@model FarmTrack.Models.JobApplication
+@{
+    ViewBag.Title = "Review Job Application";
+}
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success">@TempData["SuccessMessage"]</div>
+}
+
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger">@TempData["ErrorMessage"]</div>
+}
+
+<style>
+    /* Custom Color Scheme */
+    :root {
+        --color-earth: #8B7355; /* Primary */
+        --color-soil: #654321; /* Secondary */
+        --color-foliage: #4CAF50; /* Tertiary */
+        --color-wheat: #F5DEB3; /* Accent */
+        --color-danger: #FF6B6B; /* Error */
+        --color-white: #FFFFFF; /* Neutral */
+        --color-bib: #b17474; /* Neutral */
+    }
+
+    /* Application Review Container */
+    .application-review-container {
+        background-color: var(--color-white);
+        border: 1px solid var(--color-wheat);
+        border-radius: 8px;
+        padding: 20px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        max-width: 800px;
+        margin: auto;
+    }
+
+    /* Applicant Info Section */
+    .applicant-info {
+        margin-bottom: 25px;
+        padding-bottom: 15px;
+        border-bottom: 1px solid var(--color-wheat);
+    }
+
+        .applicant-info h3 {
+            color: var(--color-soil);
+            margin-bottom: 15px;
+        }
+
+        .applicant-info div {
+            margin-bottom: 10px;
+        }
+
+        .applicant-info strong {
+            color: var(--color-soil);
+            display: inline-block;
+            width: 140px;
+        }
+
+    /* Document Links */
+    .document-link {
+        padding: 5px 10px;
+        background-color: var(--color-wheat);
+        color: var(--color-soil);
+        border-radius: 4px;
+        border: none;
+        text-decoration: none;
+        font-size: 0.9rem;
+        transition: background-color 0.2s;
+    }
+
+        .document-link:hover {
+            background-color: #e5cca3;
+            color: var(--color-soil);
+            text-decoration: none;
+        }
+
+    /* Review Form Section */
+    .review-form {
+        background-color: rgba(245, 245, 245, 0.5);
+        padding: 20px;
+        border-radius: 8px;
+        margin-top: 15px;
+    }
+
+        .review-form h3 {
+            color: var(--color-soil);
+            margin-bottom: 15px;
+        }
+
+    .form-group {
+        margin-bottom: 20px;
+    }
+
+    label {
+        display: block;
+        color: var(--color-soil);
+        font-weight: 500;
+        margin-bottom: 8px;
+    }
+
+    .form-control {
+        width: 100%;
+        padding: 10px;
+        border: 1px solid var(--color-wheat);
+        border-radius: 6px;
+        font-size: 16px;
+    }
+
+    select.form-control {
+        height: 42px;
+    }
+
+    textarea.form-control {
+        min-height: 120px;
+    }
+
+    /* Action Buttons */
+    .action-buttons {
+        margin-top: 20px;
+        text-align: right;
+    }
+
+    .btn {
+        border-radius: 6px;
+        padding: 8px 16px;
+        font-weight: 500;
+        margin-right: 10px;
+    }
+
+    .btn-success {
+        background-color: var(--color-soil);
+        border-color: var(--color-soil);
+        color: var(--color-wheat);
+    }
+
+        .btn-success:hover {
+            opacity: 0.9;
+        }
+
+    .btn-secondary {
+        background-color: var(--color-wheat);
+        border-color: var(--color-wheat);
+        color: var(--color-soil);
+    }
+
+        .btn-secondary:hover {
+            background-color: #e5cca3;
+            border-color: #e5cca3;
+            color: var(--color-soil);
+        }
+</style>
+
+<div class="application-review-container">
+    <h2 class="text-center mb-4">Review Job Application</h2>
+
+    <div class="applicant-info">
+        <h3>Applicant Information</h3>
+        <div>
+            <strong>Applicant Name:</strong> @Model.User.FullName
+        </div>
+        <div>
+            <strong>Job Title:</strong> @Model.Job.Title
+        </div>
+        <div>
+            <strong>Job ID:</strong> @Model.Job.JobId
+        </div>
+        <div>
+            <strong>Email:</strong> @Model.User.Email
+        </div>
+        <div>
+            <strong>Phone Number:</strong> @Model.PhoneNumber
+        </div>
+        <div>
+            <strong>Address:</strong> @Model.Address
+        </div>
+        <div>
+            <strong>Applied Date:</strong> @Model.AppliedDate.ToString("dd MMM yyyy")
+        </div>
+        <div>
+            <strong>Proof of ID:</strong>
+            @if (!string.IsNullOrEmpty(Model.ID))
+            {
+                <a href="@Model.ID" target="_blank" class="document-link">
+                    <i class="fas fa-id-card"></i> View ID
+                </a>
+            }
+            else
+            {
+                <span class="text-muted">Not uploaded</span>
+            }
+        </div>
+        <div>
+            <strong>CV:</strong>
+            @if (!string.IsNullOrEmpty(Model.CV))
+            {
+                <a href="@Model.CV" target="_blank" class="document-link">
+                    <i class="fas fa-file-alt"></i> View CV
+                </a>
+            }
+            else
+            {
+                <span class="text-muted">Not uploaded</span>
+            }
+        </div>
+    </div>
+
+    <div class="review-form">
+        <h3>Review Decision</h3>
+        @using (Html.BeginForm("ReviewApplication", "Jobs", FormMethod.Post))
+        {
+            @Html.AntiForgeryToken()
+            @Html.Hidden("id", Model.JobApplicationId)
+            <div class="form-group">
+                <label>Status</label>
+                <select name="status" id="statusSelect" class="form-control" required>
+                    <option value="">-- Select --</option>
+                    <option value="Accepted">Accept</option>
+                    <option value="Rejected">Reject</option>
+                </select>
+
+            </div>
+            <div id="interviewFields" style="display:none;">
+                <div class="form-group">
+                    <label>Interview Date</label>
+                    <input type="date" name="InterviewDate" class="form-control" />
+                </div>
+                <div class="form-group">
+                    <label>Interview Venue</label>
+                    <input type="text" name="InterviewVenue" class="form-control" placeholder="e.g. Farm Office, Online Zoom..." />
+                </div>
+                <div class="form-group">
+                    <label>Interviewer</label>
+                    <input type="text" name="Interviewer" class="form-control" placeholder="e.g. Mr. Dlamini" />
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Notes (Optional)</label>
+                <textarea name="notes" class="form-control" placeholder="Add context, interview schedule, or rejection reason..."></textarea>
+            </div>
+            <div class="action-buttons">
+                <a href="@Url.Action("ApplicationsList", "Jobs")" class="btn btn-secondary">
+                    <i class="fas fa-times"></i> Cancel
+                </a>
+                <button type="submit" class="btn btn-success">
+                    <i class="fas fa-check-circle"></i> Submit Review
+                </button>
+            </div>
+        }
+    </div>
+</div>
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const statusSelect = document.getElementById("statusSelect");
+        const interviewFields = document.getElementById("interviewFields");
+
+        function toggleInterviewFields() {
+            interviewFields.style.display = statusSelect.value === "Accepted" ? "block" : "none";
+        }
+
+        // Initial check in case of postback
+        toggleInterviewFields();
+
+        // Toggle when user changes the dropdown
+        statusSelect.addEventListener("change", toggleInterviewFields);
+    });
+</script>
+
+
+<!-- Font Awesome for Icons -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">

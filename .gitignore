@@ -1,0 +1,31 @@
+﻿## Ignore Visual Studio build files
+bin/
+obj/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+*.vs/
+
+## Ignore temporary files
+*.log
+*.tmp
+*.bak
+*.swp
+
+## Ignore build results
+*.exe
+*.dll
+*.pdb
+
+## Ignore packages and NuGet
+packages/
+*.nupkg
+project.lock.json
+project.fragment.lock.json
+
+## Others
+_ReSharper*/
+*.dbmdl
+
+*.Web.config

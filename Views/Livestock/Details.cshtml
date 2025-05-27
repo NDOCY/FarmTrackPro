@@ -1,0 +1,213 @@
+﻿@model FarmTrack.Models.Livestock
+
+@*<h2>Livestock Details</h2>
+
+    <table class="table table-bordered">
+        <tr>
+            <th>Type:</th>
+            <td>@Model.Type</td>
+        </tr>
+        <tr>
+            <th>Breed:</th>
+            <td>@Model.Breed</td>
+        </tr>
+        <tr>
+            <th>Tag Number:</th>
+            <td>@Model.TagNumber</td>
+        </tr>
+        <tr>
+            <th>Date Registered:</th>
+            <td>@Model.DateRegistered.ToString("yyyy-MM-dd")</td>
+        </tr>
+        <tr>
+            <th>Status:</th>
+            <td>@Model.Status</td>
+        </tr>
+        <tr>
+            <th>Notes:</th>
+            <td>@Model.Notes</td>
+        </tr>
+    </table>
+
+    <a href="@Url.Action("Index")" class="btn btn-secondary">Back to List</a>
+    <a href="@Url.Action("Edit", new { id = Model.LivestockId })" class="btn btn-primary">Edit</a>
+*@
+
+
+@{
+    ViewBag.Title = "Livestock Details";
+    bool ascending = (ViewBag.Order as string)?.ToLower() == "asc";
+}
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success">@TempData["SuccessMessage"]</div>
+}
+
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger">@TempData["ErrorMessage"]</div>
+}
+
+<style>
+    /* Custom Color Scheme */
+    :root {
+        --color-earth: #8B7355; /* Primary */
+        --color-soil: #654321; /* Secondary */
+        --color-foliage: #4CAF50; /* Tertiary */
+        --color-wheat: #F5DEB3; /* Accent */
+        --color-danger: #FF6B6B; /* Error */
+        --color-white: #FFFFFF; /* Neutral */
+        --color-bib: #b17474; /* Neutral */
+    }
+
+    /* Inventory Details Container */
+    .inventory-details-container {
+        background-color: var(--color-white);
+        border: 1px solid var(--color-wheat);
+        border-radius: 8px;
+        padding: 20px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        max-width: 600px;
+        margin: auto;
+    }
+
+        .inventory-details-container div {
+            margin-bottom: 15px;
+        }
+
+        .inventory-details-container strong {
+            color: var(--color-soil);
+            display: inline-block;
+            width: 120px;
+        }
+
+    /* Action Buttons */
+    .action-buttons {
+        margin-top: 20px;
+        text-align: right;
+    }
+
+    .btn {
+        border-radius: 6px;
+        padding: 8px 16px;
+        font-weight: 500;
+        margin-right: 10px;
+    }
+
+    .btn-primary {
+        background-color: var(--color-soil);
+        border-color: var(--color-soil);
+        color: var(--color-wheat);
+    }
+
+        .btn-primary:hover {
+            opacity: 0.9;
+            background-color: var(--color-wheat);
+            border-color: var(--color-wheat);
+            color: var(--color-soil);
+        }
+
+    .btn-secondary {
+        background-color: var(--color-wheat);
+        border-color: var(--color-wheat);
+        color: var(--color-soil);
+    }
+
+        .btn-secondary:hover {
+            background-color: #e5cca3;
+            border-color: #e5cca3;
+            color: var(--color-soil);
+        }
+
+    .btn-danger {
+        background-color: var(--color-danger);
+        border-color: var(--color-danger);
+        color: var(--color-white);
+    }
+
+        .btn-danger:hover {
+            background-color: var(--color-bib);
+            border-color: var(--color-bib);
+            color: var(--color-white);
+        }
+</style>
+
+<div class="inventory-details-container">
+    <h2 class="text-center mb-4">Livestock Details</h2>
+
+    <div>
+        <strong>Type:</strong> @Model.Type
+    </div>
+
+    <div>
+        <strong>Breed:</strong> @Model.Breed
+    </div>
+
+    <div>
+        <strong>Tag Number:</strong> @Model.TagNumber
+    </div>
+
+    <div>
+        <strong>Gender:</strong> @Model.Sex
+    </div>
+
+    <div>
+        <strong>Date Registered:</strong> @Model.DateRegistered.ToString("yyyy-MM-dd")
+    </div>
+
+    <div>
+        <strong>Status:</strong> @Model.Status
+    </div>
+
+    <div>
+        <strong>Notes:</strong> @Model.Notes
+    </div>
+    <div>
+        <strong>Weight:</strong> @Model.Weight kg
+    </div>
+    <div>
+        <strong>Latest Event:</strong> @ViewBag.LatestEventType
+    </div>
+
+    <div class="mt-3">
+        <a href="@Url.Action("Timeline", new { livestockId = Model.LivestockId, order = ascending ? "desc" : "asc" })"
+            class="btn btn-outline-info">
+            <i class="fas fa-notes-medical"></i> View History
+        </a>
+    </div>
+
+
+    @if (!string.IsNullOrEmpty(Model.QrCodePath))
+    {
+        <div class="mb-3">
+            <img src="@Model.QrCodePath" alt="QR Code" class="img-thumbnail" width="200" />
+            <a href="@Model.QrCodePath" download class="btn btn-outline-success mt-2">
+                <i class="fas fa-download"></i> Download QR Code
+            </a>
+        </div>
+    }
+
+
+    <!-- Action Buttons -->
+    <div class="action-buttons">
+        <a href="@Url.Action("Index")" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Back to List
+        </a>
+
+
+        @*if (Session["Role"] != null && (Session["Role"].ToString() == "Admin" || Session["Role"].ToString() == "Owner"))*@
+        @*if (user == null || user.Role != "Owner")*@
+        @if (Session["Role"] != null && Session["Role"].ToString() == "Owner")
+        {
+            <a href="@Url.Action("Edit", new { id = Model.LivestockId })" class="btn btn-primary">
+                <i class="fas fa-edit"></i> Edit
+            </a>
+            <a href="@Url.Action("Delete", new { id = Model.LivestockId })" class="btn btn-danger">
+                <i class="fas fa-trash"></i> Delete
+            </a>
+        }
+    </div>
+</div>
+
+<!-- Font Awesome for Icons -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">

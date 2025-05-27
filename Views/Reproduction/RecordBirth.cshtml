@@ -1,0 +1,76 @@
+﻿@model FarmTrack.Models.ReproductionBirthViewModel
+
+@if (!ViewData.ModelState.IsValid)
+{
+    <div class="alert alert-danger">
+        @foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+        {
+            <p>@error.ErrorMessage</p>
+        }
+    </div>
+}
+
+
+@using (Html.BeginForm("RecordBirth", "Reproduction", FormMethod.Post)) // Correct: no id in URL
+{
+    @Html.AntiForgeryToken()
+    <h4>Record Birth for Breeding: @Model.FemaleTag x @Model.MaleTag</h4>
+
+    <div class="form-group">
+        @Html.LabelFor(m => m.BirthOutcome)
+        @Html.TextBoxFor(m => m.BirthOutcome, new { @class = "form-control", placeholder = "Successful, Stillborn..." })
+    </div>
+
+    <div class="form-group">
+        @Html.Label("Number of Offspring")
+        <input type="number" id="offspringCount" class="form-control" min="1" value="@Model.NumberOfOffspring" />
+
+    </div>
+
+    <div id="offspringInputs"></div>
+
+    <button type="submit" class="btn btn-primary">Save Birth Record</button>
+}
+
+@section Scripts {
+    <script>
+        function renderOffspringInputs(count) {
+            const container = document.getElementById("offspringInputs");
+            container.innerHTML = "";
+
+            for (let i = 0; i < count; i++) {
+                container.innerHTML += `
+                            <div class="form-group">
+                                <input type='text' name='OffspringTags[${i}]' placeholder='Offspring Tag ${i + 1}' class='form-control my-1' required />
+                                <select name='OffspringSexes[${i}]' class='form-control my-1'>
+                                    <option value='Unknown'>Unknown</option>
+                                    <option value='Male'>Male</option>
+                                    <option value='Female'>Female</option>
+                                </select>
+                            </div>
+                        `;
+            }
+
+            const totalInput = document.createElement('input');
+            totalInput.type = 'hidden';
+            totalInput.name = 'NumberOfOffspring';
+            totalInput.value = count;
+            container.appendChild(totalInput);
+        }
+
+        document.getElementById("offspringCount").addEventListener("input", function () {
+            const count = parseInt(this.value);
+            if (!isNaN(count)) {
+                renderOffspringInputs(count);
+            }
+        });
+
+        // ✅ Trigger input event if value already present
+        window.onload = function () {
+            const countField = document.getElementById("offspringCount");
+            if (countField.value) {
+                countField.dispatchEvent(new Event('input'));
+            }
+        };
+    </script>
+}

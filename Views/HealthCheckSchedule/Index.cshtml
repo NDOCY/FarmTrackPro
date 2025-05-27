@@ -1,0 +1,247 @@
+﻿@model IEnumerable<FarmTrack.Models.HealthCheckSchedule>
+@{
+    ViewBag.Title = "Health Check Schedules";
+}
+
+<style>
+    /* Custom Color Scheme */
+    :root {
+        --color-earth: #8B7355; /* Primary */
+        --color-soil: #654321; /* Secondary */
+        --color-foliage: #4CAF50; /* Tertiary */
+        --color-wheat: #F5DEB3; /* Accent */
+        --color-danger: #FF6B6B; /* Error */
+        --color-white: #FFFFFF; /* Neutral */
+    }
+
+    /* Page Header */
+    .page-header {
+        background-color: var(--color-wheat);
+        padding: 20px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+    }
+
+        .page-header h2 {
+            color: var(--color-soil);
+            font-weight: 700;
+            margin-bottom: 0;
+        }
+
+    /* Content Container */
+    .content-container {
+        background-color: var(--color-white);
+        border: 1px solid var(--color-wheat);
+        border-radius: 8px;
+        padding: 20px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        margin-bottom: 20px;
+    }
+
+    /* Button Styling */
+    .btn {
+        border-radius: 6px;
+        padding: 8px 16px;
+        font-weight: 500;
+    }
+
+    .btn-primary {
+        background-color: var(--color-earth);
+        border-color: var(--color-earth);
+        color: var(--color-white);
+    }
+
+        .btn-primary:hover {
+            background-color: var(--color-soil);
+            border-color: var(--color-soil);
+        }
+
+    .btn-success {
+        background-color: var(--color-foliage);
+        border-color: var(--color-foliage);
+        color: var(--color-white);
+    }
+
+        .btn-success:hover {
+            background-color: #3d8b40;
+            border-color: #3d8b40;
+        }
+
+    .btn-sm {
+        padding: 4px 8px;
+        font-size: 0.875rem;
+    }
+
+    /* Table Styling */
+    .table {
+        width: 100%;
+        margin-bottom: 1rem;
+        background-color: transparent;
+        border-collapse: collapse;
+    }
+
+    .table-bordered {
+        border: 1px solid var(--color-wheat);
+    }
+
+    .table-striped tbody tr:nth-of-type(odd) {
+        background-color: rgba(245, 222, 179, 0.1);
+    }
+
+    .table thead th {
+        background-color: var(--color-earth);
+        color: var(--color-white);
+        border-bottom: 2px solid var(--color-soil);
+        padding: 12px;
+        text-align: left;
+    }
+
+    .table td {
+        padding: 12px;
+        border-top: 1px solid var(--color-wheat);
+        vertical-align: middle;
+    }
+
+    /* Alert Styling */
+    .alert {
+        position: relative;
+        padding: 12px 20px;
+        margin-bottom: 16px;
+        border: 1px solid transparent;
+        border-radius: 6px;
+    }
+
+    .alert-success {
+        color: #155724;
+        background-color: #d4edda;
+        border-color: #c3e6cb;
+    }
+
+    /* Clickable row styling */
+    .clickable-row {
+        cursor: pointer;
+        transition: background-color 0.2s;
+    }
+
+        .clickable-row:hover {
+            background-color: rgba(245, 222, 179, 0.3) !important;
+        }
+
+    /* Status styling */
+    .text-muted {
+        color: #6c757d;
+    }
+
+    .status-pending {
+        color: #856404;
+        background-color: #fff3cd;
+        border-radius: 4px;
+        padding: 2px 6px;
+        font-size: 0.875rem;
+    }
+
+    .status-completed {
+        color: #155724;
+        background-color: #d4edda;
+        border-radius: 4px;
+        padding: 2px 6px;
+        font-size: 0.875rem;
+    }
+</style>
+
+<!-- Page Header -->
+<div class="page-header">
+    <h2><i class="fas fa-calendar-check"></i> Health Check Schedules</h2>
+</div>
+
+<div class="content-container">
+    <div class="mb-3">
+        <a class="btn btn-primary" href="@Url.Action("Create")">
+            <i class="fas fa-plus"></i> Create New Schedule
+        </a>
+    </div>
+
+    @if (TempData["Message"] != null)
+    {
+        <div class="alert alert-success">
+            <i class="fas fa-check-circle"></i> @TempData["Message"]
+        </div>
+    }
+
+    <div class="table-responsive">
+        <table class="table table-bordered table-striped">
+            <thead>
+                <tr>
+                    <th><i class="fas fa-stethoscope"></i> Check Type</th>
+                    <th><i class="fas fa-calendar-alt"></i> Scheduled Date</th>
+                    <th><i class="fas fa-user"></i> Assigned To</th>
+                    <th><i class="fas fa-tasks"></i> Status</th>
+                    <th><i class="fas fa-cow"></i> Livestock Count</th>
+                    <th><i class="fas fa-cogs"></i> Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in Model)
+                {
+                    <tr class="clickable-row" data-href="@Url.Action("Details", "HealthCheckSchedule", new { id = item.Id })">
+                        <td>@item.CheckType</td>
+                        <td>@item.ScheduledDate.ToShortDateString()</td>
+                        <td>@($"{item.AssignedToUser?.FullName}")</td>
+                        <td>
+                            @if (item.Status == "Pending")
+                            {
+                                <span class="status-pending"><i class="fas fa-hourglass-half"></i> Pending</span>
+                            }
+                            else
+                            {
+                                <span class="status-completed"><i class="fas fa-check"></i> Completed</span>
+                            }
+                        </td>
+                        <td>
+                            @{
+                                var livestockCounts = ViewBag.LivestockCounts as Dictionary<int, int>;
+                                var count = livestockCounts != null && livestockCounts.ContainsKey(item.Id) ? livestockCounts[item.Id] : 0;
+                            }
+                            @count
+                        </td>
+                        <td onclick="event.stopPropagation();">
+                            @if (item.Status == "Pending")
+                            {
+                                using (Html.BeginForm("MarkAsCompleted", "HealthCheckSchedule", FormMethod.Post))
+                                {
+                                    @Html.AntiForgeryToken()
+                                    @Html.ValidationSummary(true)
+                                    @Html.Hidden("id", item.Id)
+                                    <button type="submit" class="btn btn-sm btn-success">
+                                        <i class="fas fa-check"></i> Mark as Completed
+                                    </button>
+                                }
+                            }
+                            else
+                            {
+                                <span class="text-muted"><i class="fas fa-check-circle"></i> Completed</span>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Font Awesome for Icons -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        let rows = document.querySelectorAll(".clickable-row");
+        rows.forEach(row => {
+            row.addEventListener("click", function () {
+                let url = this.getAttribute("data-href");
+                if (url) {
+                    window.location.href = url;
+                }
+            });
+        });
+    });
+</script>

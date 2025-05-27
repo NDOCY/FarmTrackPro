@@ -1,0 +1,119 @@
+﻿@model IEnumerable<FarmTrack.Models.TaskUpdate>
+@{
+    ViewBag.Title = "Task Status Timeline";
+    Layout = "~/Views/Shared/_Layout - User.cshtml";
+}
+
+<style>
+    /* Custom Color Scheme */
+    :root {
+        --color-earth: #8B7355; /* Primary */
+        --color-soil: #654321; /* Secondary */
+        --color-foliage: #4CAF50; /* Tertiary */
+        --color-wheat: #F5DEB3; /* Accent */
+        --color-danger: #FF6B6B; /* Error */
+        --color-white: #FFFFFF; /* Neutral */
+        --color-bib: #b17474; /* Neutral */
+        --color-completed: #4CAF50; /* Completed status */
+        --color-in-progress: #FFC107; /* In progress status */
+        --color-on-hold: #6c757d; /* On hold status */
+        --color-cancelled: #dc3545; /* Cancelled status */
+    }
+
+    /* Page Header */
+    h2 {
+        color: var(--color-soil);
+        font-weight: 700;
+        margin-bottom: 20px;
+        padding: 15px 20px;
+        background-color: var(--color-wheat);
+        border-radius: 8px;
+    }
+
+    /* Card Styling */
+    .card {
+        border: 1px solid var(--color-wheat);
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+
+    .card-body {
+        padding: 15px 20px;
+    }
+
+    .card-title {
+        color: var(--color-soil);
+        font-weight: 600;
+        margin-bottom: 5px;
+        display: flex;
+        align-items: center;
+    }
+
+    .card-subtitle {
+        color: var(--color-earth);
+        font-size: 0.9rem;
+        margin-bottom: 12px;
+    }
+
+    /* Button Styling */
+    .btn-secondary {
+        background-color: var(--color-soil);
+        border-color: var(--color-soil);
+        color: var(--color-wheat);
+        padding: 8px 16px;
+        border-radius: 4px;
+        font-weight: 500;
+        transition: all 0.2s ease;
+    }
+
+        .btn-secondary:hover {
+            background-color: var(--color-soil);
+            border-color: var(--color-soil);
+            color: var(--color-wheat);
+        }
+
+    /* Status Styling - Adds colored left borders based on status */
+    .card[data-status="Completed"] {
+        border-left: 4px solid var(--color-completed);
+    }
+
+    .card[data-status="In Progress"] {
+        border-left: 4px solid var(--color-in-progress);
+    }
+
+    .card[data-status="On Hold"] {
+        border-left: 4px solid var(--color-on-hold);
+    }
+
+    .card[data-status="Cancelled"] {
+        border-left: 4px solid var(--color-cancelled);
+    }
+
+    /* Footer styling */
+    .blockquote-footer {
+        font-size: 0.875rem;
+        color: var(--color-earth);
+        margin-top: 10px;
+    }
+</style>
+
+<h2>Status Timeline for "@ViewBag.Task.Title"</h2>
+@foreach (var update in Model)
+{
+    <div class="card mb-3" data-status="@update.TasksStatus">
+        <div class="card-body">
+            <h5 class="card-title">@update.TasksStatus</h5>
+            <h6 class="card-subtitle text-muted">@update.DateUpdated.ToString("yyyy-MM-dd HH:mm")</h6>
+            <p>Progress: @update.Progress%</p>
+            <p>@update.Comments</p>
+            <footer class="blockquote-footer">
+                Updated by @(update.User != null ? update.User.FullName : "Unknown user")
+            </footer>
+        </div>
+    </div>
+}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <a href="@Url.Action("Status", "Task", new { taskId = ViewBag.Task.TaskId })" class="btn btn-secondary">
+        Update task status
+    </a>
+</div>

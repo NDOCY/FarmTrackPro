@@ -1,0 +1,392 @@
+﻿@model FarmTrack.Models.ReproductionRecord
+
+@{
+    ViewBag.Title = "Reproduction Record";
+}
+
+<style>
+    /* Custom Color Scheme */
+    :root {
+        --color-earth: #8B7355; /* Primary */
+        --color-soil: #654321; /* Secondary */
+        --color-foliage: #4CAF50; /* Tertiary */
+        --color-wheat: #F5DEB3; /* Accent */
+        --color-danger: #FF6B6B; /* Error */
+        --color-white: #FFFFFF; /* Neutral */
+        --color-light-earth: #d9c8b4; /* Light version of primary */
+    }
+
+    /* Form Container */
+    .form-container {
+        background-color: var(--color-white);
+        border: 1px solid var(--color-wheat);
+        border-radius: 12px;
+        padding: 30px;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+        max-width: 700px;
+        margin: auto;
+    }
+
+        .form-container h2 {
+            color: var(--color-soil);
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 28px;
+            position: relative;
+        }
+
+            .form-container h2:after {
+                content: '';
+                position: absolute;
+                bottom: -10px;
+                left: 50%;
+                transform: translateX(-50%);
+                width: 100px;
+                height: 3px;
+                background-color: var(--color-light-earth);
+            }
+
+    /* Animal Pairing Section */
+    .animal-pairing {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 30px;
+        position: relative;
+    }
+
+    .animal-card {
+        background-color: var(--color-wheat);
+        border-radius: 10px;
+        padding: 15px;
+        width: 42%;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        transition: all 0.3s ease;
+    }
+
+        .animal-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
+        }
+
+        .animal-card.female {
+            border-left: 5px solid #FF82AB; /* Pink for female */
+        }
+
+        .animal-card.male {
+            border-left: 5px solid #4169E1; /* Blue for male */
+        }
+
+        .animal-card label {
+            color: var(--color-soil);
+            font-weight: 600;
+            display: block;
+            margin-bottom: 8px;
+        }
+
+        .animal-card select {
+            width: 100%;
+            padding: 10px;
+            border-radius: 6px;
+            border: 1px solid var(--color-earth);
+        }
+
+    .heart-icon {
+        color: var(--color-foliage);
+        font-size: 24px;
+        animation: pulse 1.5s infinite;
+    }
+
+    @@keyframes pulse {
+        0% {
+            transform: scale(1);
+        }
+
+        50% {
+            transform: scale(1.2);
+        }
+
+        100% {
+            transform: scale(1);
+        }
+    }
+
+    /* Timeline Section */
+    .breeding-timeline {
+        margin: 40px 0;
+        padding: 20px;
+        background-color: #f9f5ee;
+        border-radius: 10px;
+        position: relative;
+    }
+
+    .timeline-header {
+        color: var(--color-soil);
+        margin-bottom: 15px;
+        text-align: center;
+        font-size: 18px;
+    }
+
+    .timeline-container {
+        display: flex;
+        align-items: center;
+        position: relative;
+        padding: 20px 0;
+    }
+
+    .timeline-date {
+        width: 45%;
+        text-align: center;
+    }
+
+        .timeline-date label {
+            display: block;
+            margin-bottom: 8px;
+            color: var(--color-soil);
+            font-weight: 600;
+        }
+
+        .timeline-date input {
+            width: 90%;
+            padding: 10px;
+            border-radius: 6px;
+            border: 1px solid var(--color-earth);
+        }
+
+    .timeline-progress {
+        position: relative;
+        height: 6px;
+        background-color: var(--color-light-earth);
+        flex-grow: 1;
+        margin: 0 15px;
+        border-radius: 3px;
+    }
+
+    .progress-icon {
+        position: absolute;
+        top: -12px;
+        font-size: 24px;
+        color: var(--color-wheat);
+    }
+
+        .progress-icon.start {
+            left: 0;
+        }
+
+        .progress-icon.end {
+            right: 0;
+        }
+
+    .progress-dots {
+        position: absolute;
+        top: -4px;
+        left: 20%;
+        width: 60%;
+        display: flex;
+        justify-content: space-between;
+    }
+
+    .progress-dot {
+        width: 12px;
+        height: 12px;
+        background-color: var(--color-soil);
+        border-radius: 50%;
+    }
+
+    .notes-section {
+        margin-top: 30px;
+    }
+
+        .notes-section label {
+            color: var(--color-soil);
+            font-weight: 600;
+            display: block;
+            margin-bottom: 8px;
+        }
+
+        .notes-section textarea {
+            width: 100%;
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid var(--color-wheat);
+            resize: vertical;
+            min-height: 100px;
+        }
+
+    .submit-btn {
+        background-color: var(--color-wheat);
+        color: white;
+        border: none;
+        border-radius: 8px;
+        padding: 12px 25px;
+        font-size: 16px;
+        font-weight: 600;
+        margin-top: 20px;
+        cursor: pointer;
+        width: 100%;
+        transition: all 0.3s ease;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 10px;
+    }
+
+        .submit-btn:hover {
+            background-color: #3e8e41;
+            transform: translateY(-2px);
+        }
+
+    .text-danger {
+        color: var(--color-danger);
+        font-size: 14px;
+        margin-top: 5px;
+        display: block;
+    }
+</style>
+
+<div class="form-container">
+    <h2><i class="fas fa-leaf"></i> Reproduction Record</h2>
+
+    @using (Html.BeginForm())
+    {
+        @Html.AntiForgeryToken()
+        @Html.ValidationSummary(true, "", new { @class = "text-danger" })
+
+        <div class="animal-pairing">
+            <div class="animal-card female">
+                <label><i class="fas fa-venus"></i> Female Livestock</label>
+                @Html.DropDownListFor(m => m.FemaleLivestockId, (SelectList)ViewBag.Females, "Select Female", new { @class = "form-control", required = "required" })
+                @Html.ValidationMessageFor(m => m.FemaleLivestockId, "", new { @class = "text-danger" })
+            </div>
+
+            <div class="heart-icon">
+                <i class="fas fa-heart"></i>
+            </div>
+
+            <div class="animal-card male">
+                <label><i class="fas fa-mars"></i> Male Livestock</label>
+                @Html.DropDownListFor(m => m.MaleLivestockId, (SelectList)ViewBag.Males, "Select Male (Optional)", new { @class = "form-control" })
+                @Html.ValidationMessageFor(m => m.MaleLivestockId, "", new { @class = "text-danger" })
+            </div>
+        </div>
+
+        <div class="breeding-timeline">
+            <h3 class="timeline-header">Breeding Journey</h3>
+
+            <div class="timeline-container">
+                <div class="timeline-date">
+                    <label><i class="fas fa-calendar-check"></i> Breeding Date</label>
+                    @Html.TextBoxFor(m => m.BreedingDate, "{0:yyyy-MM-dd}", new { @class = "form-control", type = "date", required = "required" })
+                    @Html.ValidationMessageFor(m => m.BreedingDate, "", new { @class = "text-danger" })
+                </div>
+
+                <div class="timeline-progress">
+                    <div class="progress-icon start"><i class="fas fa-flag-checkered"></i></div>
+                    <div class="progress-dots">
+                        <div class="progress-dot"></div>
+                        <div class="progress-dot"></div>
+                        <div class="progress-dot"></div>
+                    </div>
+                    <div class="progress-icon end"><i class="fas fa-baby"></i></div>
+                </div>
+
+                <div class="timeline-date">
+                    <label><i class="fas fa-calendar-day"></i> Expected Due Date</label>
+                    @Html.TextBoxFor(model => model.ExpectedDueDate, "{0:yyyy-MM-dd}", new { @class = "form-control", type = "date", @readonly = "readonly" })
+                    @Html.ValidationMessageFor(m => m.ExpectedDueDate, "", new { @class = "text-danger" })
+                </div>
+            </div>
+        </div>
+
+        <div class="notes-section">
+            <label><i class="fas fa-sticky-note"></i> Notes</label>
+            @Html.TextAreaFor(m => m.Notes, new { @class = "form-control", rows = 4, placeholder = "Enter any additional notes about this breeding (health observations, special conditions, etc.)" })
+            @Html.ValidationMessageFor(m => m.Notes, "", new { @class = "text-danger" })
+        </div>
+
+        <button type="submit" class="submit-btn">
+            <i class="fas fa-seedling"></i> Record Breeding
+        </button>
+    }
+</div>
+
+<!-- Font Awesome for Icons -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
+<!-- Add a simple JS to enhance the visual connection -->
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        // Highlight matching pair when both are selected
+        const femaleSelect = document.querySelector('[name="FemaleLivestockId"]');
+        const maleSelect = document.querySelector('[name="MaleLivestockId"]');
+
+        function checkPairing() {
+            const femaleCard = document.querySelector('.animal-card.female');
+            const maleCard = document.querySelector('.animal-card.male');
+            const heartIcon = document.querySelector('.heart-icon');
+
+            if (femaleSelect.value && maleSelect.value) {
+                femaleCard.style.boxShadow = '0 0 15px rgba(255, 130, 171, 0.6)';
+                maleCard.style.boxShadow = '0 0 15px rgba(65, 105, 225, 0.6)';
+                heartIcon.style.color = '#e74c3c';
+            } else {
+                femaleCard.style.boxShadow = '0 4px 8px rgba(0, 0, 0, 0.1)';
+                maleCard.style.boxShadow = '0 4px 8px rgba(0, 0, 0, 0.1)';
+                heartIcon.style.color = 'var(--color-foliage)';
+            }
+        }
+
+        femaleSelect.addEventListener('change', checkPairing);
+        maleSelect.addEventListener('change', checkPairing);
+
+        // Calculate due date automatically based on species typical gestation
+        const breedingDateInput = document.querySelector('[name="BreedingDate"]');
+        const dueDateInput = document.querySelector('[name="ExpectedDueDate"]');
+
+        breedingDateInput.addEventListener('change', function () {
+            // This is just a simple example - you would want to calculate based on species
+            // For demo purposes, adding ~9 months (270 days for cattle)
+            if (breedingDateInput.value) {
+                const breedingDate = new Date(breedingDateInput.value);
+                const dueDate = new Date(breedingDate);
+                dueDate.setDate(breedingDate.getDate() + 270);
+
+                // Format to YYYY-MM-DD for the input
+                const formattedDate = dueDate.toISOString().split('T')[0];
+                dueDateInput.value = formattedDate;
+            }
+        });
+    });
+
+            ///script>
+            //script>
+
+    const gestationMap = @Html.Raw(Json.Encode(ViewBag.GestationPeriods));
+    const femaleTypes = @Html.Raw(Json.Encode(ViewBag.FemaleTypes));
+
+    document.addEventListener('DOMContentLoaded', function () {
+        const femaleSelect = document.querySelector('[name="FemaleLivestockId"]');
+        const breedingInput = document.querySelector('[name="BreedingDate"]');
+        const dueDateInput = document.querySelector('[name="ExpectedDueDate"]');
+
+        function updateDueDate() {
+            const femaleId = femaleSelect.value;
+            const breedingDateStr = breedingInput.value;
+
+            if (!femaleId || !breedingDateStr) return;
+
+            const female = femaleTypes.find(f => f.LivestockId == femaleId);
+            if (!female) return;
+
+            const gestationDays = gestationMap[female.Type];
+            if (!gestationDays) return;
+
+            const breedingDate = new Date(breedingDateStr);
+            const dueDate = new Date(breedingDate.getTime() + gestationDays * 24 * 60 * 60 * 1000);
+            dueDateInput.value = dueDate.toISOString().split('T')[0];
+        }
+
+        breedingInput.addEventListener('change', updateDueDate);
+        femaleSelect.addEventListener('change', updateDueDate);
+    });
+</script>

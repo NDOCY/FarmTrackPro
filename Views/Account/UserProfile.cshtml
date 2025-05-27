@@ -1,0 +1,156 @@
+﻿@model FarmTrack.Models.User
+@{
+    ViewBag.Title = "User Profile";
+    if (Session["Role"] != null && (Session["Role"].ToString() == "Admin" || Session["Role"].ToString() == "Owner"))
+    {
+        Layout = "~/Views/Shared/_Layout.cshtml";
+    }
+    else
+    {
+        Layout = "~/Views/Shared/_Layout - User.cshtml";
+    }
+}
+
+<style>
+    /* Custom Color Scheme */
+    :root {
+        --color-earth: #8B7355; /* Primary */
+        --color-soil: #654321; /* Secondary */
+        --color-foliage: #4CAF50; /* Tertiary */
+        --color-wheat: #F5DEB3; /* Accent */
+        --color-danger: #FF6B6B; /* Error */
+        --color-white: #FFFFFF; /* Neutral */
+    }
+
+    /* Form Container */
+    .form-container {
+        background-color: var(--color-white);
+        border: 1px solid var(--color-wheat);
+        border-radius: 8px;
+        padding: 20px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        max-width: 600px;
+        margin: auto;
+    }
+
+        .form-container h2 {
+            color: var(--color-soil);
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+    .form-group {
+        margin-bottom: 15px;
+    }
+
+        .form-group label {
+            color: var(--color-soil);
+            font-weight: 500;
+        }
+
+    .form-control {
+        border: 1px solid var(--color-wheat);
+        border-radius: 4px;
+        padding: 8px;
+    }
+
+        .form-control:focus {
+            border-color: var(--color-earth);
+            box-shadow: 0 0 5px rgba(139, 115, 85, 0.5);
+        }
+
+        .form-control[readonly] {
+            background-color: #f9f9f9;
+            cursor: not-allowed;
+        }
+
+    .btn-primary {
+        background-color: var(--color-earth);
+        border-color: var(--color-earth);
+        color: var(--color-white);
+        padding: 8px 16px;
+        border-radius: 4px;
+        width: 100%;
+        margin-top: 15px;
+    }
+
+        .btn-primary:hover {
+            background-color: var(--color-soil);
+            border-color: var(--color-soil);
+        }
+
+    .alert-success {
+        background-color: var(--color-foliage);
+        color: white;
+        border: none;
+    }
+
+    .profile-picture {
+        max-width: 200px;
+        border-radius: 50%;
+        margin: 20px auto;
+        display: block;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+</style>
+
+<div class="form-container">
+    <h2>User Profile</h2>
+
+    @if (ViewBag.Message != null)
+    {
+        <div class="alert alert-success">@ViewBag.Message</div>
+    }
+
+    @using (Html.BeginForm("UserProfile", "Account", FormMethod.Post))
+    {
+        @Html.AntiForgeryToken()
+
+        if (!string.IsNullOrEmpty(Model.ProfilePictureUrl))
+        {
+            <img src="@Model.ProfilePictureUrl" alt="Profile Picture" class="profile-picture" />
+        }
+
+        <div class="form-group">
+            @Html.LabelFor(m => m.FullName)
+            <input type="text" class="form-control" value="@Model.FullName" readonly />
+        </div>
+
+        <div class="form-group">
+            @Html.LabelFor(m => m.Email)
+            <input type="email" class="form-control" value="@Model.Email" readonly />
+        </div>
+
+        <div class="form-group">
+            @Html.LabelFor(m => m.DateRegistered)
+            <input type="text" class="form-control" value="@Model.DateRegistered.ToString("yyyy-MM-dd")" readonly />
+        </div>
+
+        <div class="form-group">
+            @Html.LabelFor(m => m.Role)
+            <input type="text" class="form-control" value="@Model.Role" readonly />
+        </div>
+
+        <div class="form-group">
+            @Html.LabelFor(m => m.PhoneNumber)
+            @Html.TextBoxFor(m => m.PhoneNumber, new { @class = "form-control", placeholder = "Enter phone number" })
+        </div>
+
+        <div class="form-group">
+            @Html.LabelFor(m => m.Address)
+            @Html.TextBoxFor(m => m.Address, new { @class = "form-control", placeholder = "Enter address" })
+        </div>
+
+        <div class="form-group">
+            @Html.LabelFor(m => m.Department)
+            <input type="text" class="form-control" value="@Model.Department" readonly />
+        </div>
+
+        <div class="form-group">
+            @Html.LabelFor(m => m.ProfilePictureUrl, "Profile Picture URL")
+            @Html.TextBoxFor(m => m.ProfilePictureUrl, new { @class = "form-control", placeholder = "Enter image URL" })
+        </div>
+
+        <button type="submit" class="btn btn-primary">Save Changes</button>
+    }
+</div>

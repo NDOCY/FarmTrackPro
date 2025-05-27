@@ -1,0 +1,196 @@
+﻿@model FarmTrack.Models.Livestock
+@{
+    ViewBag.Title = "Edit Livestock";
+}
+
+<style>
+    /* Custom Color Scheme */
+    :root {
+        --color-earth: #8B7355; /* Primary */
+        --color-soil: #654321; /* Secondary */
+        --color-foliage: #4CAF50; /* Tertiary */
+        --color-wheat: #F5DEB3; /* Accent */
+        --color-danger: #FF6B6B; /* Error */
+        --color-white: #FFFFFF; /* Neutral */
+        --color-bib: #b17474; /* Neutral */
+    }
+
+    /* Page Header */
+    .page-header {
+        background-color: var(--color-wheat);
+        padding: 15px 20px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+    }
+
+        .page-header h2 {
+            color: var(--color-soil);
+            font-weight: 700;
+            margin: 0;
+        }
+
+    /* Form Styling */
+    .farm-form {
+        background-color: var(--color-white);
+        border: 1px solid var(--color-wheat);
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        padding: 25px;
+        margin-bottom: 25px;
+    }
+
+    .form-group {
+        margin-bottom: 20px;
+    }
+
+    .form-label {
+        display: block;
+        margin-bottom: 8px;
+        font-weight: 600;
+        color: var(--color-soil);
+    }
+
+    .form-control {
+        width: 100%;
+        padding: 10px 12px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        font-size: 1rem;
+        transition: border-color 0.2s ease;
+    }
+
+        .form-control:focus {
+            border-color: var(--color-earth);
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(139, 115, 85, 0.25);
+        }
+
+    .form-textarea {
+        min-height: 100px;
+        resize: vertical;
+    }
+
+    /* Button Styling */
+    .btn-farm {
+        padding: 10px 20px;
+        border-radius: 4px;
+        font-weight: 500;
+        transition: all 0.2s ease;
+        cursor: pointer;
+        margin-right: 10px;
+    }
+
+    .btn-save {
+        background-color: var(--color-foliage);
+        border: 1px solid var(--color-foliage);
+        color: var(--color-white);
+    }
+
+        .btn-save:hover {
+            background-color: #3d8b40; /* Darker shade of foliage */
+            border-color: #3d8b40;
+        }
+
+    .btn-back {
+        background-color: var(--color-earth);
+        border: 1px solid var(--color-earth);
+        color: var(--color-white);
+    }
+
+        .btn-back:hover {
+            background-color: var(--color-soil);
+            border-color: var(--color-soil);
+        }
+
+    /* Action Buttons Container */
+    .action-buttons {
+        display: flex;
+        margin-top: 25px;
+    }
+
+    /* Validation Styling */
+    .field-validation-error {
+        color: var(--color-danger);
+        font-size: 0.875rem;
+        margin-top: 5px;
+        display: block;
+    }
+
+    .input-validation-error {
+        border-color: var(--color-danger);
+    }
+</style>
+
+<!-- Page Header -->
+<div class="page-header">
+    <h2>Edit Livestock</h2>
+</div>
+
+<!-- Edit Form -->
+<div class="farm-form">
+    @using (Html.BeginForm())
+    {
+        @Html.AntiForgeryToken()
+        @Html.HiddenFor(m => m.LivestockId)
+
+        <div class="form-group">
+            @Html.LabelFor(m => m.Type, new { @class = "form-label" })
+            @Html.TextBoxFor(m => m.Type, new { @class = "form-control", required = "required" })
+            @Html.ValidationMessageFor(m => m.Type, "", new { @class = "field-validation-error" })
+        </div>
+
+        <div class="form-group">
+            @Html.LabelFor(m => m.Breed, new { @class = "form-label" })
+            @Html.TextBoxFor(m => m.Breed, new { @class = "form-control", required = "required" })
+            @Html.ValidationMessageFor(m => m.Breed, "", new { @class = "field-validation-error" })
+        </div>
+
+        <div class="form-group">
+            @Html.LabelFor(m => m.TagNumber, new { @class = "form-label" })
+            @Html.TextBoxFor(m => m.TagNumber, new { @class = "form-control" })
+            @Html.ValidationMessageFor(m => m.TagNumber, "", new { @class = "field-validation-error" })
+        </div>
+
+        <div class="form-group">
+            @Html.LabelFor(m => m.DateRegistered, new { @class = "form-label" })
+            @Html.TextBoxFor(m => m.DateRegistered, new { @class = "form-control", type = "date", required = "required" })
+            @Html.ValidationMessageFor(m => m.DateRegistered, "", new { @class = "field-validation-error" })
+        </div>
+
+        <div class="form-group">
+            @Html.LabelFor(m => m.Status, new { @class = "form-label" })
+            @Html.DropDownListFor(m => m.Status,
+                new SelectList(new[] { "Active", "Sold", "Deceased", "Transfer", "Other" }),
+                "-- Select Status --",
+                new { @class = "form-control", required = "required" })
+            @Html.ValidationMessageFor(m => m.Status, "", new { @class = "field-validation-error" })
+        </div>
+
+        <div class="form-group">
+            @Html.LabelFor(m => m.Notes, new { @class = "form-label" })
+            @Html.TextAreaFor(m => m.Notes, new { @class = "form-control form-textarea" })
+            @Html.ValidationMessageFor(m => m.Notes, "", new { @class = "field-validation-error" })
+        </div>
+
+        <div class="action-buttons">
+            <button type="submit" class="btn-farm btn-save">
+                <i class="fas fa-save"></i> Save Changes
+            </button>
+            <a href="@Url.Action("Index")" class="btn-farm btn-back">
+                <i class="fas fa-arrow-left"></i> Back to List
+            </a>
+        </div>
+    }
+</div>
+
+<!-- Font Awesome for Icons -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
+<!-- Client-side validation scripts -->
+@section Scripts {
+    @Scripts.Render("~/bundles/jqueryval")
+}

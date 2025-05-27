@@ -1,0 +1,184 @@
+﻿@model IEnumerable<FarmTrack.Models.EquipmentRepairLog>
+
+@{
+    ViewBag.Title = "Equipment Repair Logs";
+}
+
+<style>
+    /* Custom Color Scheme */
+    :root {
+        --color-earth: #8B7355; /* Primary */
+        --color-soil: #654321; /* Secondary */
+        --color-foliage: #4CAF50; /* Tertiary */
+        --color-wheat: #F5DEB3; /* Accent */
+        --color-danger: #FF6B6B; /* Error */
+        --color-white: #FFFFFF; /* Neutral */
+    }
+
+    /* Page Header */
+    .page-header {
+        background-color: var(--color-wheat);
+        padding: 20px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+    }
+
+        .page-header h2 {
+            color: var(--color-soil);
+            font-weight: 700;
+            margin-bottom: 0;
+        }
+
+        .page-header p.lead {
+            color: var(--color-soil);
+            opacity: 0.8;
+            margin-bottom: 0;
+        }
+
+    /* Card Container */
+    .logs-container {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 20px;
+        margin-bottom: 20px;
+    }
+
+    /* Repair Log Cards */
+    .repair-card {
+        background-color: var(--color-white);
+        border: 1px solid var(--color-wheat);
+        border-radius: 8px;
+        padding: 20px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+        .repair-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
+        }
+
+        .repair-card .repair-date {
+            color: var(--color-soil);
+            font-weight: 600;
+            font-size: 1.25rem;
+            margin-bottom: 15px;
+            border-bottom: 2px solid var(--color-wheat);
+            padding-bottom: 10px;
+        }
+
+        .repair-card .repair-detail {
+            margin-bottom: 12px;
+        }
+
+        .repair-card .label {
+            color: var(--color-earth);
+            font-weight: 600;
+            display: inline-block;
+            margin-right: 5px;
+        }
+
+        .repair-card .repair-issue {
+            color: var(--color-danger);
+            font-weight: 500;
+        }
+
+        .repair-card .repair-action {
+            color: var(--color-foliage);
+        }
+
+    /* No Logs Message */
+    .no-logs {
+        text-align: center;
+        padding: 40px;
+        background-color: var(--color-white);
+        border: 1px solid var(--color-wheat);
+        border-radius: 8px;
+        color: var(--color-soil);
+        font-style: italic;
+    }
+
+    /* Action Button */
+    .btn {
+        border-radius: 6px;
+        padding: 8px 16px;
+        font-weight: 500;
+    }
+
+    .btn-info {
+        background-color: var(--color-earth);
+        border-color: var(--color-earth);
+        color: var(--color-white);
+    }
+
+        .btn-info:hover {
+            background-color: var(--color-soil);
+            border-color: var(--color-soil);
+            color: var(--color-white);
+        }
+</style>
+
+<!-- Page Header -->
+<div class="page-header">
+    <h2><i class="fas fa-tools"></i> Equipment Repair Logs</h2>
+    <p class="lead">Track maintenance and repair history for all equipment</p>
+</div>
+
+<!-- New Log Button -->
+<div class="mb-4">
+    <a href="@Url.Action("Create", "EquipmentRepair")" class="btn btn-info">
+        <i class="fas fa-plus"></i> Record New Repair
+    </a>
+</div>
+
+<!-- Repair Logs Grid -->
+@if (Model.Any())
+{
+    <div class="logs-container">
+        @foreach (var log in Model)
+        {
+            <div class="repair-card">
+                <h5 class="repair-date">
+                    <i class="fas fa-calendar-alt"></i> @log.RepairDate.ToString("MMMM dd, yyyy")
+                </h5>
+
+                <div class="repair-detail">
+                    <span class="label">Issue:</span>
+                    <span class="repair-issue">@log.IssueReported</span>
+                </div>
+
+                <div class="repair-detail">
+                    <span class="label">Repair Action:</span>
+                    <span class="repair-action">@log.RepairDetails</span>
+                </div>
+
+                <div class="repair-detail">
+                    <span class="label">Technician:</span>
+                    <span>@log.RepairedBy</span>
+                </div>
+
+
+            </div>
+        }
+    </div>
+}
+else
+{
+    <div class="no-logs">
+        <i class="fas fa-info-circle fa-2x mb-3"></i>
+        <p>No repair logs found. Click "Record New Repair" to add repair history.</p>
+    </div>
+}
+
+<!-- New Log Button (Bottom) -->
+@if (Model.Any())
+{
+    <div class="text-right mt-4">
+        <a href="@Url.Action("Create", "EquipmentRepair")" class="btn btn-info">
+            <i class="fas fa-plus"></i> Record New Repair
+        </a>
+    </div>
+}
+
+<!-- Font Awesome for Icons -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">

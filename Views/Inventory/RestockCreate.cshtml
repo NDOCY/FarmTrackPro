@@ -1,0 +1,102 @@
+﻿@model FarmTrack.Models.InventoryRestock
+@{
+    ViewBag.Title = "Create Restock";
+    bool isFromItemPage = ViewBag.IsFromItemPage ?? false;
+    var selectedItem = ViewBag.SelectedItem as FarmTrack.Models.Inventory;
+}
+
+<h2>@(isFromItemPage ? "Create Restock Request" : "Create Manual Restock")</h2>
+
+@using (Html.BeginForm("RestockCreate", "Inventory", FormMethod.Post))
+{
+    @Html.AntiForgeryToken()
+    @Html.ValidationSummary(true, "", new { @class = "text-danger" })
+
+    if (isFromItemPage && selectedItem != null)
+    {
+        <!-- Coming from item page - show item details and hidden field -->
+        @Html.HiddenFor(m => m.InventoryId)
+        <div class="form-group">
+            <label><strong>Item:</strong></label>
+            <div class="form-control-static">
+                <strong>@selectedItem.ItemName</strong>
+                @if (!string.IsNullOrEmpty(selectedItem.Category))
+                {
+                    <span class="text-muted"> - @selectedItem.Category</span>
+                }
+            </div>
+            <small class="form-text text-muted">Current Stock: @selectedItem.Quantity</small>
+        </div>
+    }
+    else
+    {
+        <!-- Manual creation - show dropdown -->
+        <div class="form-group">
+            @Html.LabelFor(m => m.InventoryId, "Select Item")
+            @Html.DropDownList("InventoryId", (SelectList)ViewBag.InventoryList, "-- Select Item --", new { @class = "form-control", required = "required", id = "inventoryDropdown" })
+            @Html.ValidationMessageFor(m => m.InventoryId, "", new { @class = "text-danger" })
+        </div>
+    }
+
+    <div class="form-group">
+        @Html.LabelFor(m => m.Quantity, "Quantity to Restock")
+        @Html.TextBoxFor(m => m.Quantity, new { @class = "form-control", type = "number", min = "1", required = "required" })
+        @Html.ValidationMessageFor(m => m.Quantity, "", new { @class = "text-danger" })
+    </div>
+
+    <div class="form-group">
+        @Html.LabelFor(m => m.SupplierId, "Select Supplier")
+        @Html.DropDownList("SupplierId", (SelectList)ViewBag.SupplierList, "-- Select Supplier --", new { @class = "form-control", required = "required", id = "supplierDropdown" })
+        @Html.ValidationMessageFor(m => m.SupplierId, "", new { @class = "text-danger" })
+        <small class="form-text text-muted">
+            @if (isFromItemPage && selectedItem?.Supplier != null)
+            {
+                <span>Default supplier for this item: @selectedItem.Supplier.Name</span>
+            }
+            else
+            {
+                <span>If the item has a default supplier, it will be pre-selected.</span>
+            }
+        </small>
+    </div>
+
+    <div class="form-group">
+        <button type="submit" class="btn btn-primary">Create Restock Request</button>
+        @Html.ActionLink("Cancel", "RestockList", null, new { @class = "btn btn-default" })
+    </div>
+}
+
+@section Scripts {
+    @Scripts.Render("~/bundles/jqueryval")
+    <script type="text/javascript">
+        $(document).ready(function () {
+            @if (!isFromItemPage)
+            {
+                <text>
+                // Auto-select supplier when inventory item changes (only for manual creation)
+                $('#inventoryDropdown').change(function () {
+                    var selectedInventoryId = $(this).val();
+                    if (selectedInventoryId) {
+                        // Make AJAX call to get the default supplier for the selected item
+                        $.ajax({
+                            url: '@Url.Action("GetItemSupplier", "Inventory")',
+                            type: 'GET',
+                            data: { inventoryId: selectedInventoryId },
+                            success: function (data) {
+                                if (data.supplierId) {
+                                    $('#supplierDropdown').val(data.supplierId);
+                                } else {
+                                    $('#supplierDropdown').val('');
+                                }
+                            },
+                            error: function () {
+                                console.log('Error getting supplier information');
+                            }
+                        });
+                    }
+                });
+                </text>
+            }
+        });
+    </script>
+}

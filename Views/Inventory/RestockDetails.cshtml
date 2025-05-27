@@ -1,0 +1,24 @@
+﻿@model FarmTrack.Models.InventoryRestock
+@{
+    ViewBag.Title = "Restock Details";
+}
+<h2>Restock Details</h2>
+
+<div>
+    <p><strong>Item:</strong> @Model.Inventory.ItemName</p>
+    <p><strong>Quantity:</strong> @Model.Quantity</p>
+    <p><strong>Requested On:</strong> @Model.RequestedOn.ToShortDateString()</p>
+    <p><strong>Status:</strong> @(Model.IsCompleted ? "Completed" : Model.Failed ? "Failed" : "Pending")</p>
+</div>
+
+@if (!Model.IsCompleted && !Model.Failed)
+{
+    <form method="post" action="@Url.Action("MarkRestockComplete", new { id = Model.InventoryRestockId })">
+        @Html.AntiForgeryToken()
+        <button type="submit" class="btn btn-success">Mark as Complete</button>
+    </form>
+    <form method="post" action="@Url.Action("FailRestock", new { id = Model.InventoryRestockId })">
+        @Html.AntiForgeryToken()
+        <button type="submit" class="btn btn-danger">Fail</button>
+    </form>
+}

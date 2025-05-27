@@ -1,0 +1,230 @@
+﻿@model IEnumerable<FarmTrack.Models.ActivityLog>
+@{
+    ViewBag.Title = "Activity Logs";
+}
+
+<style>
+    /* Custom Color Scheme */
+    :root {
+        --color-earth: #8B7355; /* Primary */
+        --color-soil: #654321; /* Secondary */
+        --color-foliage: #4CAF50; /* Tertiary */
+        --color-wheat: #F5DEB3; /* Accent */
+        --color-danger: #FF6B6B; /* Error */
+        --color-white: #FFFFFF; /* Neutral */
+        --color-bib: #b17474; /* Neutral */
+    }
+
+    /* Page Header */
+    .page-header {
+        background-color: var(--color-wheat);
+        padding: 20px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+    }
+
+        .page-header h2 {
+            color: var(--color-soil);
+            font-weight: 700;
+        }
+
+        .page-header p.lead {
+            color: var(--color-soil);
+            opacity: 0.8;
+        }
+
+    /* Filter Section */
+    .card {
+        border: 1px solid var(--color-wheat);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+
+    .card-body {
+        background-color: var(--color-white);
+    }
+
+    .form-control {
+        border: 1px solid var(--color-wheat);
+    }
+
+    .btn-primary {
+        background-color: var(--color-earth);
+        border-color: var(--color-earth);
+    }
+
+        .btn-primary:hover {
+            background-color: var(--color-soil);
+            border-color: var(--color-soil);
+        }
+
+    /* Task Table */
+    .table thead {
+        background-color: var(--color-earth);
+        color: var(--color-white);
+    }
+
+    .table-striped tbody tr:nth-of-type(odd) {
+        background-color: rgba(245, 222, 179, 0.1);
+    }
+
+    .table-hover tbody tr:hover {
+        background-color: rgba(245, 222, 179, 0.2);
+    }
+
+    /* Status Badges */
+    .badge-success {
+        background-color: var(--color-foliage);
+        color: var(--color-white);
+    }
+
+    .badge-warning {
+        background-color: var(--color-wheat);
+        color: var(--color-soil);
+    }
+
+    .badge-secondary {
+        background-color: var(--color-soil);
+        color: var(--color-white);
+    }
+
+    .badge-danger {
+        background-color: var(--color-danger);
+        color: var(--color-white);
+    }
+
+    /* Action Buttons */
+    .btn-info {
+        background-color: var(--color-earth);
+        border-color: var(--color-earth);
+        color: var(--color-white);
+    }
+
+        .btn-info:hover {
+            background-color: var(--color-soil);
+            border-color: var(--color-soil);
+        }
+
+    .btn-warning {
+        background-color: var(--color-wheat);
+        border-color: var(--color-wheat);
+        color: var(--color-soil);
+    }
+
+        .btn-warning:hover {
+            background-color: var(--color-soil);
+            border-color: var(--color-soil);
+            color: var(--color-white);
+        }
+
+    .btn-danger {
+        background-color: var(--color-danger);
+        border-color: var(--color-danger);
+    }
+
+        .btn-danger:hover {
+            background-color: var(--color-bib);
+            border-color: var(--color-bib);
+        }
+
+    /* Alert Styles */
+    .alert-warning {
+        background-color: var(--color-wheat);
+        color: var(--color-soil);
+        border-color: var(--color-soil);
+    }
+
+    /* Timestamp Formatting */
+    .timestamp {
+        font-family: monospace;
+        color: var(--color-soil);
+    }
+
+    /* Activity Description Styling */
+    .activity-description {
+        max-width: 500px;
+        word-wrap: break-word;
+    }
+</style>
+
+<!-- Page Header -->
+<div class="page-header">
+    <h2>Activity Logs</h2>
+    <p class="lead">Track all activities performed on the farm management system.</p>
+</div>
+
+<!-- Search Section -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="get" class="form-inline">
+            <div class="form-group mr-3">
+                <label for="search" class="mr-2">Search:</label>
+                <input type="text" name="search" class="form-control" placeholder="Search activity logs..." value="@ViewBag.SearchQuery" />
+            </div>
+            <div class="form-group mr-3">
+                <label for="dateFrom" class="mr-2">From:</label>
+                <input type="date" name="dateFrom" class="form-control" value="@ViewBag.DateFrom" />
+            </div>
+            <div class="form-group mr-3">
+                <label for="dateTo" class="mr-2">To:</label>
+                <input type="date" name="dateTo" class="form-control" value="@ViewBag.DateTo" />
+            </div>
+            <button type="submit" class="btn btn-info"><i class="fas fa-search"></i> Search</button>
+        </form>
+    </div>
+</div>
+
+@if (!Model.Any())
+{
+    <div class="alert alert-warning text-center">No activity logs available.</div>
+}
+else
+{
+    <div class="table-responsive">
+        <table class="table table-striped table-hover">
+            <thead>
+                <tr>
+                    <th>User</th>
+                    <th>Activity Description</th>
+                    <th>Timestamp</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in Model)
+                {
+                    <tr class="clickable-row" data-href="@Url.Action("Details", "ActivityLogs", new { id = item.LogId })">
+                        <td>
+                            @Html.DisplayFor(modelItem => item.User.FullName)
+                        </td>
+                        <td class="activity-description">
+                            @Html.DisplayFor(modelItem => item.Description)
+                        </td>
+                        <td class="timestamp">
+                            @item.Timestamp.ToString("yyyy-MM-dd HH:mm:ss")
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+
+<!-- Export Button -->
+<div class="text-right mt-4">
+    <a href="@Url.Action("ExportLogs", "ActivityLogs")" class="btn btn-info">
+        <i class="fas fa-download"></i> Export Logs
+    </a>
+</div>
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        let rows = document.querySelectorAll(".clickable-row");
+        rows.forEach(row => {
+            row.addEventListener("click", function () {
+                let url = this.getAttribute("data-href");
+                if (url) {
+                    window.location.href = url;
+                }
+            });
+        });
+    });
+
+</script>

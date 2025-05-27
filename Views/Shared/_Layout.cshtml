@@ -1,0 +1,366 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>@ViewBag.Title - Farm Management System</title>
+    @Styles.Render("~/Content/css")
+    @Scripts.Render("~/bundles/modernizr")
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        :root {
+            --color-earth: #8B7355;
+            --color-soil: #654321;
+            --color-foliage: #4CAF50;
+            --color-wheat: #F5DEB3;
+            --color-hay: #DAA520;
+            --border-radius: 8px;
+        }
+
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            display: flex;
+            flex-direction: column;
+            background-color: #F9F7F4;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .navbar {
+            background: linear-gradient(135deg, var(--color-earth), var(--color-soil)) !important;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.15);
+        }
+
+        .navbar-brand {
+            font-weight: 700;
+            color: var(--color-wheat) !important;
+        }
+
+        .nav-link {
+            color: rgba(255, 255, 255, 0.85) !important;
+            font-weight: 500;
+        }
+
+            .nav-link:hover {
+                color: var(--color-wheat) !important;
+            }
+
+        .card {
+            border-radius: var(--border-radius);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            border: none;
+            margin-bottom: 20px;
+        }
+
+        .card-header {
+            font-weight: 600;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .farm-overview, .livestock, .users, .activity {
+            background: linear-gradient(135deg, var(--color-earth), var(--color-soil));
+            color: white;
+        }
+
+        .quick-links {
+            background: linear-gradient(135deg, var(--color-wheat), var(--color-hay));
+            color: #5D4037;
+        }
+
+        .table {
+            margin-bottom: 0;
+        }
+
+        .users .table, .activity .table {
+            color: white;
+        }
+
+        .users thead, .activity thead {
+            background-color: rgba(255, 255, 255, 0.15);
+        }
+
+        .users th, .activity th,
+        .users td, .activity td {
+            border-color: rgba(255, 255, 255, 0.1);
+        }
+
+        .users tbody tr:hover, .activity tbody tr:hover {
+            background-color: rgba(255, 255, 255, 0.08);
+        }
+
+        .user-avatar {
+            width: 32px;
+            height: 32px;
+            background-color: var(--color-wheat);
+            color: var(--color-soil);
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            margin-right: 8px;
+        }
+
+        footer {
+            margin-top: auto; /* Pushes the footer to the bottom */
+            padding: 20px 0;
+            color: var(--color-soil);
+            border-top: 1px solid #E5E0DA;
+            background-color: white;
+            text-align: center;
+        }
+
+        .parent {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            grid-template-rows: repeat(11, 60px);
+            gap: 16px;
+            min-height: 700px;
+        }
+
+        .div1 {
+            grid-area: 1 / 1 / 10 / 2;
+        }
+
+        .div2 {
+            grid-area: 1 / 2 / 6 / 4;
+        }
+
+        .div3 {
+            grid-area: 6 / 2 / 10 / 4;
+        }
+
+        .div4 {
+            grid-area: 1 / 4 / 10 / 6;
+        }
+
+        .div5 {
+            grid-area: 10 / 1 / 12 / 6;
+        }
+
+        .avatar-sm {
+            width: 28px;
+            height: 28px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            font-weight: 600;
+        }
+
+        .scrollable {
+            overflow-y: auto;
+            max-height: 100%;
+        }
+
+        .container.body-content {
+            flex: 1; /* Takes up remaining space */
+            padding-top: 20px;
+            padding-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-sm navbar-dark">
+        <div class="container">
+            <a class="navbar-brand" href="@Url.Action("AdminDashboard", "Dashboard")">
+                <i class="fas fa-leaf me-2"></i>FarmTrack Pro
+            </a>
+            <button type="button" class="navbar-toggler" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" title="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse d-sm-inline-flex justify-content-between">
+                <ul class="navbar-nav flex-grow-1">
+                    <li class="nav-item">
+                        <a class="nav-link" href="@Url.Action("AdminDashboard", "Dashboard")">
+                            <i class="fas fa-home me-1"></i> Dashboard
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="@Url.Action("Index", "Livestock")">
+                            <i class="fas fa-horse me-1">
+                            </i> Livestock
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="@Url.Action("InventoryList", "Inventory")">
+                            <i class="fas fa-boxes me-1"></i> Inventory
+                            <span id="lowStockBadge" class="badge bg-warning text-dark ms-1"></span>
+                        </a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="nav-link" href="@Url.Action("Index", "Message")">
+                            <i class="fas fa-envelope me-1"></i> Messages
+                            <span id="messageBadge" class="badge bg-warning text-dark ms-1"></span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="@Url.Action("Index", "Task")">
+                            <i class="fas fa-tasks me-1"></i> Tasks
+                            <span id="taskBadge" class="badge bg-danger text-white ms-1"></span>
+                            <span id="statusUpdateBadge" class="badge"></span>
+                        </a>
+                    </li>
+                    <li class="nav-item dropdown" id="notificationDropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="notifToggle" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            Notifications <span class="badge bg-danger" id="notifCount"></span>
+                        </a>
+                        <div id="notifContent" class="dropdown-menu dropdown-menu-end"></div>
+                    </li>
+
+                </ul>
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <div class="user-avatar">
+                                @(Session["FullName"] != null ? Session["FullName"].ToString().Substring(0, 1) : "U")
+                            </div>
+                            <span>@(Session["FullName"] ?? "User")</span>
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
+                            <li><a class="dropdown-item" href="@Url.Action("UserProfile", "Account")">Profile</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="@Url.Action("Logout", "Account")">Logout</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="@Url.Action("About", "Home")">About Us</a></li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container body-content">
+        @RenderBody()
+    </div>
+
+    <footer>
+        <div class="container">
+            <p class="text-center">&copy; @DateTime.Now.Year - FarmTrack Pro</p>
+        </div>
+    </footer>
+
+    <!-- Ensure jQuery and Bootstrap JS are included -->
+    @Scripts.Render("~/bundles/jquery")
+    @Html.Raw("<script src=\"https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js\"></script>")
+
+    @Scripts.Render("~/bundles/bootstrap")
+    @RenderSection("scripts", required: false)
+    <script>
+        const defaultNotificationState = {
+            unreadMessages: 0,
+            pendingTask: 0,
+            lowStock: 0,
+            newStatusUpdate: 0
+        };
+
+        function getLastState() {
+            const saved = localStorage.getItem("lastNotificationState");
+            return saved ? JSON.parse(saved) : defaultNotificationState;
+        }
+
+        function saveLastState(state) {
+            localStorage.setItem("lastNotificationState", JSON.stringify(state));
+        }
+
+        function playSound(url) {
+            const audio = new Audio(url);
+            audio.play().catch(e => console.warn("Sound play failed:", e));
+        }
+
+        function updateBadge(id, count) {
+            const el = document.getElementById(id);
+            if (!el) return;
+            el.innerText = count > 0 ? count : '';
+            el.style.display = count > 0 ? 'inline-block' : 'none';
+        }
+
+        function loadNotifications() {
+            fetch('/Notification/Dropdown')
+                .then(res => res.text())
+                .then(html => {
+                    document.getElementById('notifContent').innerHTML = html;
+                });
+        }
+
+        function checkNotifications() {
+            fetch('/Notification/Check')
+                .then(res => res.json())
+                .then(data => {
+                    const { unreadMessages, pendingTask, lowStock, newStatusUpdate } = data;
+
+                    // Update badges
+                    updateBadge('messageBadge', unreadMessages);
+                    updateBadge('taskBadge', pendingTask);
+                    updateBadge('lowStockBadge', lowStock);
+                    updateBadge('statusUpdateBadge', newStatusUpdate);
+                    updateBadge('notifCount', unreadMessages + pendingTask + lowStock + newStatusUpdate);
+
+                    const last = getLastState();
+
+                    // Only notify if counts increased
+                    if (unreadMessages > last.unreadMessages) {
+                        playSound('/Content/notify.mp3');
+                        if (Notification.permission === "granted") {
+                            new Notification("You have new messages.");
+                        }
+                    }
+
+                    if (pendingTask > last.pendingTask) {
+                        playSound('/Content/notify.mp3');
+                        if (Notification.permission === "granted") {
+                            new Notification("You have pending tasks.");
+                        }
+                    }
+
+                    if (lowStock > last.lowStock) {
+                        playSound('/Content/notify.mp3');
+                        if (Notification.permission === "granted") {
+                            new Notification(`Low stock alert: ${lowStock} items.`);
+                        }
+                    }
+
+                    if (newStatusUpdate > last.newStatusUpdate) {
+                        playSound('/Content/notify.mp3');
+                        if (Notification.permission === "granted") {
+                            new Notification("New task status updates.");
+                        }
+                    }
+
+                    saveLastState({ unreadMessages, pendingTask, lowStock, newStatusUpdate });
+                });
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            // Request notification permission on first load
+            if ("Notification" in window && Notification.permission !== "granted") {
+                Notification.requestPermission();
+            }
+
+            // Load immediately and then every 30s
+            checkNotifications();
+            loadNotifications();
+            setInterval(() => {
+                checkNotifications();
+                loadNotifications();
+            }, 30000);
+
+            // Refresh dropdown when bell is clicked
+            const notifToggle = document.getElementById('notifToggle');
+            if (notifToggle) {
+                notifToggle.addEventListener('click', () => {
+                    loadNotifications();
+                });
+            }
+        });
+    </script>
+
+
+
+</body>
+</html>

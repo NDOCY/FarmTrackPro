@@ -1,0 +1,152 @@
+﻿@model FarmTrack.Models.User
+
+@{
+    ViewBag.Title = "Register";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<style>
+    :root {
+        --color-earth: #8B7355;
+        --color-soil: #654321;
+        --color-foliage: #4CAF50;
+        --color-wheat: #F5DEB3;
+        --color-hay: #DAA520;
+        --border-radius: 12px;
+        --card-shadow: 0 6px 18px rgba(0,0,0,0.1);
+    }
+
+    .register-wrapper {
+        max-width: 500px;
+        margin: 40px auto;
+        padding: 20px;
+    }
+
+    .register-card {
+        border-radius: var(--border-radius);
+        box-shadow: var(--card-shadow);
+        overflow: hidden;
+        background-color: white;
+    }
+
+    .register-header {
+        background-color: var(--color-earth);
+        color: white;
+        padding: 20px;
+        text-align: center;
+    }
+
+        .register-header h2 {
+            margin: 0;
+            font-size: 1.5rem;
+        }
+
+    .register-body {
+        padding: 30px;
+    }
+
+    .form-group {
+        margin-bottom: 20px;
+    }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: var(--color-soil);
+        }
+
+    .form-control {
+        width: 100%;
+        padding: 10px;
+        border: 1px solid #ddd;
+        border-radius: 6px;
+        font-size: 1rem;
+        box-sizing: border-box;
+    }
+
+        .form-control:focus {
+            border-color: var(--color-hay);
+            outline: none;
+        }
+
+    .text-danger {
+        color: #F5DEB3;
+        font-size: 0.875rem;
+        margin-top: 4px;
+    }
+
+    .btn-register {
+        background-color: var(--color-earth);
+        color: white;
+        border: none;
+        padding: 12px 20px;
+        width: 100%;
+        border-radius: 6px;
+        font-size: 1rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition: background-color 0.3s;
+    }
+
+        .btn-register:hover {
+            background-color: var(--color-hay);
+        }
+
+    .register-link {
+        text-align: center;
+        margin-top: 20px;
+        font-size: 0.875rem;
+    }
+
+        .register-link a {
+            color: var(--color-soil);
+            text-decoration: none;
+        }
+
+            .register-link a:hover {
+                text-decoration: underline;
+            }
+</style>
+
+<div class="register-wrapper">
+    <div class="register-card">
+        <div class="register-header">
+            <h2>Create Your Account</h2>
+        </div>
+        <div class="register-body">
+            @using (Html.BeginForm("Register", "Account", FormMethod.Post))
+            {
+                @Html.AntiForgeryToken()
+
+                <div class="form-group">
+                    @Html.LabelFor(m => m.FullName, "Full Name")
+                    @Html.TextBoxFor(m => m.FullName, new { @class = "form-control", placeholder = "Full Name" })
+                    @Html.ValidationMessageFor(m => m.FullName, "", new { @class = "text-danger" })
+                </div>
+
+                <div class="form-group">
+                    @Html.LabelFor(m => m.Email, "Email Address")
+                    @Html.TextBoxFor(m => m.Email, new { @class = "form-control", placeholder = "Email Address" })
+                    @Html.ValidationMessageFor(m => m.Email, "", new { @class = "text-danger" })
+                </div>
+
+                <div class="form-group">
+                    @Html.LabelFor(m => m.PasswordHash, "Password")
+                    @Html.PasswordFor(m => m.PasswordHash, new { @class = "form-control", placeholder = "Password" })
+                    @Html.ValidationMessageFor(m => m.PasswordHash, "", new { @class = "text-danger" })
+                </div>
+
+                <button type="submit" class="btn-register">Sign Up</button>
+
+                <div class="register-link">
+                    Already have an account? @Html.ActionLink("Login here", "Login", "Account")
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @Scripts.Render("~/bundles/jqueryval")
+}

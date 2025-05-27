@@ -1,0 +1,203 @@
+﻿@model FarmTrack.Models.JobApplication
+@{
+    ViewBag.Title = "Apply for Job";
+    Layout = "~/Views/Shared/_Layout - User.cshtml";
+}
+
+<style>
+    /* Custom Color Scheme */
+    :root {
+        --color-earth: #8B7355; /* Primary */
+        --color-soil: #654321; /* Secondary */
+        --color-foliage: #4CAF50; /* Tertiary */
+        --color-wheat: #F5DEB3; /* Accent */
+        --color-danger: #FF6B6B; /* Error */
+        --color-white: #FFFFFF; /* Neutral */
+    }
+
+    /* Form Container */
+    .form-container {
+        background-color: var(--color-white);
+        border: 1px solid var(--color-wheat);
+        border-radius: 8px;
+        padding: 20px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        max-width: 600px;
+        margin: auto;
+    }
+
+        .form-container h2 {
+            color: var(--color-soil);
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+    .form-group {
+        margin-bottom: 15px;
+    }
+
+        .form-group label {
+            color: var(--color-soil);
+            font-weight: 500;
+            display: block;
+            margin-bottom: 5px;
+        }
+
+    .form-control {
+        border: 1px solid var(--color-wheat);
+        border-radius: 4px;
+        padding: 8px;
+        width: 100%;
+        box-sizing: border-box;
+    }
+
+    .form-control-file {
+        border: 1px solid var(--color-wheat);
+        border-radius: 4px;
+        padding: 8px;
+        width: 100%;
+        background-color: var(--color-white);
+    }
+
+        .form-control:focus,
+        .form-control-file:focus {
+            border-color: var(--color-earth);
+            box-shadow: 0 0 5px rgba(139, 115, 85, 0.5);
+        }
+
+    .btn-primary {
+        background-color: var(--color-earth);
+        border-color: var(--color-earth);
+        color: var(--color-white);
+        padding: 8px 16px;
+        border-radius: 4px;
+        text-decoration: none;
+        display: inline-block;
+        cursor: pointer;
+        width: 100%;
+        margin-top: 15px;
+    }
+
+        .btn-primary:hover {
+            background-color: var(--color-soil);
+            border-color: var(--color-soil);
+        }
+
+    .text-danger {
+        color: var(--color-danger);
+    }
+</style>
+
+<div class="form-container">
+    <h2>Apply for Job: @Model.Job.Title</h2>
+
+    @using (Html.BeginForm("SubmitApplication", "Jobs", FormMethod.Post, new { enctype = "multipart/form-data" }))
+    {
+        @Html.AntiForgeryToken()
+        @Html.HiddenFor(m => m.JobId)
+
+        <div class="form-group">
+            @Html.Label("Full Name")
+            <input class="form-control" readonly value="@Model.User.FullName" />
+        </div>
+
+        <div class="form-group">
+            @Html.Label("Email")
+            <input class="form-control" readonly value="@Model.User.Email" />
+        </div>
+
+        <div class="form-group">
+            @Html.Label("Date Registered")
+            <input class="form-control" readonly value="@Model.User.DateRegistered.ToString("yyyy-MM-dd")" />
+        </div>
+
+        <div class="form-group">
+            <label>Upload CV:</label>
+            <input type="file" name="CVUpload" class="form-control-file" required onchange="previewFile(this, 'cvPreview')" />
+            <small class="form-text text-muted">Accepted: PDF, DOC, DOCX</small>
+            <div id="cvPreview" class="file-preview mt-2"></div>
+
+            @if (!string.IsNullOrEmpty(Model.User.CV))
+            {
+                <div class="mt-2">
+                    <label>Previously Uploaded CV:</label>
+                    <a href="@Model.User.CV" target="_blank" class="btn btn-sm btn-outline-primary">View CV</a>
+                </div>
+            }
+        </div>
+
+        <div class="form-group">
+            <label>Upload Proof of ID (optional):</label>
+            <input type="file" name="IDUpload" class="form-control-file" onchange="previewFile(this, 'idPreview')" />
+            <small class="form-text text-muted">Accepted: PDF, Image, or Text</small>
+            <div id="idPreview" class="file-preview mt-2"></div>
+
+            @if (!string.IsNullOrEmpty(Model.User.ID))
+            {
+                <div class="mt-2">
+                    <label>Previously Uploaded ID:</label>
+                    <a href="@Model.User.ID" target="_blank" class="btn btn-sm btn-outline-primary">View ID</a>
+                </div>
+            }
+        </div>
+
+        <div class="form-group">
+            @Html.LabelFor(m => m.PhoneNumber)
+            @Html.TextBoxFor(m => m.PhoneNumber, new { @class = "form-control", placeholder = "Enter your phone number", required = "required" })
+        </div>
+
+        <div class="form-group">
+            @Html.LabelFor(m => m.Address)
+            @Html.TextAreaFor(m => m.Address, new { @class = "form-control", placeholder = "Enter your address", rows = 3, required = "required" })
+        </div>
+
+        <div class="form-group">
+            @Html.Label("Highest Level of Education")
+            <input type="text" name="Education" class="form-control" required />
+        </div>
+
+        <div class="form-group">
+            @Html.Label("Institution")
+            <input type="text" name="Institution" class="form-control" required />
+        </div>
+
+        <div class="form-group">
+            @Html.Label("Work Experience")
+            <textarea name="Experience" class="form-control" rows="4" required placeholder="Include details like company name, work period (number of years), and only add employer contact details on your resume."></textarea>
+        </div>
+
+
+        <button type="submit" class="btn btn-primary mt-3">
+            <i class="fas fa-paper-plane"></i> Submit Application
+        </button>
+    }
+</div>
+
+<!-- Optional: File preview script -->
+<script>
+    function previewFile(input, previewId) {
+        const preview = document.getElementById(previewId);
+        preview.innerHTML = "";
+
+        if (input.files && input.files[0]) {
+            const file = input.files[0];
+            const fileType = file.type;
+
+            if (fileType.startsWith("image/")) {
+                const img = document.createElement("img");
+                img.src = URL.createObjectURL(file);
+                img.style.maxWidth = "200px";
+                img.style.border = "1px solid #ddd";
+                img.style.padding = "5px";
+                preview.appendChild(img);
+            } else {
+                const info = document.createElement("p");
+                info.textContent = `Selected file: ${file.name}`;
+                preview.appendChild(info);
+            }
+        }
+    }
+</script>
+
+<!-- Font Awesome (for icons) -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />

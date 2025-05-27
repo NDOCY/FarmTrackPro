@@ -1,0 +1,42 @@
+﻿@model IEnumerable<FarmTrack.Models.InventoryRestock>
+@{
+    ViewBag.Title = "Inventory Restocks";
+}
+@if (TempData["Message"] != null)
+{
+    <div class="alert alert-info">
+        @TempData["Message"]
+    </div>
+}
+
+<h2>Inventory Restocks</h2>
+<p>
+    @Html.ActionLink("Create Restock", "RestockCreate")
+
+</p>
+<table class="table">
+    <thead>
+        <tr>
+            <th>Item</th>
+            <th>Quantity</th>
+            <th>Requested On</th>
+            <th>Status</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var restock in Model)
+        {
+            <tr>
+                <td>@restock.Inventory.ItemName</td>
+                <td>@restock.Quantity</td>
+                <td>@restock.RequestedOn.ToShortDateString()</td>
+                <td>@(restock.IsCompleted ? "Completed" : restock.Failed ? "Failed" : "Pending")</td>
+                <td>
+                    @Html.ActionLink("Details", "RestockDetails", new { id = restock.InventoryRestockId })
+                    @Html.ActionLink("Create Restock", "RestockCreate", new { id = restock.InventoryId })
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>

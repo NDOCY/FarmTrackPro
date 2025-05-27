@@ -1,0 +1,18 @@
+﻿@model FarmTrack.Models.Livestock
+
+<h2>Are you sure you want to delete this?</h2>
+
+<div>
+    <p>Type: @Model.Type</p>
+    <p>Breed: @Model.Breed</p>
+    <p>Tag Number: @Model.TagNumber</p>
+    <p>Status: @Model.Status</p>
+    <p>Notes: @Model.Notes</p>
+</div>
+
+@using (Html.BeginForm())
+{
+    @Html.AntiForgeryToken()
+    <button type="submit">Confirm Delete</button>
+}
+<a href="@Url.Action("Index")">Cancel</a>

@@ -1,0 +1,203 @@
+﻿@model FarmTrack.Models.Livestock
+
+@{
+    ViewBag.Title = "Add Livestock";
+}
+
+<style>
+    /* Custom Color Scheme */
+    :root {
+        --color-earth: #8B7355; /* Primary */
+        --color-soil: #654321; /* Secondary */
+        --color-foliage: #4CAF50; /* Tertiary */
+        --color-wheat: #F5DEB3; /* Accent */
+        --color-danger: #FF6B6B; /* Error */
+        --color-white: #FFFFFF; /* Neutral */
+    }
+
+    /* Form Container */
+    .form-container {
+        background-color: var(--color-white);
+        border: 1px solid var(--color-wheat);
+        border-radius: 8px;
+        padding: 20px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        max-width: 600px;
+        margin: auto;
+    }
+
+        .form-container h2 {
+            color: var(--color-soil);
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+    .form-group {
+        margin-bottom: 15px;
+    }
+
+        .form-group label {
+            color: var(--color-soil);
+            font-weight: 500;
+        }
+
+    .form-control {
+        border: 1px solid var(--color-wheat);
+        border-radius: 4px;
+        padding: 8px;
+    }
+
+        .form-control:focus {
+            border-color: var(--color-earth);
+            box-shadow: 0 0 5px rgba(139, 115, 85, 0.5);
+        }
+
+    .btn-primary {
+        background-color: var(--color-earth);
+        border-color: var(--color-earth);
+        color: var(--color-white);
+        padding: 8px 16px;
+        border-radius: 4px;
+        text-decoration: none;
+        display: inline-block;
+        cursor: pointer;
+    }
+
+        .btn-primary:hover {
+            background-color: var(--color-soil);
+            border-color: var(--color-soil);
+        }
+
+    .text-danger {
+        color: var(--color-danger);
+    }
+
+    .back-link {
+        display: block;
+        margin-top: 15px;
+        text-align: center;
+        color: var(--color-earth);
+        text-decoration: none;
+    }
+
+        .back-link:hover {
+            color: var(--color-soil);
+            text-decoration: underline;
+        }
+</style>
+
+<div class="form-container">
+    <h2>Add Livestock</h2>
+
+    @using (Html.BeginForm())
+    {
+        @Html.AntiForgeryToken()
+
+        <div class="form-group">
+            @Html.LabelFor(m => m.Type)
+            @Html.TextBoxFor(m => m.Type, new { @class = "form-control", placeholder = "Enter livestock type", required = "required" })
+            @Html.ValidationMessageFor(m => m.Type, "", new { @class = "text-danger" })
+        </div>
+
+        <div class="form-group">
+            @Html.LabelFor(m => m.Breed)
+            @Html.TextBoxFor(m => m.Breed, new { @class = "form-control", placeholder = "Enter livestock breed", required = "required" })
+            @Html.ValidationMessageFor(m => m.Breed, "", new { @class = "text-danger" })
+        </div>
+
+        <div class="form-group">
+            @Html.LabelFor(m => m.TagNumber)
+            @Html.TextBoxFor(m => m.TagNumber, new { @class = "form-control", placeholder = "Enter tag number" })
+            @Html.ValidationMessageFor(m => m.TagNumber, "", new { @class = "text-danger" })
+        </div>
+
+        <div class="form-group">
+            @Html.LabelFor(m => m.Sex)
+
+            <div class="form-check">
+                @Html.RadioButtonFor(m => m.Sex, "Male", new { @class = "form-check-input", id = "sexMale" })
+                <label class="form-check-label" for="sexMale">Male</label>
+            </div>
+
+            <div class="form-check">
+                @Html.RadioButtonFor(m => m.Sex, "Female", new { @class = "form-check-input", id = "sexFemale" })
+                <label class="form-check-label" for="sexFemale">Female</label>
+            </div>
+
+            @Html.ValidationMessageFor(m => m.Sex, "", new { @class = "text-danger" })
+        </div>
+
+
+
+        <div class="form-group">
+            @Html.LabelFor(model => model.InitialWeight, htmlAttributes: new { @class = "control-label" })
+            @Html.TextBoxFor(model => model.InitialWeight, new { @class = "form-control", type = "number", step = "0.1" })
+            @Html.ValidationMessageFor(model => model.InitialWeight, "", new { @class = "text-danger" })
+        </div>
+
+
+        <div class="form-group">
+            @Html.LabelFor(model => model.DateOfBirth, htmlAttributes: new { @class = "control-label" })
+            @Html.TextBoxFor(model => model.DateOfBirth, "{0:yyyy-MM-dd}", new { @class = "form-control", type = "date", id = "DateOfBirth" })
+            @Html.ValidationMessageFor(model => model.DateOfBirth, "", new { @class = "text-danger" })
+        </div>
+
+        <div class="form-group">
+            <label>Age (Months)</label>
+            <input type="text" id="AgeInMonths" class="form-control" readonly />
+        </div>
+
+
+
+        <div class="form-group">
+            @Html.LabelFor(m => m.Notes)
+            @Html.TextAreaFor(m => m.Notes, new { @class = "form-control", placeholder = "Enter additional notes", rows = "3" })
+            @Html.ValidationMessageFor(m => m.Notes, "", new { @class = "text-danger" })
+        </div>
+        <div class="form-group">
+            <label for="InitialEventType">Initial Event Type</label>
+            <select class="form-control" id="InitialEventType" name="InitialEventType" required>
+                <option value="">-- Select Event Type --</option>
+                <option value="Birth">Birth</option>
+                <option value="Purchased">Purchased</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="InitialEventNotes">Initial Event Notes</label>
+            <textarea class="form-control" id="InitialEventNotes" name="InitialEventNotes" rows="2" placeholder="Notes about this initial event (optional)"></textarea>
+        </div>
+
+
+        <button type="submit" class="btn btn-primary w-100">
+            <i class="fas fa-save"></i> Save Livestock
+        </button>
+    }
+
+    <a href="@Url.Action("Index")" class="back-link">
+        <i class="fas fa-arrow-left"></i> Back to List
+    </a>
+</div>
+
+<!-- Font Awesome for Icons -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
+<script>
+    document.getElementById("DateOfBirth").addEventListener("change", function () {
+        const dobValue = this.value;
+        if (!dobValue) return;
+
+        const dob = new Date(dobValue);
+        const today = new Date();
+
+        let months = (today.getFullYear() - dob.getFullYear()) * 12;
+        months -= dob.getMonth();
+        months += today.getMonth();
+
+        if (today.getDate() < dob.getDate()) {
+            months--; // adjust for day
+        }
+
+        document.getElementById("AgeInMonths").value = months >= 0 ? months : 0;
+    });
+</script>

@@ -1,0 +1,329 @@
+﻿@model FarmTrack.Models.Equipment
+@{
+    ViewBag.Title = "Equipment Details";
+}
+
+<style>
+    /* Custom Color Scheme */
+    :root {
+        --color-earth: #8B7355; /* Primary */
+        --color-soil: #654321; /* Secondary */
+        --color-foliage: #4CAF50; /* Tertiary */
+        --color-wheat: #F5DEB3; /* Accent */
+        --color-danger: #FF6B6B; /* Error */
+        --color-white: #FFFFFF; /* Neutral */
+    }
+
+    /* Page Header */
+    .page-header {
+        background-color: var(--color-wheat);
+        padding: 20px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+    }
+
+        .page-header h2 {
+            color: var(--color-soil);
+            font-weight: 700;
+            margin-bottom: 0;
+        }
+
+    /* Equipment Detail Card */
+    .equipment-detail-card {
+        background-color: var(--color-white);
+        border: 1px solid var(--color-wheat);
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        max-width: 700px;
+        margin-bottom: 20px;
+    }
+
+        .equipment-detail-card .card-img-container {
+            height: 300px;
+            overflow: hidden;
+            background-color: #f8f8f8;
+        }
+
+        .equipment-detail-card .card-img-top {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .equipment-detail-card .card-body {
+            padding: 20px;
+        }
+
+        .equipment-detail-card .card-title {
+            color: var(--color-soil);
+            font-weight: 600;
+            margin-bottom: 15px;
+            font-size: 1.5rem;
+        }
+
+        .equipment-detail-card .card-text {
+            color: #555;
+            margin-bottom: 10px;
+            line-height: 1.5;
+        }
+
+        .equipment-detail-card .status-badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.875rem;
+            font-weight: 600;
+            margin-left: 8px;
+        }
+
+    .status-active {
+        background-color: rgba(76, 175, 80, 0.1);
+        color: var(--color-foliage);
+    }
+
+    .status-maintenance {
+        background-color: rgba(255, 152, 0, 0.1);
+        color: #FF9800;
+    }
+
+    .status-inactive {
+        background-color: rgba(255, 107, 107, 0.1);
+        color: var(--color-danger);
+    }
+
+    /* Category Badge */
+    .category-badge {
+        display: inline-block;
+        background-color: var(--color-wheat);
+        color: var(--color-soil);
+        padding: 4px 10px;
+        border-radius: 20px;
+        font-size: 0.875rem;
+        font-weight: 600;
+        margin-left: 8px;
+    }
+
+    /* Repair Section */
+    .repair-section {
+        margin-top: 25px;
+        padding-top: 20px;
+        border-top: 1px solid var(--color-wheat);
+    }
+
+        .repair-section h4 {
+            color: var(--color-soil);
+            font-weight: 600;
+            margin-bottom: 15px;
+            font-size: 1.25rem;
+        }
+
+    /* Repair List Items */
+    .repair-list {
+        border-radius: 6px;
+        overflow: hidden;
+        margin-bottom: 20px;
+    }
+
+    .repair-list-item {
+        background-color: #f9f9f9;
+        border-left: 3px solid var(--color-earth);
+        padding: 15px;
+        margin-bottom: 10px;
+        border-radius: 4px;
+    }
+
+        .repair-list-item p {
+            margin-bottom: 8px;
+        }
+
+        .repair-list-item .repair-date {
+            color: var(--color-soil);
+            font-weight: 500;
+        }
+
+        .repair-list-item .repair-tech {
+            color: #555;
+        }
+
+        .repair-list-item .repair-status {
+            font-weight: 500;
+        }
+
+    /* Button Styling */
+    .btn {
+        border-radius: 6px;
+        padding: 8px 16px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+    .btn-primary {
+        background-color: var(--color-earth);
+        border-color: var(--color-earth);
+        color: var(--color-white);
+    }
+
+        .btn-primary:hover {
+            background-color: var(--color-soil);
+            border-color: var(--color-soil);
+        }
+
+    .btn-secondary {
+        background-color: var(--color-wheat);
+        border-color: var(--color-wheat);
+        color: var(--color-soil);
+    }
+
+        .btn-secondary:hover {
+            background-color: #e5cca3;
+            border-color: #e5cca3;
+        }
+
+    .btn-success {
+        background-color: var(--color-foliage);
+        border-color: var(--color-foliage);
+        color: var(--color-white);
+    }
+
+        .btn-success:hover {
+            background-color: #3d8b40;
+            border-color: #3d8b40;
+        }
+
+    .btn-warning {
+        background-color: #FF9800;
+        border-color: #FF9800;
+        color: var(--color-white);
+    }
+
+        .btn-warning:hover {
+            background-color: #e68a00;
+            border-color: #e68a00;
+        }
+
+    /* Button spacing */
+    .action-buttons {
+        display: flex;
+        gap: 10px;
+        margin-top: 20px;
+    }
+
+    /* Empty state styling */
+    .no-repairs {
+        padding: 15px;
+        background-color: #f9f9f9;
+        border-radius: 6px;
+        text-align: center;
+        color: #777;
+        margin-bottom: 20px;
+    }
+
+    /* Margin utilities */
+    .mt-4 {
+        margin-top: 20px;
+    }
+
+    .mb-4 {
+        margin-bottom: 20px;
+    }
+
+    .ml-2 {
+        margin-left: 8px;
+    }
+</style>
+
+<!-- Page Header -->
+<div class="page-header">
+    <h2><i class="fas fa-tools"></i> Equipment Details</h2>
+</div>
+
+<div class="equipment-detail-card">
+    @if (!string.IsNullOrEmpty(Model.ImagePath))
+    {
+        <div class="card-img-container">
+            <img class="card-img-top" src="@Model.ImagePath" alt="@Model.Name" />
+        </div>
+    }
+    <div class="card-body">
+        <h5 class="card-title">@Model.Name</h5>
+        <p class="card-text">@Model.Description</p>
+        <p class="card-text">
+            <strong>Status:</strong>
+            <span class="status-badge @GetStatusClass(Model.Status)">@Model.Status</span>
+        </p>
+        <p class="card-text">
+            <strong>Category:</strong>
+            <span class="category-badge">@Model.Category</span>
+        </p>
+
+        <div class="repair-section">
+            @if (Model.EquipmentRepairs != null && Model.EquipmentRepairs.Any())
+            {
+                <h4><i class="fas fa-tools"></i> Repair Schedules</h4>
+                <div class="repair-list">
+                    @foreach (var schedule in Model.EquipmentRepairs.OrderByDescending(r => r.RepairDate))
+                    {
+                        <div class="repair-list-item">
+                            <p class="repair-date"><strong>Date:</strong> @schedule.RepairDate.ToString("yyyy-MM-dd")</p>
+                            <p class="repair-tech">
+                                <strong>Technician:</strong>
+                                @(schedule.TechnicianType == "In-house"
+                                ? schedule.InHouseUser?.FullName
+                                : schedule.OutsourcedTechnicianName)
+                            </p>
+                            <p class="repair-status"><strong>Status:</strong> @schedule.Status</p>
+                            @if (schedule.Status != "Completed")
+                            {
+                                <a href="@Url.Action("CompleteRepair", "Equipment", new { id = schedule.RepairId })" class="btn btn-success btn-sm">
+                                    <i class="fas fa-check"></i> Mark as Completed
+                                </a>
+                            }
+                        </div>
+                    }
+                </div>
+            }
+            else
+            {
+                <div class="no-repairs">
+                    <p><i class="fas fa-clipboard-list"></i> No repair schedules yet.</p>
+                </div>
+            }
+        </div>
+
+        <div class="action-buttons">
+            <a href="@Url.Action("Index")" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Back
+            </a>
+            <a href="@Url.Action("ScheduleRepair", "Equipment", new { equipmentId = Model.EquipmentId })" class="btn btn-warning">
+                <i class="fas fa-tools"></i> Schedule Repair
+            </a>
+
+            <a href="@Url.Action("RepairLogs", "Equipment", new { id = Model.EquipmentId })" class="btn btn-outline-primary mt-3">
+                View All Repair Logs
+            </a>
+
+        </div>
+    </div>
+</div>
+
+<!-- Font Awesome for Icons -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
+@functions {
+    public string GetStatusClass(string status)
+    {
+        if (string.IsNullOrEmpty(status))
+            return "status-inactive";
+
+        status = status.ToLower();
+
+        if (status.Contains("active") || status.Contains("operational") || status.Contains("good"))
+            return "status-active";
+        else if (status.Contains("maintenance") || status.Contains("repair"))
+            return "status-maintenance";
+        else
+            return "status-inactive";
+    }
+}

@@ -1,0 +1,566 @@
+﻿@{
+    ViewBag.Title = "Scan QR Code";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<style>
+    /* Custom Color Scheme */
+    :root {
+        --color-earth: #8B7355; /* Primary */
+        --color-soil: #654321; /* Secondary */
+        --color-foliage: #4CAF50; /* Tertiary */
+        --color-wheat: #F5DEB3; /* Accent */
+        --color-danger: #FF6B6B; /* Error */
+        --color-white: #FFFFFF; /* Neutral */
+        --color-bib: #b17474; /* Neutral */
+    }
+
+    /* Page Header */
+    .page-header {
+        background-color: var(--color-wheat);
+        padding: 15px 20px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+    }
+
+    .page-header h2 {
+        color: var(--color-soil);
+        font-weight: 700;
+        margin: 0;
+    }
+
+    .page-header p {
+        color: var(--color-soil);
+        margin-top: 5px;
+        margin-bottom: 0;
+    }
+
+    /* Scanner Container */
+    .scanner-container {
+        background-color: var(--color-white);
+        border: 1px solid var(--color-wheat);
+        border-radius: 8px;
+        padding: 20px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        margin-bottom: 20px;
+    }
+
+    /* QR Preview */
+    #preview {
+        width: 100%;
+        max-width: 600px;
+        margin: 0 auto 20px;
+        border-radius: 8px;
+        overflow: hidden;
+        position: relative;
+    }
+
+    /* Scan Animation */
+    .scan-line {
+        position: absolute;
+        width: 100%;
+        height: 2px;
+        background: var(--color-foliage);
+        animation: scan 2s linear infinite;
+        z-index: 10;
+        opacity: 0.7;
+    }
+
+    @@keyframes scan {
+        0% {
+            top: 0;
+        }
+        100% {
+            top: 100%;
+        }
+    }
+
+    /* Scanner Controls */
+    .scanner-controls {
+        display: flex;
+        justify-content: center;
+        margin-top: 15px;
+        gap: 10px;
+    }
+
+    .btn-farm {
+        padding: 8px 16px;
+        border-radius: 4px;
+        font-weight: 500;
+        transition: all 0.2s ease;
+        cursor: pointer;
+    }
+
+    .btn-primary {
+        background-color: var(--color-earth);
+        border: 1px solid var(--color-earth);
+        color: var(--color-white);
+    }
+
+    .btn-primary:hover {
+        background-color: var(--color-soil);
+        border-color: var(--color-soil);
+    }
+
+    .btn-secondary {
+        background-color: var(--color-wheat);
+        border: 1px solid var(--color-wheat);
+        color: var(--color-soil);
+    }
+
+    .btn-secondary:hover {
+        background-color: #e8d1a6;
+        border-color: #e8d1a6;
+    }
+
+    /* Status Messages */
+    .status-container {
+        margin-top: 10px;
+        text-align: center;
+    }
+
+    .status-message {
+        padding: 10px 15px;
+        border-radius: 4px;
+        font-weight: 500;
+        margin-bottom: 15px;
+        display: none;
+    }
+
+    .status-success {
+        background-color: rgba(76, 175, 80, 0.1);
+        border: 1px solid var(--color-foliage);
+        color: var(--color-foliage);
+    }
+
+    .status-error {
+        background-color: rgba(255, 107, 107, 0.1);
+        border: 1px solid var(--color-danger);
+        color: var(--color-danger);
+    }
+
+    .status-info {
+        background-color: rgba(139, 115, 85, 0.1);
+        border: 1px solid var(--color-earth);
+        color: var(--color-earth);
+    }
+
+    /* Scanner Frame */
+    .scanner-frame {
+        position: relative;
+        width: 100%;
+        max-width: 600px;
+        margin: 0 auto;
+    }
+
+    .qr-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.3);
+        z-index: 5;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .qr-cutout {
+        width: 270px;
+        height: 270px;
+        background: transparent;
+        border: 5px solid var(--color-foliage);
+        border-radius: 10px;
+        box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.5);
+        position: relative;
+    }
+
+    .qr-cutout::before {
+        content: '';
+        position: absolute;
+        top: -10px;
+        left: -10px;
+        right: -10px;
+        bottom: -10px;
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        border-radius: 15px;
+    }
+
+    .qr-cutout-corner {
+        position: absolute;
+        width: 20px;
+        height: 20px;
+        border-color: var(--color-white);
+        border-style: solid;
+        border-width: 0;
+    }
+
+    .top-left {
+        top: -5px;
+        left: -5px;
+        border-top-width: 3px;
+        border-left-width: 3px;
+        border-top-left-radius: 5px;
+    }
+
+    .top-right {
+        top: -5px;
+        right: -5px;
+        border-top-width: 3px;
+        border-right-width: 3px;
+        border-top-right-radius: 5px;
+    }
+
+    .bottom-left {
+        bottom: -5px;
+        left: -5px;
+        border-bottom-width: 3px;
+        border-left-width: 3px;
+        border-bottom-left-radius: 5px;
+    }
+
+    .bottom-right {
+        bottom: -5px;
+        right: -5px;
+        border-bottom-width: 3px;
+        border-right-width: 3px;
+        border-bottom-right-radius: 5px;
+    }
+
+    /* Instructions panel */
+    .instructions-panel {
+        background-color: rgba(245, 222, 179, 0.2);
+        border: 1px solid var(--color-wheat);
+        border-radius: 8px;
+        padding: 15px;
+        margin-top: 20px;
+    }
+
+    .instructions-panel h4 {
+        color: var(--color-soil);
+        margin-bottom: 10px;
+    }
+
+    .instructions-panel ul {
+        margin-bottom: 0;
+        padding-left: 20px;
+    }
+
+    .instructions-panel li {
+        margin-bottom: 5px;
+        color: var(--color-soil);
+    }
+
+    /* Loading spinner */
+    .loading-spinner {
+        display: none;
+        width: 50px;
+        height: 50px;
+        border: 5px solid var(--color-wheat);
+        border-top: 5px solid var(--color-foliage);
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+        margin: 20px auto;
+    }
+
+    @@keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+
+    /* Camera selection */
+    .camera-selection {
+        margin-bottom: 15px;
+    }
+
+    .camera-selection select {
+        padding: 8px;
+        border: 1px solid var(--color-wheat);
+        border-radius: 4px;
+        background-color: var(--color-white);
+        color: var(--color-soil);
+    }
+
+    /* Manual entry link */
+    .manual-entry {
+        display: block;
+        text-align: center;
+        margin-top: 15px;
+        color: var(--color-soil);
+        text-decoration: underline;
+    }
+
+    .manual-entry:hover {
+        color: var(--color-earth);
+    }
+</style>
+
+<!-- Page Header -->
+<div class="page-header">
+    <h2>Scan Livestock QR Code</h2>
+    <p>Quickly access livestock information by scanning their QR code</p>
+</div>
+
+<!-- Scanner container -->
+<div class="scanner-container">
+    <div class="camera-selection">
+        <label for="cameraSelection">Select Camera:</label>
+        <select id="cameraSelection" class="form-control">
+            <option value="">Loading cameras...</option>
+        </select>
+    </div>
+
+    <div class="scanner-frame">
+        <div id="preview"></div>
+        <div class="qr-overlay" id="overlay">
+            <div class="qr-cutout">
+                <div class="qr-cutout-corner top-left"></div>
+                <div class="qr-cutout-corner top-right"></div>
+                <div class="qr-cutout-corner bottom-left"></div>
+                <div class="qr-cutout-corner bottom-right"></div>
+                <div class="scan-line"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="loading-spinner" id="loadingSpinner"></div>
+
+    <div class="status-container">
+        <div class="status-message status-info" id="statusInfo">
+            <i class="fas fa-info-circle"></i> Position the QR code within the frame
+        </div>
+        <div class="status-message status-success" id="statusSuccess">
+            <i class="fas fa-check-circle"></i> QR code detected! Redirecting...
+        </div>
+        <div class="status-message status-error" id="statusError">
+            <i class="fas fa-exclamation-circle"></i> <span id="errorMessage">Unable to start camera</span>
+        </div>
+    </div>
+
+    <div class="scanner-controls">
+        <button id="startButton" class="btn-farm btn-primary">
+            <i class="fas fa-camera"></i> Start Scanner
+        </button>
+        <button id="stopButton" class="btn-farm btn-secondary">
+            <i class="fas fa-stop"></i> Stop Scanner
+        </button>
+        <button id="switchCamera" class="btn-farm btn-secondary">
+            <i class="fas fa-sync"></i> Switch Camera
+        </button>
+    </div>
+
+    <a href="@Url.Action("Search", "Livestock")" class="manual-entry">
+        <i class="fas fa-keyboard"></i> Enter livestock ID manually
+    </a>
+</div>
+
+<!-- Instructions panel -->
+<div class="instructions-panel">
+    <h4><i class="fas fa-info-circle"></i> How to Scan</h4>
+    <ul>
+        <li>Ensure the QR code is well-lit and clearly visible</li>
+        <li>Position your device so the QR code fits within the frame</li>
+        <li>Hold steady until the code is scanned</li>
+        <li>If scanning fails, try adjusting the lighting or distance</li>
+        <li>You'll be automatically redirected to the livestock details once scanned</li>
+    </ul>
+</div>
+
+<!-- Font Awesome for Icons -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
+<!-- QR Code Scanner Script -->
+<script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        // Elements
+        const previewElement = document.getElementById("preview");
+        const cameraSelection = document.getElementById("cameraSelection");
+        const startButton = document.getElementById("startButton");
+        const stopButton = document.getElementById("stopButton");
+        const switchCamera = document.getElementById("switchCamera");
+        const loadingSpinner = document.getElementById("loadingSpinner");
+        const statusInfo = document.getElementById("statusInfo");
+        const statusSuccess = document.getElementById("statusSuccess");
+        const statusError = document.getElementById("statusError");
+        const errorMessage = document.getElementById("errorMessage");
+        const overlay = document.getElementById("overlay");
+
+        // HTML5 QR Code Scanner
+        let html5QrCode = null;
+        let cameras = [];
+        let currentCameraIndex = 0;
+        let isScanning = false;
+
+        // Initialize UI
+        stopButton.style.display = "none";
+        statusInfo.style.display = "block";
+
+        // Load cameras
+        loadingSpinner.style.display = "block";
+        Html5Qrcode.getCameras().then(devices => {
+            cameras = devices;
+
+            if (devices && devices.length) {
+                cameraSelection.innerHTML = '';
+                devices.forEach((device, index) => {
+                    const option = document.createElement('option');
+                    option.value = device.id;
+                    option.text = device.label || `Camera ${index + 1}`;
+                    cameraSelection.appendChild(option);
+                });
+                cameraSelection.disabled = false;
+            } else {
+                cameraSelection.innerHTML = '<option value="">No cameras found</option>';
+                showError("No cameras found on your device");
+            }
+            loadingSpinner.style.display = "none";
+        }).catch(err => {
+            cameraSelection.innerHTML = '<option value="">Camera access denied</option>';
+            showError("Camera access denied: " + err.message);
+            loadingSpinner.style.display = "none";
+        });
+
+        // Camera selection change
+        cameraSelection.addEventListener("change", function() {
+            if (isScanning) {
+                stopScanner();
+                setTimeout(() => {
+                    startScanner(cameraSelection.value);
+                }, 500);
+            }
+        });
+
+        // Start scanner button
+        startButton.addEventListener("click", function() {
+            if (!isScanning) {
+                const cameraId = cameraSelection.value;
+                if (cameraId) {
+                    startScanner(cameraId);
+                } else {
+                    showError("Please select a camera");
+                }
+            }
+        });
+
+        // Stop scanner button
+        stopButton.addEventListener("click", function() {
+            if (isScanning) {
+                stopScanner();
+            }
+        });
+
+        // Switch camera button
+        switchCamera.addEventListener("click", function() {
+            if (cameras.length > 1) {
+                currentCameraIndex = (currentCameraIndex + 1) % cameras.length;
+                cameraSelection.value = cameras[currentCameraIndex].id;
+
+                if (isScanning) {
+                    stopScanner();
+                    setTimeout(() => {
+                        startScanner(cameras[currentCameraIndex].id);
+                    }, 500);
+                }
+            }
+        });
+
+        // Start scanner function
+        function startScanner(cameraId) {
+            hideAllStatus();
+            loadingSpinner.style.display = "block";
+
+            html5QrCode = new Html5Qrcode("preview");
+            html5QrCode.start(
+                cameraId,
+                {
+                    fps: 10,
+                    qrbox: 250,
+                    aspectRatio: 1.0
+                },
+                (decodedText, decodedResult) => {
+                    // QR Code scanned
+                    successfulScan(decodedText);
+                },
+                (errorMessage) => {
+                    // QR scanning ongoing
+                }
+            ).then(() => {
+                // Scanner started successfully
+                isScanning = true;
+                overlay.style.display = "flex";
+                startButton.style.display = "none";
+                stopButton.style.display = "inline-block";
+                loadingSpinner.style.display = "none";
+                statusInfo.style.display = "block";
+            }).catch(err => {
+                // Scanner failed to start
+                showError("Failed to start scanner: " + err.message);
+                loadingSpinner.style.display = "none";
+            });
+        }
+
+        // Stop scanner function
+        function stopScanner() {
+            if (html5QrCode && isScanning) {
+                html5QrCode.stop().then(() => {
+                    isScanning = false;
+                    overlay.style.display = "none";
+                    stopButton.style.display = "none";
+                    startButton.style.display = "inline-block";
+                    hideAllStatus();
+                }).catch(err => {
+                    showError("Failed to stop scanner: " + err.message);
+                });
+            }
+        }
+
+        // Handle successful scan
+        function successfulScan(decodedText) {
+            statusSuccess.style.display = "block";
+            statusInfo.style.display = "none";
+
+            // Validate URL
+            let url = decodedText;
+            if (!url.startsWith('http')) {
+                // If it's just an ID, construct the URL to the livestock details
+                if (!isNaN(url)) {
+                    url = '@Url.Action("Details", "Livestock")/' + url;
+                }
+            }
+
+            // Vibrate for feedback if supported
+            if (navigator.vibrate) {
+                navigator.vibrate(200);
+            }
+
+            // Redirect after a brief delay
+            setTimeout(() => {
+                window.location.href = url;
+            }, 1000);
+        }
+
+        // Show error message
+        function showError(message) {
+            statusError.style.display = "block";
+            errorMessage.textContent = message;
+            statusInfo.style.display = "none";
+            statusSuccess.style.display = "none";
+        }
+
+        // Hide all status messages
+        function hideAllStatus() {
+            statusError.style.display = "none";
+            statusInfo.style.display = "none";
+            statusSuccess.style.display = "none";
+        }
+
+        // Try to autostart scanner on page load
+        setTimeout(() => {
+            if (cameras.length > 0) {
+                startScanner(cameras[0].id);
+            }
+        }, 1000);
+    });
+</script>

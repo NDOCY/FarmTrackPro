@@ -1,0 +1,153 @@
+﻿@model FarmTrack.Models.Job
+@{
+    ViewBag.Title = "Create Job";
+}
+
+<style>
+    /* Custom Color Scheme */
+    :root {
+        --color-earth: #8B7355; /* Primary */
+        --color-soil: #654321; /* Secondary */
+        --color-foliage: #4CAF50; /* Tertiary */
+        --color-wheat: #F5DEB3; /* Accent */
+        --color-danger: #FF6B6B; /* Error */
+        --color-white: #FFFFFF; /* Neutral */
+    }
+
+    /* Form Container */
+    .form-container {
+        background-color: var(--color-white);
+        border: 1px solid var(--color-wheat);
+        border-radius: 8px;
+        padding: 20px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        max-width: 600px;
+        margin: auto;
+    }
+
+        .form-container h2 {
+            color: var(--color-soil);
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+    .form-group {
+        margin-bottom: 15px;
+    }
+
+        .form-group label {
+            color: var(--color-soil);
+            font-weight: 500;
+        }
+
+    .form-control {
+        border: 1px solid var(--color-wheat);
+        border-radius: 4px;
+        padding: 8px;
+        width: 100%;
+    }
+
+        .form-control:focus {
+            border-color: var(--color-earth);
+            box-shadow: 0 0 5px rgba(139, 115, 85, 0.5);
+        }
+
+    .btn-primary {
+        background-color: var(--color-earth);
+        border-color: var(--color-earth);
+        color: var(--color-white);
+        padding: 8px 16px;
+        border-radius: 4px;
+        text-decoration: none;
+        display: inline-block;
+        cursor: pointer;
+        width: 100%;
+    }
+
+        .btn-primary:hover {
+            background-color: var(--color-soil);
+            border-color: var(--color-soil);
+        }
+
+    .text-danger {
+        color: var(--color-danger);
+    }
+
+    .back-link {
+        display: block;
+        margin-top: 15px;
+        text-align: center;
+        color: var(--color-earth);
+        text-decoration: none;
+    }
+
+        .back-link:hover {
+            color: var(--color-soil);
+            text-decoration: underline;
+        }
+</style>
+
+<div class="form-container">
+    <h2>Post Job Listing</h2>
+
+    @using (Html.BeginForm())
+    {
+        @Html.AntiForgeryToken()
+        @Html.ValidationSummary(true, "", new { @class = "text-danger" })
+
+        <div class="form-group">
+            @Html.LabelFor(model => model.Title)
+            @Html.EditorFor(model => model.Title, new { htmlAttributes = new { @class = "form-control", placeholder = "Enter job title" } })
+        </div>
+
+        <div class="form-group">
+            @Html.LabelFor(model => model.Description)
+            @Html.TextAreaFor(model => model.Description, new { @class = "form-control", rows = 3, placeholder = "Describe the job duties and requirements" })
+        </div>
+
+        <div class="form-group">
+            @Html.LabelFor(model => model.JobType)
+            @Html.EditorFor(model => model.JobType, new { htmlAttributes = new { @class = "form-control", placeholder = "e.g. Harvesting, Maintenance" } })
+        </div>
+
+        <div class="form-group">
+            @Html.Label("Location")
+            <input type="text" name="Location" class="form-control" placeholder="e.g. Eastern Cape, SA" required />
+        </div>
+
+        <div class="form-group">
+            @Html.Label("Employment Type")
+            <select name="EmploymentType" class="form-control" required>
+                <option value="">-- Select --</option>
+                <option value="Full-time">Full-time</option>
+                <option value="Part-time">Part-time</option>
+                <option value="Contract">Contract</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            @Html.Label("Application Deadline")
+            <input type="date" name="ApplicationDeadline" class="form-control" required />
+        </div>
+
+        <div class="form-group">
+            @Html.Label("Salary Range (Optional)")
+            <input type="text" name="SalaryRange" class="form-control" placeholder="e.g. R4000 - R6000" />
+        </div>
+
+        <div class="form-group">
+            @Html.Label("Required Skills (Optional)")
+            <textarea name="RequiredSkills" class="form-control" rows="2" placeholder="e.g. Tractor Operation, Irrigation Systems"></textarea>
+        </div>
+
+        <button type="submit" class="btn btn-primary">
+            <i class="fas fa-plus"></i> Create Job
+        </button>
+    }
+
+    <a href="@Url.Action("Index")" class="back-link mt-2 d-block">
+        <i class="fas fa-arrow-left"></i> Back to Job List
+    </a>
+</div>
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />

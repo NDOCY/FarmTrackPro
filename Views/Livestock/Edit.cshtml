@@ -1,0 +1,116 @@
+﻿@model FarmTrack.Models.Livestock
+<h2>Edit Livestock Details</h2>
+@using (Html.BeginForm("Edit", "Livestock", FormMethod.Post))
+{
+    @Html.AntiForgeryToken()
+    @Html.HiddenFor(model => model.LivestockId)
+    @Html.HiddenFor(model => model.Type)
+    @Html.HiddenFor(model => model.Breed)
+    @Html.HiddenFor(model => model.TagNumber)
+    @Html.HiddenFor(model => model.Sex)
+    @Html.HiddenFor(model => model.DateOfBirth)
+    @Html.HiddenFor(model => model.InitialWeight)
+    @Html.HiddenFor(model => model.Status)
+    @Html.HiddenFor(model => model.DateRegistered)
+    @Html.HiddenFor(model => model.Notes)
+    @Html.HiddenFor(model => model.ImagePath)
+    @Html.HiddenFor(model => model.QrCodePath)
+    @Html.HiddenFor(model => model.UserId)
+    @Html.HiddenFor(model => model.ParentId)
+    @Html.HiddenFor(model => model.ReproductionRecordId)
+
+    @Html.ValidationSummary(true, "", new { @class = "text-danger" })
+
+    <div class="form-group">
+        <label>Tag Number</label>
+        <input class="form-control" value="@Model.TagNumber" readonly />
+    </div>
+
+    <div class="form-group">
+        <label>Type</label>
+        <input class="form-control" value="@Model.Type" readonly />
+    </div>
+
+    <div class="form-group">
+        <label>Breed</label>
+        <input class="form-control" value="@Model.Breed" readonly />
+    </div>
+
+    <div class="form-group">
+        <label>Sex</label>
+        <input class="form-control" value="@Model.Sex" readonly />
+    </div>
+
+    <div class="form-group">
+        <label>Date of Birth</label>
+        <input class="form-control" value="@(Model.DateOfBirth?.ToString("yyyy-MM-dd") ?? "Not set")" readonly />
+    </div>
+
+    <div class="form-group">
+        <label>Age (in months)</label>
+        <input class="form-control" value="@Model.AgeInMonths" readonly />
+    </div>
+
+    <div class="form-group">
+        <label>Weight (kg)</label>
+        @Html.EditorFor(model => model.Weight, new { htmlAttributes = new { @class = "form-control" } })
+        @Html.ValidationMessageFor(model => model.Weight, "", new { @class = "text-danger" })
+    </div>
+
+    <div class="form-group">
+        <label>Initial Weight (kg)</label>
+        <input class="form-control" value="@(Model.InitialWeight?.ToString() ?? "Not set")" readonly />
+    </div>
+
+    <div class="form-group">
+        <label>Status</label>
+        <input class="form-control" value="@Model.Status" readonly />
+    </div>
+
+    <div class="form-group">
+        <label>Date Registered</label>
+        <input class="form-control" value="@Model.DateRegistered.ToString("yyyy-MM-dd")" readonly />
+    </div>
+
+    <div class="form-group form-check">
+        @Html.CheckBoxFor(model => model.IsBreedingStock, new { @class = "form-check-input" })
+        @Html.LabelFor(model => model.IsBreedingStock, new { @class = "form-check-label" })
+        @Html.ValidationMessageFor(model => model.IsBreedingStock, "", new { @class = "text-danger" })
+    </div>
+
+    if (Model.IsBreedingStock)
+    {
+        <div class="alert alert-info mt-2">
+            @Model.GetBreedingEligibilityMessage()
+        </div>
+    }
+
+    if (!string.IsNullOrEmpty(Model.Notes))
+    {
+        <div class="form-group">
+            <label>Notes</label>
+            <textarea class="form-control" readonly>@Model.Notes</textarea>
+        </div>
+    }
+
+    if (!string.IsNullOrEmpty(Model.ImagePath))
+    {
+        <div class="form-group">
+            <label>Image</label><br />
+            <img src="@Url.Content(Model.ImagePath)" alt="Livestock Image" style="max-height:200px;" />
+        </div>
+    }
+
+    if (!string.IsNullOrEmpty(Model.QrCodePath))
+    {
+        <div class="form-group">
+            <label>QR Code</label><br />
+            <img src="@Url.Content(Model.QrCodePath)" alt="QR Code" style="max-height:150px;" />
+        </div>
+    }
+
+    <div class="form-group mt-3">
+        <button type="submit" class="btn btn-success">Save Changes</button>
+        <a href="@Url.Action("Index")" class="btn btn-secondary">Back to List</a>
+    </div>
+}

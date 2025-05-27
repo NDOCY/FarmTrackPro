@@ -1,0 +1,289 @@
+﻿@model FarmTrack.Models.EquipmentRepair
+@{
+    ViewBag.Title = "Complete Repair";
+}
+
+<style>
+    /* Custom Color Scheme */
+    :root {
+        --color-earth: #8B7355; /* Primary */
+        --color-soil: #654321; /* Secondary */
+        --color-foliage: #4CAF50; /* Tertiary */
+        --color-wheat: #F5DEB3; /* Accent */
+        --color-danger: #FF6B6B; /* Error */
+        --color-white: #FFFFFF; /* Neutral */
+        --color-success: #28a745; /* Success */
+    }
+
+    /* Page Header */
+    .page-header {
+        background-color: var(--color-wheat);
+        padding: 20px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+    }
+
+        .page-header h2 {
+            color: var(--color-soil);
+            font-weight: 700;
+            margin-bottom: 0;
+        }
+
+    /* Form Container */
+    .form-container {
+        background-color: var(--color-white);
+        border: 1px solid var(--color-wheat);
+        border-radius: 8px;
+        padding: 20px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        max-width: 700px;
+        margin: auto;
+    }
+
+    /* Equipment Info Section */
+    .equipment-info {
+        background-color: #f8f9fa;
+        border-left: 4px solid var(--color-earth);
+        padding: 15px;
+        margin-bottom: 20px;
+        border-radius: 4px;
+    }
+
+        .equipment-info h4 {
+            color: var(--color-soil);
+            margin-bottom: 10px;
+        }
+
+        .equipment-info p {
+            margin: 5px 0;
+            color: #6c757d;
+        }
+
+    /* Form Styling */
+    .form-group {
+        margin-bottom: 20px;
+    }
+
+        .form-group label {
+            color: var(--color-soil);
+            font-weight: 500;
+            display: block;
+            margin-bottom: 8px;
+        }
+
+    .form-control {
+        border: 1px solid var(--color-wheat);
+        border-radius: 4px;
+        padding: 10px;
+        width: 100%;
+        font-size: 14px;
+    }
+
+        .form-control:focus {
+            border-color: var(--color-earth);
+            box-shadow: 0 0 5px rgba(139, 115, 85, 0.5);
+            outline: none;
+        }
+
+    textarea.form-control {
+        resize: vertical;
+        min-height: 120px;
+    }
+
+    select.form-control {
+        height: auto;
+        padding: 10px;
+    }
+
+    /* Status Options Styling */
+    .status-section {
+        background-color: #fff3cd;
+        border: 1px solid #ffeaa7;
+        border-radius: 8px;
+        padding: 15px;
+        margin-bottom: 20px;
+    }
+
+        .status-section h5 {
+            color: #856404;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+
+        .status-section p {
+            color: #856404;
+            margin-bottom: 10px;
+            font-size: 14px;
+        }
+
+    /* Button Styling */
+    .btn {
+        border-radius: 6px;
+        padding: 12px 20px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        text-decoration: none;
+        display: inline-block;
+        text-align: center;
+    }
+
+    .btn-success {
+        background-color: var(--color-success);
+        border-color: var(--color-success);
+        color: var(--color-white);
+    }
+
+        .btn-success:hover {
+            background-color: #218838;
+            border-color: #1e7e34;
+        }
+
+    .btn-secondary {
+        background-color: var(--color-wheat);
+        border-color: var(--color-wheat);
+        color: var(--color-soil);
+    }
+
+        .btn-secondary:hover {
+            background-color: #e5cca3;
+            border-color: #e5cca3;
+        }
+
+    /* Action Buttons Container */
+    .action-buttons {
+        display: flex;
+        gap: 15px;
+        margin-top: 25px;
+    }
+
+    /* Field Validation Styling */
+    .field-validation-error {
+        color: var(--color-danger);
+        font-size: 0.875rem;
+        margin-top: 5px;
+        display: block;
+    }
+
+    /* Alert Styling */
+    .alert {
+        padding: 15px;
+        margin-bottom: 20px;
+        border: 1px solid transparent;
+        border-radius: 4px;
+    }
+
+    .alert-danger {
+        color: #721c24;
+        background-color: #f8d7da;
+        border-color: #f5c6cb;
+    }
+
+    /* Required field indicator */
+    .required {
+        color: var(--color-danger);
+    }
+</style>
+
+<!-- Page Header -->
+<div class="page-header">
+    <h2><i class="fas fa-check-circle"></i> Complete Repair</h2>
+</div>
+
+<div class="form-container">
+    <!-- Equipment Information -->
+    <div class="equipment-info">
+        <h4><i class="fas fa-cog"></i> Equipment Information</h4>
+        <p><strong>Equipment:</strong> @Model.Equipment.Name</p>
+        <p><strong>Repair Date:</strong> @Model.RepairDate.ToString("dddd, dd MMMM yyyy")</p>
+        <p><strong>Technician Type:</strong> @Model.TechnicianType</p>
+        @if (Model.TechnicianType == "In-house")
+        {
+            <p><strong>Technician:</strong> @(Model.InHouseUser?.FullName ?? "Not assigned")</p>
+        }
+        else
+        {
+            <p><strong>Technician:</strong> @Model.OutsourcedTechnicianName</p>
+        }
+        <p><strong>Original Description:</strong> @Model.Description</p>
+    </div>
+
+    @using (Html.BeginForm("CompleteRepair", "Equipment", FormMethod.Post))
+    {
+        @Html.AntiForgeryToken()
+        @Html.Hidden("id", Model.RepairId)
+
+        <!-- Display validation errors -->
+        if (!ViewData.ModelState.IsValid)
+        {
+            <div class="alert alert-danger">
+                <h5><i class="fas fa-exclamation-triangle"></i> Please correct the following errors:</h5>
+                @Html.ValidationSummary(false)
+            </div>
+        }
+
+        <!-- Equipment Status Selection -->
+        <div class="status-section">
+            <h5><i class="fas fa-clipboard-check"></i> Equipment Status After Repair</h5>
+            <p>Please indicate the current condition of the equipment after completing the repair:</p>
+
+            <div class="form-group">
+                <label for="equipmentStatus">Equipment Status <span class="required">*</span></label>
+                @Html.DropDownList("equipmentStatus", (IEnumerable<SelectListItem>)ViewBag.EquipmentStatusOptions,
+                    "-- Select Equipment Status --",
+                    new { @class = "form-control", required = "required" })
+                @Html.ValidationMessage("equipmentStatus", "", new { @class = "field-validation-error" })
+            </div>
+        </div>
+
+        <!-- Repair Notes -->
+        <div class="form-group">
+            <label for="logNotes"><i class="fas fa-sticky-note"></i> Repair Completion Notes</label>
+            <textarea name="logNotes" class="form-control" rows="6"
+                      placeholder="Enter details about the repair work completed, parts used, observations, etc."></textarea>
+            <small class="form-text text-muted">
+                Provide detailed information about the repair work performed, any parts replaced,
+                and the current condition of the equipment.
+            </small>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="action-buttons">
+            @Html.ActionLink("Cancel", "Details", "Equipment", new { id = Model.EquipmentId }, new { @class = "btn btn-secondary" })
+            <button type="submit" class="btn btn-success">
+                <i class="fas fa-check"></i> Complete Repair
+            </button>
+        </div>
+    }
+</div>
+
+<!-- Font Awesome for Icons -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
+@section Scripts {
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        $(document).ready(function () {
+            // Add some interactivity to the status selection
+            $('#equipmentStatus').change(function () {
+                var selectedValue = $(this).val();
+                var $notesTextarea = $('textarea[name="logNotes"]');
+
+                // Update placeholder text based on selection
+                switch(selectedValue) {
+                    case 'Active':
+                        $notesTextarea.attr('placeholder', 'Describe the repair work completed and confirm the equipment is now functioning properly...');
+                        break;
+                    case 'Needs Further Repair':
+                        $notesTextarea.attr('placeholder', 'Describe what was attempted, what issues remain, and what further repair work is needed...');
+                        break;
+                    case 'Decommissioned':
+                        $notesTextarea.attr('placeholder', 'Explain why the equipment cannot be repaired and should be decommissioned...');
+                        break;
+                    default:
+                        $notesTextarea.attr('placeholder', 'Enter details about the repair work completed, parts used, observations, etc.');
+                }
+            });
+        });
+    </script>
+}

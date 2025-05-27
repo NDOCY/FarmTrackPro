@@ -1,0 +1,237 @@
+﻿@model List<FarmTrack.Models.JobApplication>
+
+@{
+    ViewBag.Title = "My Job Applications";
+    Layout = "~/Views/Shared/_Layout - User.cshtml";
+}
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success">@TempData["SuccessMessage"]</div>
+}
+
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger">@TempData["ErrorMessage"]</div>
+}
+
+<style>
+    /* Custom Color Scheme */
+    :root {
+        --color-earth: #8B7355; /* Primary */
+        --color-soil: #654321; /* Secondary */
+        --color-foliage: #4CAF50; /* Tertiary */
+        --color-wheat: #F5DEB3; /* Accent */
+        --color-danger: #FF6B6B; /* Error */
+        --color-white: #FFFFFF; /* Neutral */
+        --color-bib: #b17474; /* Neutral */
+    }
+
+    /* Applications Container */
+    .applications-container {
+        background-color: var(--color-white);
+        border: 1px solid var(--color-wheat);
+        border-radius: 8px;
+        padding: 20px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        max-width: 1000px;
+        margin: auto;
+    }
+
+    /* Table Container with Horizontal Scroll */
+    .table-container {
+        width: 100%;
+        overflow-x: auto;
+        margin-top: 20px;
+    }
+
+    /* Table Styling */
+    .farm-table {
+        width: 100%;
+        min-width: 800px; /* Ensures minimum width for all columns */
+        border-collapse: collapse;
+        table-layout: fixed; /* Fixed table layout */
+        background-color: var(--color-white);
+    }
+
+        .farm-table th {
+            background-color: var(--color-wheat);
+            color: var(--color-soil);
+            font-weight: 600;
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 2px solid var(--color-soil);
+            position: sticky; /* Keep headers visible while scrolling */
+            top: 0;
+        }
+
+        .farm-table td {
+            padding: 10px 15px;
+            border-bottom: 1px solid var(--color-wheat);
+            white-space: nowrap; /* Prevents text wrapping */
+            overflow: hidden; /* Hides overflow text */
+            text-overflow: ellipsis; /* Shows ellipsis for overflow */
+        }
+
+            /* Column widths */
+            .farm-table th:nth-child(1), .farm-table td:nth-child(1) {
+                width: 25%;
+            }
+            /* Job Title */
+            .farm-table th:nth-child(2), .farm-table td:nth-child(2) {
+                width: 15%;
+            }
+            /* Job ID */
+            .farm-table th:nth-child(3), .farm-table td:nth-child(3) {
+                width: 15%;
+            }
+            /* Applied On */
+            .farm-table th:nth-child(4), .farm-table td:nth-child(4) {
+                width: 15%;
+            }
+            /* Status */
+            .farm-table th:nth-child(5), .farm-table td:nth-child(5) {
+                width: 30%;
+            }
+        /* Owner's Notes */
+
+        .farm-table tbody tr:hover {
+            background-color: rgba(245, 222, 179, 0.2);
+        }
+
+    /* Expandable cell on hover */
+    .expandable {
+        position: relative;
+    }
+
+        .expandable:hover .cell-content {
+            position: absolute;
+            background-color: var(--color-white);
+            border: 1px solid var(--color-wheat);
+            padding: 8px;
+            border-radius: 4px;
+            white-space: normal;
+            width: auto;
+            min-width: 100%;
+            max-width: 300px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            z-index: 10;
+            overflow: visible;
+        }
+
+    /* Status Badges */
+    .status-badge {
+        display: inline-block;
+        padding: 0.25rem 0.75rem;
+        border-radius: 12px;
+        font-size: 0.875rem;
+        font-weight: 500;
+    }
+
+    .status-pending {
+        background-color: var(--color-wheat);
+        color: var(--color-soil);
+    }
+
+    .status-accepted {
+        background-color: var(--color-foliage);
+        color: var(--color-white);
+    }
+
+    .status-rejected {
+        background-color: var(--color-danger);
+        color: var(--color-white);
+    }
+
+    /* Empty State */
+    .empty-state {
+        text-align: center;
+        padding: 40px 0;
+        color: var(--color-soil);
+    }
+
+        .empty-state i {
+            font-size: 48px;
+            margin-bottom: 15px;
+            opacity: 0.6;
+        }
+
+    /* Tooltip icon */
+    .tooltip-icon {
+        font-size: 0.75rem;
+        margin-left: 4px;
+        color: var(--color-soil);
+        opacity: 0.7;
+    }
+</style>
+
+<div class="applications-container">
+    <h2 class="text-center mb-4">My Job Applications</h2>
+
+    @if (Model.Count == 0)
+    {
+        <div class="empty-state">
+            <i class="fas fa-file-alt"></i>
+            <h4>No Applications Found</h4>
+            <p>You haven't applied for any jobs yet.</p>
+        </div>
+    }
+    else
+    {
+        <div class="table-container">
+            <table class="farm-table">
+                <thead>
+                    <tr>
+                        <th>Job Title <i class="fas fa-info-circle tooltip-icon" title="Hover over cells to see full content"></i></th>
+                        <th>Job ID</th>
+                        <th>Applied On</th>
+                        <th>Status</th>
+                        <th>Owner's Notes <i class="fas fa-info-circle tooltip-icon" title="Hover over cells to see full content"></i></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var app in Model)
+                    {
+                        <tr class="clickable-row" data-href="@Url.Action("Detail", "Jobs", new { id = app.JobApplicationId })">
+                            <td class="expandable">
+                                <div class="cell-content">@(app.Job != null ? app.Job.Title : "Unknown")</div>
+                            </td>
+                            <td>@(app.Job != null ? app.Job.JobId.ToString() : "N/A")</td>
+                            <td>@app.AppliedDate.ToShortDateString()</td>
+                            <td>
+                                @{
+                                    var statusClass = app.Status == "Accepted" ? "status-accepted" :
+                                                    app.Status == "Rejected" ? "status-rejected" :
+                                                    "status-pending";
+                                }
+                                <span class="status-badge @statusClass">
+                                    @app.Status
+                                </span>
+                            </td>
+                            <td class="expandable">
+                                <div class="cell-content">@(string.IsNullOrEmpty(app.ReviewNotes) ? "-" : app.ReviewNotes)</div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</div>
+
+<!-- Font Awesome for Icons -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        let rows = document.querySelectorAll(".clickable-row");
+        rows.forEach(row => {
+            row.addEventListener("click", function () {
+                let url = this.getAttribute("data-href");
+                if (url) {
+                    window.location.href = url;
+                }
+            });
+        });
+    });
+
+</script>

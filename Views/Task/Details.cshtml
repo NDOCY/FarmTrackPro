@@ -1,0 +1,172 @@
+﻿@model FarmTrack.Models.FarmTask
+
+@{
+    ViewBag.Title = "Task Details";
+    if (Session["Role"] != null && (Session["Role"].ToString() == "Admin" || Session["Role"].ToString() == "Owner"))
+    {
+        Layout = "~/Views/Shared/_Layout.cshtml";
+    }
+    else
+    {
+        Layout = "~/Views/Shared/_Layout - User.cshtml";
+    }
+}
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success">@TempData["SuccessMessage"]</div>
+}
+
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger">@TempData["ErrorMessage"]</div>
+}
+
+
+<style>
+    /* Custom Color Scheme */
+    :root {
+        --color-earth: #8B7355; /* Primary */
+        --color-soil: #654321; /* Secondary */
+        --color-foliage: #4CAF50; /* Tertiary */
+        --color-wheat: #F5DEB3; /* Accent */
+        --color-danger: #FF6B6B; /* Error */
+        --color-white: #FFFFFF; /* Neutral */
+        --color-bib: #b17474; /* Neutral */
+    }
+
+    /* Task Details Container */
+    .task-details-container {
+        background-color: var(--color-white);
+        border: 1px solid var(--color-wheat);
+        border-radius: 8px;
+        padding: 20px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        max-width: 600px;
+        margin: auto;
+    }
+
+        .task-details-container div {
+            margin-bottom: 15px;
+        }
+
+        .task-details-container strong {
+            color: var(--color-soil);
+            display: inline-block;
+            width: 120px;
+        }
+
+    /* Status Badge */
+    .status-badge {
+        display: inline-block;
+        padding: 0.25rem 0.75rem;
+        border-radius: 12px;
+        font-size: 0.875rem;
+        font-weight: 500;
+    }
+
+    .status-pending {
+        background-color: var(--color-wheat);
+        color: var(--color-soil);
+    }
+
+    .status-in-progress {
+        background-color: var(--color-earth);
+        color: var(--color-white);
+    }
+
+    .status-completed {
+        background-color: var(--color-foliage);
+        color: var(--color-white);
+    }
+
+    /* Action Buttons */
+    .action-buttons {
+        margin-top: 20px;
+        text-align: right;
+    }
+
+    .btn-danger {
+        background-color: var(--color-danger);
+        border-color: var(--color-danger);
+    }
+
+        .btn-danger:hover {
+            background-color: var(--color-bib);
+            border-color: var(--color-bib);
+        }
+</style>
+
+<div class="task-details-container">
+    <h2 class="text-center mb-4">Task Details</h2>
+
+    <div>
+        <strong>Title:</strong> @Model.Title
+    </div>
+
+    <div>
+        <strong>Description:</strong> @Model.Description
+    </div>
+
+    <div>
+        <strong>Due Date:</strong> @Model.DueDate.ToShortDateString()
+    </div>
+
+    <div>
+        <strong>Status:</strong>
+        @{
+            var statusClass = Model.Status == "Pending" ? "status-pending" :
+                              Model.Status == "In Progress" ? "status-in-progress" :
+                              Model.Status == "Completed" ? "status-completed" : "";
+        }
+        <span class="status-badge @statusClass">@Model.Status</span>
+    </div>
+
+    <div>
+        <strong>Assigned To:</strong> @(Model.AssignedUser?.FullName ?? Model.AssignedDepartment ?? "Not Assigned")
+    </div>
+
+    <div>
+        <strong>Department:</strong>@Model.AssignedDepartment
+    </div>
+
+    <div>
+        <strong>Is Recurring:</strong> @Model.IsRecurring
+    </div>
+
+    <div>
+        <strong>Recurrence Type:</strong> @Model.RecurrenceType
+    </div>
+    @if (Session["Role"] != null && (Session["Role"].ToString() == "Admin" || Session["Role"].ToString() == "Owner"))
+    {
+        <div class="mt-3">
+            <form method="post" action="@Url.Action("UpdateStatus", "Task")">
+                <input type="hidden" name="taskId" value="@Model.TaskId" />
+
+                <label><strong>Update Status:</strong></label>
+                <select name="newStatus" class="form-control" required>
+                    <option value="Pending" @(Model.Status == "Pending" ? "selected" : "")>Pending</option>
+                    <option value="In Progress" @(Model.Status == "In Progress" ? "selected" : "")>In Progress</option>
+                    <option value="Completed" @(Model.Status == "Completed" ? "selected" : "")>Completed</option>
+                </select>
+
+                <button type="submit" class="btn btn-info">
+                    <i class="fas fa-save"></i> Save Status
+                </button>
+            </form>
+        </div>
+    }
+
+    <!-- Action Buttons -->
+    @* @if (Session["Role"] != null && (Session["Role"].ToString() == "Admin" || Session["Role"].ToString() == "Owner"))*@
+    @if (Session["Role"] != null && Session["Role"].ToString() == "Owner")
+    {
+        <div class="action-buttons">
+            <a href="@Url.Action("Delete", "Task", new { id = Model.TaskId })" class="btn btn-danger">
+                <i class="fas fa-trash"></i> Delete
+            </a>
+        </div>
+    }
+</div>
+
+<!-- Font Awesome for Icons -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">

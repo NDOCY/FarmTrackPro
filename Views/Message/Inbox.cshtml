@@ -1,0 +1,368 @@
+﻿@model List<FarmTrack.Models.Message>
+@{
+    ViewBag.Title = "Inbox";
+    if (Session["Role"] != null && (Session["Role"].ToString() == "Admin" || Session["Role"].ToString() == "Owner"))
+    {
+        Layout = "~/Views/Shared/_Layout.cshtml";
+    }
+    else
+    {
+        Layout = "~/Views/Shared/_Layout - User.cshtml";
+    }
+}
+
+<style>
+    /* Custom Color Scheme */
+    :root {
+        --color-earth: #8B7355; /* Primary */
+        --color-soil: #654321; /* Secondary */
+        --color-foliage: #4CAF50; /* Tertiary */
+        --color-wheat: #F5DEB3; /* Accent */
+        --color-danger: #FF6B6B; /* Error */
+        --color-white: #FFFFFF; /* Neutral */
+        --color-bib: #b17474; /* Neutral */
+    }
+
+    /* Page Header */
+    .page-header {
+        background-color: var(--color-wheat);
+        padding: 20px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+    }
+
+        .page-header h2 {
+            color: var(--color-soil);
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .page-header p.lead {
+            color: var(--color-soil);
+            opacity: 0.8;
+            margin-bottom: 0;
+        }
+
+    /* Buttons */
+    .btn-primary {
+        background-color: var(--color-earth);
+        border-color: var(--color-earth);
+        color: var(--color-white);
+    }
+
+        .btn-primary:hover {
+            background-color: var(--color-soil);
+            border-color: var(--color-soil);
+        }
+
+    .btn-secondary {
+        background-color: var(--color-wheat);
+        border-color: var(--color-wheat);
+        color: var(--color-soil);
+    }
+
+        .btn-secondary:hover {
+            background-color: #e5ceA3;
+            border-color: #e5ceA3;
+        }
+
+    /* Table Container with Horizontal Scroll */
+    .table-container {
+        width: 100%;
+        overflow-x: auto;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        border-radius: 8px;
+    }
+
+    /* Table Styling */
+    .table {
+        width: 100%;
+        min-width: 800px; /* Ensures minimum width for all columns */
+        border-collapse: collapse;
+        table-layout: fixed; /* Fixed table layout */
+        margin-bottom: 0;
+    }
+
+        .table thead {
+            background-color: var(--color-earth);
+            color: var(--color-white);
+        }
+
+        .table th {
+            padding: 12px 15px;
+            position: sticky; /* Keep headers visible while scrolling */
+            top: 0;
+            z-index: 1;
+            white-space: nowrap;
+        }
+
+        .table td {
+            padding: 12px 15px;
+            vertical-align: middle;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+            /* Column widths */
+            .table th:nth-child(1), .table td:nth-child(1) {
+                width: 15%;
+            }
+            /* From */
+            .table th:nth-child(2), .table td:nth-child(2) {
+                width: 15%;
+            }
+            /* To */
+            .table th:nth-child(3), .table td:nth-child(3) {
+                width: 40%;
+            }
+            /* Subject and Preview */
+            .table th:nth-child(4), .table td:nth-child(4) {
+                width: 15%;
+            }
+            /* Date */
+            .table th:nth-child(5), .table td:nth-child(5) {
+                width: 15%;
+            }
+    /* Actions */
+
+    .table-striped tbody tr:nth-of-type(odd) {
+        background-color: rgba(245, 222, 179, 0.1);
+    }
+
+    .table-hover tbody tr:hover {
+        background-color: rgba(245, 222, 179, 0.2);
+    }
+
+    /* Expandable cell on hover */
+    .expandable {
+        position: relative;
+    }
+
+        .expandable:hover .cell-content {
+            position: absolute;
+            background-color: var(--color-white);
+            border: 1px solid var(--color-wheat);
+            padding: 8px;
+            border-radius: 4px;
+            white-space: normal;
+            width: auto;
+            min-width: 100%;
+            max-width: 300px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            z-index: 10;
+            overflow: visible;
+        }
+
+    /* Message Status Indicators */
+    .unread {
+        font-weight: bold;
+    }
+
+        .unread td:first-child::before {
+            content: "•";
+            color: var(--color-foliage);
+            margin-right: 8px;
+        }
+
+    /* Message Preview */
+    .message-preview {
+        font-size: 0.85rem;
+        margin-top: 3px;
+    }
+
+    /* Action Buttons */
+    .action-btn {
+        margin-right: 5px;
+    }
+
+    /* Empty State */
+    .empty-state {
+        text-align: center;
+        padding: 40px 0;
+        color: var(--color-soil);
+    }
+
+        .empty-state i {
+            font-size: 48px;
+            color: var(--color-wheat);
+            margin-bottom: 15px;
+        }
+
+    /* Tooltip icon */
+    .tooltip-icon {
+        font-size: 0.75rem;
+        margin-left: 4px;
+        opacity: 0.7;
+    }
+</style>
+
+<!-- Page Header -->
+<div class="page-header">
+    <div class="d-flex justify-content-between align-items-center">
+        <div>
+            <h2>Message Inbox</h2>
+            <p class="lead">View and manage your communication</p>
+        </div>
+        <a href="@Url.Action("Compose", "Message")" class="btn btn-primary">
+            <i class="fas fa-envelope"></i> Compose Message
+        </a>
+    </div>
+</div>
+
+<!-- Message Filters -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="get" class="form-inline">
+            <div class="row align-items-center">
+                <div class="col-md-4 mb-2 mb-md-0">
+                    <div class="input-group">
+                        <input type="text" name="search" class="form-control" placeholder="Search messages..." value="@Request.QueryString["search"]" />
+                        <button class="btn btn-primary" type="submit">
+                            <i class="fas fa-search"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="col-md-4 mb-2 mb-md-0">
+                    <select name="filter" class="form-control">
+                        <option value="">All Messages</option>
+                        <option value="unread">Unread</option>
+                        <option value="read">Read</option>
+                    </select>
+                </div>
+                <div class="col-md-4 text-md-end">
+                    <a href="@Url.Action("Inbox", "Message")" class="btn btn-secondary">
+                        <i class="fas fa-sync-alt"></i> Refresh
+                    </a>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Messages Table -->
+@if (Model.Count > 0)
+{
+    <div class="table-container">
+        <table class="table table-striped table-hover">
+            @*<thead>
+                    <tr>
+                        <th>From</th>
+                        <th>To</th>
+                        <th>Subject <i class="fas fa-info-circle tooltip-icon" title="Hover over content to see full text"></i></th>
+                        <th>Date</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var msg in Model)
+                    {
+                        <tr class="@(!msg.IsRead ? "unread" : "")">
+                            <td class="expandable">
+                                <div class="cell-content">@msg.Sender?.FullName</div>
+                            </td>
+                            <td class="expandable">
+                                <div class="cell-content">@(msg.Recipient != null ? msg.Recipient.FullName : "Group")</div>
+                            </td>
+                            <td class="expandable">
+                                <div class="cell-content">
+                                    <a href="@Url.Action("Details", "Message", new { id = msg.MessageId })" class="message-link">
+                                        @(string.IsNullOrEmpty(msg.Subject) ? "No Subject" : msg.Subject)
+                                    </a>
+                                    <div class="message-preview text-muted">
+                                        @msg.Body
+                                    </div>
+                                </div>
+                            </td>
+                            <td>@msg.SentAt.ToString("MMM d, yyyy h:mm tt")</td>
+                            <td>
+                                <div class="d-flex">
+                                    
+                    <a href="@Url.Action("Reply", "Message", new { messageId = msg.MessageId })" class="btn btn-sm btn-secondary action-btn" title="Reply">
+                        <i class="fas fa-reply"></i>
+                    </a>
+            
+                        </div>
+                        </td>
+                        </tr>
+                    }
+                    </tbody>*@
+                    <thead>
+                <tr>
+                    <th style="width: 20%;">From</th>
+                    <th style="width: 20%;">To</th>
+                    <th style="width: 40%;">Subject</th>
+                    <th style="width: 20%;">Date</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var msg in Model)
+                {
+                    <tr>
+                        <td>
+                            @(msg.Sender != null ? msg.Sender.FullName : "System")
+                        </td>
+                        <td>
+                            @(msg.Recipient != null ? msg.Recipient.FullName : "All / Group")
+                        </td>
+                        <td>
+                            <div class="cell-content">
+                                <a href="@Url.Action("Reply", "Message", new { messageId = msg.MessageId })" class="message-link">
+                                    @(!string.IsNullOrEmpty(msg.Subject) ? msg.Subject : "No Subject")
+                                </a>
+                                <div class="message-preview text-muted">
+                                    @(!string.IsNullOrEmpty(msg.Body) ? msg.Body.Substring(0, Math.Min(msg.Body.Length, 60)) + "..." : "")
+                                </div>
+                            </div>
+                        </td>
+
+                        <td>
+                            @msg.SentAt.ToString("MMM d, yyyy h:mm tt")
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+ }
+ else
+ {
+    <div class="empty-state">
+        <i class="fas fa-inbox"></i>
+        <h4>Your inbox is empty</h4>
+        <p>No messages to display</p>
+    </div>
+ }
+
+            <!-- Pagination -->
+            @if (ViewBag.PageCount > 1)
+            {
+                <nav aria-label="Message navigation">
+                    <ul class="pagination justify-content-center">
+                        @for (int i = 1; i <= ViewBag.PageCount; i++)
+                        {
+                            <li class="page-item @(i == ViewBag.CurrentPage ? "active" : "")">
+                                <a class="page-link" href="?search=@Request.QueryString["search"]&filter=@Request.QueryString["filter"]&page=@i">@i</a>
+                            </li>
+                        }
+                    </ul>
+                </nav>
+            }
+
+            <!-- FontAwesome (if not included elsewhere) -->
+            <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet" />
+
+            @section Scripts {
+                <script>
+                    // Toggle message read status
+                    document.addEventListener('DOMContentLoaded', function () {
+                        const messageLinks = document.querySelectorAll('.message-link');
+                        messageLinks.forEach(link => {
+                            link.addEventListener('click', function () {
+                                const row = this.closest('tr');
+                                row.classList.remove('unread');
+                            });
+                        });
+                    });
+                </script>
+            }

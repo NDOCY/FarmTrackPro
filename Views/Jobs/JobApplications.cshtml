@@ -1,0 +1,263 @@
+﻿@model List<FarmTrack.Models.JobApplication>
+@{
+    ViewBag.Title = "Job Applications";
+}
+@if (TempData["Message"] != null)
+{
+    <div class="alert alert-success">
+        @TempData["Message"]
+    </div>
+}
+
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger">
+        @TempData["Error"]
+    </div>
+}
+
+
+<style>
+    /* Custom Color Scheme */
+    :root {
+        --color-earth: #8B7355; /* Primary */
+        --color-soil: #654321; /* Secondary */
+        --color-foliage: #4CAF50; /* Tertiary */
+        --color-wheat: #F5DEB3; /* Accent */
+        --color-danger: #FF6B6B; /* Error */
+        --color-white: #FFFFFF; /* Neutral */
+        --color-bib: #b17474; /* Neutral */
+    }
+
+    /* Page Header */
+    .page-header {
+        background-color: var(--color-wheat);
+        padding: 20px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+    }
+
+        .page-header h2 {
+            color: var(--color-soil);
+            font-weight: 700;
+        }
+
+        .page-header p.lead {
+            color: var(--color-soil);
+            opacity: 0.8;
+        }
+
+    /* Filter Section */
+    .card {
+        border: 1px solid var(--color-wheat);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+
+    .card-body {
+        background-color: var(--color-white);
+    }
+
+    .form-control {
+        border: 1px solid var(--color-wheat);
+    }
+
+    .btn-primary {
+        background-color: var(--color-earth);
+        border-color: var(--color-earth);
+    }
+
+        .btn-primary:hover {
+            background-color: var(--color-soil);
+            border-color: var(--color-soil);
+        }
+
+    /* Task Table */
+    .table thead {
+        background-color: var(--color-earth);
+        color: var(--color-white);
+    }
+
+    .table-striped tbody tr:nth-of-type(odd) {
+        background-color: rgba(245, 222, 179, 0.1);
+    }
+
+    .table-hover tbody tr:hover {
+        background-color: rgba(245, 222, 179, 0.2);
+    }
+
+    /* Status Badges */
+    .badge-success {
+        background-color: var(--color-foliage);
+        color: var(--color-white);
+    }
+
+    .badge-warning {
+        background-color: var(--color-wheat);
+        color: var(--color-soil);
+    }
+
+    .badge-secondary {
+        background-color: var(--color-soil);
+        color: var(--color-white);
+    }
+
+    .badge-danger {
+        background-color: var(--color-danger);
+        color: var(--color-white);
+    }
+
+    /* Action Buttons */
+    .btn-info {
+        background-color: var(--color-earth);
+        border-color: var(--color-earth);
+        color: var(--color-white);
+    }
+
+        .btn-info:hover {
+            background-color: var(--color-soil);
+            border-color: var(--color-soil);
+        }
+
+    .btn-warning {
+        background-color: var(--color-wheat);
+        border-color: var(--color-wheat);
+        color: var(--color-soil);
+    }
+
+        .btn-warning:hover {
+            background-color: var(--color-soil);
+            border-color: var(--color-soil);
+            color: var(--color-white);
+        }
+
+    .btn-danger {
+        background-color: var(--color-danger);
+        border-color: var(--color-danger);
+    }
+
+        .btn-danger:hover {
+            background-color: var(--color-bib);
+            border-color: var(--color-bib);
+        }
+
+    /* Custom for Job Applications */
+    .text-danger {
+        color: var(--color-danger) !important;
+    }
+
+    .text-muted {
+        color: var(--color-soil) !important;
+        opacity: 0.6;
+    }
+
+    .alert-warning {
+        background-color: var(--color-wheat);
+        color: var(--color-soil);
+        border-color: var(--color-soil);
+    }
+</style>
+
+<!-- Page Header -->
+<div class="page-header">
+    <h2>Job Applications</h2>
+    <p class="lead">Review and manage candidate applications.</p>
+</div>
+
+<!-- Search Section -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="get" class="form-inline">
+            <div class="form-group mr-3">
+                <label for="search" class="mr-2">Search:</label>
+                <input type="text" name="search" class="form-control" placeholder="Search applications..." value="@ViewBag.SearchQuery" />
+            </div>
+            <button type="submit" class="btn btn-info"><i class="fas fa-search"></i> Search</button>
+        </form>
+    </div>
+</div>
+
+@if (!Model.Any())
+{
+    <div class="alert alert-warning text-center">No job applications found.</div>
+}
+else
+{
+    <div class="table-responsive">
+        <table class="table table-striped table-hover">
+            <thead>
+                <tr>
+                    <th>Applicant Name</th>
+                    <th>Email</th>
+                    <th>Phone</th>
+                    <th>Address</th>
+                    <th>Job Title</th>
+                    <th>Applied Date</th>
+                    <th>Proof of ID</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var app in Model)
+                {
+                    <tr class="clickable-row" data-href="@Url.Action("ReviewApplication", "Jobs", new { id = app.JobApplicationId })">
+                        <td>@app.User.FullName</td>
+                        <td>@app.User.Email</td>
+                        <td>
+                            @if (!string.IsNullOrEmpty(app.User.PhoneNumber))
+                            {
+                                @app.User.PhoneNumber
+                            }
+                            else
+                            {
+                                <span class="text-danger">Not provided</span>
+                            }
+                        </td>
+                        <td>
+                            @if (!string.IsNullOrEmpty(app.User.Address))
+                            {
+                                @app.User.Address
+                            }
+                            else
+                            {
+                                <span class="text-danger">Not provided</span>
+                            }
+                        </td>
+                        <td>@app.Job.Title</td>
+                        <td>@app.AppliedDate.ToString("yyyy-MM-dd")</td>
+                        <td>
+                            @if (!string.IsNullOrEmpty(app.ID))
+                            {
+                                <a href="@app.ID" target="_blank" class="btn btn-primary btn-sm">View ID</a>
+                            }
+                            else
+                            {
+                                <span class="text-muted">N/A</span>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+
+<!-- Actions Section -->
+<div class="text-right mt-4">
+    <a href="@Url.Action("ExportToExcel", "JobApplications")" class="btn btn-info">
+        <i class="fas fa-download"></i> Export to Excel
+    </a>
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        let rows = document.querySelectorAll(".clickable-row");
+        rows.forEach(row => {
+            row.addEventListener("click", function () {
+                let url = this.getAttribute("data-href");
+                if (url) {
+                    window.location.href = url;
+                }
+            });
+        });
+    });
+
+</script>

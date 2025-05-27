@@ -1,0 +1,127 @@
+﻿@model FarmTrack.Models.FarmTask
+
+@{
+    ViewBag.Title = "Delete Task";
+}
+
+<style>
+    /* Custom Color Scheme */
+    :root {
+        --color-earth: #8B7355; /* Primary */
+        --color-soil: #654321; /* Secondary */
+        --color-foliage: #4CAF50; /* Tertiary */
+        --color-wheat: #F5DEB3; /* Accent */
+        --color-danger: #FF6B6B; /* Error */
+        --color-white: #FFFFFF; /* Neutral */
+    }
+
+    /* Delete Confirmation Container */
+    .delete-container {
+        background-color: var(--color-white);
+        border: 1px solid var(--color-wheat);
+        border-radius: 8px;
+        padding: 20px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        max-width: 600px;
+        margin: auto;
+    }
+
+        .delete-container h2,
+        .delete-container h3,
+        .delete-container h4 {
+            color: var(--color-soil);
+        }
+
+        .delete-container dl {
+            margin-top: 15px;
+        }
+
+        .delete-container dt {
+            font-weight: 500;
+            color: var(--color-soil);
+            width: 160px;
+        }
+
+        .delete-container dd {
+            margin-left: 180px;
+            color: var(--color-soil);
+        }
+
+    /* Buttons */
+    /* Buttons */
+    .btn-danger {
+        background-color: var(--color-danger);
+        border-color: var(--color-danger);
+    }
+
+        .btn-danger:hover {
+            filter: brightness(85%); /* Darkens the color */
+        }
+
+    .btn-secondary {
+        background-color: var(--color-wheat);
+        border-color: var(--color-wheat);
+        color: var(--color-soil);
+    }
+
+        .btn-secondary:hover {
+            background-color: var(--color-soil);
+            border-color: var(--color-soil);
+            color: var(--color-white);
+        }
+
+
+    .action-buttons {
+        margin-top: 20px;
+        text-align: center;
+    }
+
+        .action-buttons .btn {
+            margin: 0 5px;
+        }
+</style>
+
+<div class="delete-container">
+    <h2>Delete Task</h2>
+    <h3>Are you sure you want to delete this task?</h3>
+
+    <div>
+        <h4>Task Details</h4>
+        <dl>
+            <dt>Title:</dt>
+            <dd>@Model.Title</dd>
+
+            <dt>Description:</dt>
+            <dd>@Model.Description</dd>
+
+            <dt>Due Date:</dt>
+            <dd>@Model.DueDate.ToString("yyyy-MM-dd")</dd>
+
+            <dt>Status:</dt>
+            <dd>@Model.Status</dd>
+
+            <dt>Assigned User:</dt>
+            <dd>@(Model.AssignedTo.HasValue ? Model.AssignedTo.ToString() : "Not Assigned")</dd>
+
+            <dt>Assigned Department:</dt>
+            <dd>@(!string.IsNullOrEmpty(Model.AssignedDepartment) ? Model.AssignedDepartment : "None")</dd>
+
+            <dt>Recurring:</dt>
+            <dd>@(Model.IsRecurring ? "Yes" : "No")</dd>
+
+            <dt>Recurrence Type:</dt>
+            <dd>@Model.RecurrenceType</dd>
+        </dl>
+
+        @using (Html.BeginForm("Delete", "Task", new { id = Model.TaskId }, FormMethod.Post))
+        {
+            @Html.AntiForgeryToken()
+
+            <div class="action-buttons">
+                <input type="submit" value="Delete" class="btn btn-danger" />
+                @Html.ActionLink("Cancel", "Index", null, new { @class = "btn btn-secondary" })
+            </div>
+        }
+    </div>
+</div>
+

@@ -1,0 +1,233 @@
+﻿@model FarmTrack.Models.HealthCheckSchedule
+
+@{
+    ViewBag.Title = "Schedule Health Check";
+}
+
+<style>
+    /* Custom Color Scheme */
+    :root {
+        --color-earth: #8B7355; /* Primary */
+        --color-soil: #654321; /* Secondary */
+        --color-foliage: #4CAF50; /* Tertiary */
+        --color-wheat: #F5DEB3; /* Accent */
+        --color-danger: #FF6B6B; /* Error */
+        --color-white: #FFFFFF; /* Neutral */
+    }
+
+    /* Page Header */
+    .page-header {
+        background-color: var(--color-wheat);
+        padding: 20px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+    }
+
+        .page-header h2 {
+            color: var(--color-soil);
+            font-weight: 700;
+            margin-bottom: 0;
+        }
+
+    /* Content Container */
+    .content-container {
+        background-color: var(--color-white);
+        border: 1px solid var(--color-wheat);
+        border-radius: 8px;
+        padding: 20px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        margin-bottom: 20px;
+    }
+
+    /* Form Styling */
+    .form-container {
+        background-color: var(--color-white);
+        border: 1px solid var(--color-wheat);
+        border-radius: 8px;
+        padding: 20px;
+    }
+
+    .form-group {
+        margin-bottom: 15px;
+    }
+
+        .form-group label {
+            color: var(--color-soil);
+            font-weight: 500;
+        }
+
+    .form-control {
+        border: 1px solid var(--color-wheat);
+        border-radius: 4px;
+        padding: 8px;
+    }
+
+        .form-control:focus {
+            border-color: var(--color-earth);
+            box-shadow: 0 0 5px rgba(139, 115, 85, 0.5);
+        }
+
+    /* Button Styling */
+    .btn {
+        border-radius: 6px;
+        padding: 8px 16px;
+        font-weight: 500;
+    }
+
+    .btn-success {
+        background-color: var(--color-earth);
+        border-color: var(--color-earth);
+        color: var(--color-white);
+    }
+
+        .btn-success:hover {
+            background-color: var(--color-soil);
+            border-color: var(--color-soil);
+        }
+
+    /* Livestock Checkboxes Styling */
+    #livestockCheckboxes {
+        max-height: 300px;
+        overflow-y: auto;
+        border: 1px solid var(--color-wheat);
+        border-radius: 4px;
+        padding: 10px;
+    }
+
+    .form-check {
+        margin-bottom: 8px;
+    }
+
+    .form-check-label {
+        color: var(--color-soil);
+    }
+</style>
+
+<!-- Page Header -->
+<div class="page-header">
+    <h2><i class="fas fa-calendar-check"></i> Schedule Health Check</h2>
+</div>
+
+<div class="content-container">
+    <div class="form-container">
+        @using (Html.BeginForm())
+        {
+            @Html.AntiForgeryToken()
+            <div class="form-group">
+                @Html.LabelFor(m => m.CheckType)
+                <div class="input-group">
+                    <div class="input-group-prepend">
+                        <span class="input-group-text"><i class="fas fa-stethoscope"></i></span>
+                    </div>
+                    @*@Html.TextBoxFor(m => m.CheckType, new { @class = "form-control", placeholder = "Enter check type (e.g. Vaccination, General Health)" })
+                    *@
+                    @Html.DropDownListFor(m => m.CheckType, new SelectList(ViewBag.HealthCheckTypes as List<string>), "-- Select Health Check Type --", new { @class = "form-control" })
+
+                </div>
+            </div>
+            <div class="form-group">
+                @Html.LabelFor(m => m.Notes)
+                <div class="input-group">
+                    <div class="input-group-prepend">
+                        <span class="input-group-text"><i class="fas fa-sticky-note"></i></span>
+                    </div>
+                    @Html.TextAreaFor(m => m.Notes, new { @class = "form-control", rows = "3", placeholder = "Enter any additional notes here" })
+                </div>
+            </div>
+            <div class="form-group">
+                @Html.LabelFor(m => m.ScheduledDate)
+                <div class="input-group">
+                    <div class="input-group-prepend">
+                        <span class="input-group-text"><i class="fas fa-calendar-alt"></i></span>
+                    </div>
+                    @Html.TextBoxFor(m => m.ScheduledDate, new { @class = "form-control", type = "date" })
+                </div>
+            </div>
+            <div class="form-group">
+                @Html.Label("Assigned User")
+                <div class="input-group">
+                    <div class="input-group-prepend">
+                        <span class="input-group-text"><i class="fas fa-user"></i></span>
+                    </div>
+                    @Html.DropDownListFor(m => m.AssignedToUserId, (SelectList)ViewBag.Users, "-- Select User --", new { @class = "form-control" })
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Filter by Type</label>
+                <div class="input-group">
+                    <div class="input-group-prepend">
+                        <span class="input-group-text"><i class="fas fa-filter"></i></span>
+                    </div>
+                    <select id="livestockType" class="form-control">
+                        <option value="">-- All Types --</option>
+                        @foreach (var type in (List<string>)ViewBag.Types)
+                        {
+                            <option value="@type">@type</option>
+                        }
+                    </select>
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Select Livestock</label>
+                <div class="mb-2">
+                    <button type="button" class="btn btn-sm btn-primary" id="selectAllBtn">
+                        <i class="fas fa-check-square"></i> Select All Visible
+                    </button>
+                    <button type="button" class="btn btn-sm btn-secondary" id="clearAllBtn">
+                        <i class="fas fa-square"></i> Clear All
+                    </button>
+                </div>
+                <div id="livestockCheckboxes" class="border rounded p-2">
+                    @foreach (var l in (List<FarmTrack.Models.Livestock>)ViewBag.Livestocks)
+                    {
+                        <div class="form-check livestock-option" data-type="@l.Type">
+                            <input class="form-check-input" type="checkbox" name="SelectedLivestockIds" value="@l.LivestockId" id="livestock_@l.LivestockId" />
+                            <label class="form-check-label" for="livestock_@l.LivestockId">
+                                @l.TagNumber (@l.Type)
+                            </label>
+                        </div>
+                    }
+                </div>
+            </div>
+            <button type="submit" class="btn btn-success">
+                <i class="fas fa-save"></i> Schedule
+            </button>
+        }
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        const livestockTypeSelect = document.getElementById("livestockType");
+        const livestockOptions = document.querySelectorAll(".livestock-option");
+        const selectAllBtn = document.getElementById("selectAllBtn");
+        const clearAllBtn = document.getElementById("clearAllBtn");
+
+        // Filter by livestock type
+        livestockTypeSelect.addEventListener("change", function () {
+            const selectedType = this.value;
+            livestockOptions.forEach(opt => {
+                opt.style.display = (!selectedType || opt.dataset.type === selectedType) ? "block" : "none";
+            });
+        });
+
+        // Select all visible checkboxes
+        selectAllBtn.addEventListener("click", function () {
+            livestockOptions.forEach(opt => {
+                if (opt.style.display !== "none") {
+                    const checkbox = opt.querySelector("input[type='checkbox']");
+                    checkbox.checked = true;
+                }
+            });
+        });
+
+        // Clear all checkboxes
+        clearAllBtn.addEventListener("click", function () {
+            document.querySelectorAll("input[name='SelectedLivestockIds']").forEach(cb => cb.checked = false);
+        });
+    </script>
+}
+
+
+<!-- Font Awesome for Icons -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">

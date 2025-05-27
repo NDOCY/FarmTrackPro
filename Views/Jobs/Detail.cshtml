@@ -1,0 +1,251 @@
+﻿@model FarmTrack.Models.JobApplication
+@{
+    ViewData["Title"] = "Job Application Details";
+    if (Session["Role"] != null && (Session["Role"].ToString() == "Admin" || Session["Role"].ToString() == "Owner"))
+    {
+        Layout = "~/Views/Shared/_Layout.cshtml";
+    }
+    else
+    {
+        Layout = "~/Views/Shared/_Layout - User.cshtml";
+    }
+}
+
+<style>
+    /* Custom Color Scheme */
+    :root {
+        --color-earth: #8B7355; /* Primary */
+        --color-soil: #654321; /* Secondary */
+        --color-foliage: #4CAF50; /* Tertiary */
+        --color-wheat: #F5DEB3; /* Accent */
+        --color-danger: #FF6B6B; /* Error */
+        --color-white: #FFFFFF; /* Neutral */
+        --color-bib: #b17474; /* Neutral */
+    }
+
+    /* Details Container */
+    .details-container {
+        background-color: var(--color-white);
+        border: 1px solid var(--color-wheat);
+        border-radius: 8px;
+        padding: 20px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        max-width: 1000px;
+        margin: auto;
+    }
+
+    /* Section Header */
+    .section-header {
+        background-color: var(--color-wheat);
+        color: var(--color-soil);
+        padding: 15px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+        font-weight: 600;
+    }
+
+    /* Detail Items */
+    .details-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 20px;
+    }
+
+    @@media (max-width: 768px) {
+        .details-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    .detail-item {
+        margin-bottom: 15px;
+        padding: 10px;
+        border-radius: 6px;
+        transition: background-color 0.2s;
+    }
+
+    .detail-item:hover {
+        background-color: rgba(245, 222, 179, 0.1);
+    }
+
+    .detail-label {
+        font-weight: 600;
+        color: var(--color-soil);
+        display: block;
+        margin-bottom: 5px;
+    }
+
+    .detail-value {
+        padding: 8px 12px;
+        background-color: rgba(245, 222, 179, 0.1);
+        border-radius: 4px;
+        min-height: 40px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        word-wrap: break-word;
+    }
+
+    .long-text {
+        max-height: 120px;
+        overflow-y: auto;
+    }
+
+    /* Status Badge */
+    .status-badge {
+        display: inline-block;
+        padding: 0.25rem 0.75rem;
+        border-radius: 12px;
+        font-size: 0.875rem;
+        font-weight: 500;
+    }
+
+    .status-pending {
+        background-color: var(--color-wheat);
+        color: var(--color-soil);
+    }
+
+    .status-accepted {
+        background-color: var(--color-foliage);
+        color: var(--color-white);
+    }
+
+    .status-rejected {
+        background-color: var(--color-danger);
+        color: var(--color-white);
+    }
+
+    /* Buttons */
+    .btn-primary {
+        background-color: var(--color-earth);
+        border-color: var(--color-earth);
+        color: var(--color-white);
+    }
+
+    .btn-primary:hover {
+        background-color: var(--color-soil);
+        border-color: var(--color-soil);
+    }
+
+    .document-link {
+        color: var(--color-soil);
+        text-decoration: underline;
+        font-weight: 500;
+    }
+
+    .document-link:hover {
+        color: var(--color-earth);
+    }
+
+    .back-link {
+        display: inline-block;
+        margin-top: 20px;
+        margin-bottom: 10px;
+        color: var(--color-soil);
+        text-decoration: none;
+    }
+
+    .back-link i {
+        margin-right: 5px;
+    }
+
+    .back-link:hover {
+        color: var(--color-earth);
+    }
+</style>
+
+<div class="details-container">
+    <h2 class="text-center mb-4">Job Application Details</h2>
+
+    <div class="section-header">
+        Application Information
+    </div>
+
+    <div class="details-grid">
+        <div class="detail-item">
+            <span class="detail-label">Application ID</span>
+            <div class="detail-value">@Model.JobApplicationId</div>
+        </div>
+
+        <div class="detail-item">
+            <span class="detail-label">User Name</span>
+            <div class="detail-value">@Model.User.FullName</div>
+        </div>
+
+        <div class="detail-item">
+            <span class="detail-label">Job Title</span>
+            <div class="detail-value">@Model.Job.Title</div>
+        </div>
+
+        <div class="detail-item">
+            <span class="detail-label">Phone Number</span>
+            <div class="detail-value">@Model.PhoneNumber</div>
+        </div>
+
+        <div class="detail-item">
+            <span class="detail-label">Address</span>
+            <div class="detail-value">@Model.Address</div>
+        </div>
+
+        <div class="detail-item">
+            <span class="detail-label">CV</span>
+            <div class="detail-value">
+                <a href="@Url.Action("ViewDocument", "Job", new { id = Model.JobApplicationId, type = "CV" })" class="document-link" target="_blank">
+                    <i class="fas fa-file-pdf"></i> View CV
+                </a>
+            </div>
+        </div>
+
+        <div class="detail-item">
+            <span class="detail-label">ID Document</span>
+            <div class="detail-value">
+                <a href="@Url.Action("ViewDocument", "Job", new { id = Model.JobApplicationId, type = "ID" })" class="document-link" target="_blank">
+                    <i class="fas fa-id-card"></i> View ID
+                </a>
+            </div>
+        </div>
+
+        <div class="detail-item">
+            <span class="detail-label">Status</span>
+            <div class="detail-value">
+                @{
+                    var statusClass = Model.Status == "Accepted" ? "status-accepted" :
+                                    Model.Status == "Rejected" ? "status-rejected" :
+                                    "status-pending";
+                }
+                <span class="status-badge @statusClass">@Model.Status</span>
+            </div>
+        </div>
+
+        <div class="detail-item">
+            <span class="detail-label">Applied Date</span>
+            <div class="detail-value">@Model.AppliedDate.ToString("yyyy-MM-dd")</div>
+        </div>
+
+        <div class="detail-item">
+            <span class="detail-label">Education</span>
+            <div class="detail-value">@Model.Education</div>
+        </div>
+
+        <div class="detail-item">
+            <span class="detail-label">Institution</span>
+            <div class="detail-value">@Model.Institution</div>
+        </div>
+    </div>
+
+    <div class="detail-item mt-3">
+        <span class="detail-label">Review Notes</span>
+        <div class="detail-value long-text">@(string.IsNullOrEmpty(Model.ReviewNotes) ? "No review notes provided" : Model.ReviewNotes)</div>
+    </div>
+
+    <div class="detail-item">
+        <span class="detail-label">Experience</span>
+        <div class="detail-value long-text">@(string.IsNullOrEmpty(Model.Experience) ? "No experience information provided" : Model.Experience)</div>
+    </div>
+
+    <a href="@Url.Action("MyApplication", "Jobs")" class="back-link">
+        <i class="fas fa-arrow-left"></i> Back to My Applications
+    </a>
+</div>
+
+<!-- Font Awesome for Icons -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">

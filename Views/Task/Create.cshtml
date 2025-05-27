@@ -1,0 +1,134 @@
+﻿@model FarmTrack.Models.FarmTask
+
+@{
+    ViewBag.Title = "Create Task";
+}
+
+
+<style>
+    /* Custom Color Scheme */
+    :root {
+        --color-earth: #8B7355; /* Primary */
+        --color-soil: #654321; /* Secondary */
+        --color-foliage: #4CAF50; /* Tertiary */
+        --color-wheat: #F5DEB3; /* Accent */
+        --color-danger: #FF6B6B; /* Error */
+        --color-white: #FFFFFF; /* Neutral */
+    }
+
+    /* Form Container */
+    .form-container {
+        background-color: var(--color-white);
+        border: 1px solid var(--color-wheat);
+        border-radius: 8px;
+        padding: 20px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        max-width: 600px;
+        margin: auto;
+    }
+
+        .form-container h2 {
+            color: var(--color-soil);
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+    .form-group {
+        margin-bottom: 15px;
+    }
+
+        .form-group label {
+            color: var(--color-soil);
+            font-weight: 500;
+        }
+
+    .form-control {
+        border: 1px solid var(--color-wheat);
+        border-radius: 4px;
+        padding: 8px;
+    }
+
+        .form-control:focus {
+            border-color: var(--color-earth);
+            box-shadow: 0 0 5px rgba(139, 115, 85, 0.5);
+        }
+
+    .btn-primary {
+        background-color: var(--color-earth);
+        border-color: var(--color-earth);
+    }
+
+        .btn-primary:hover {
+            background-color: var(--color-soil);
+            border-color: var(--color-soil);
+        }
+
+    .text-danger {
+        color: var(--color-danger);
+    }
+</style>
+<div class="form-container">
+    <h2>Task Assignment</h2>
+
+    @using (Html.BeginForm())
+    {
+        @Html.AntiForgeryToken()
+
+        <div class="form-group">
+            @Html.LabelFor(model => model.Title)
+            @Html.TextBoxFor(model => model.Title, new { @class = "form-control", placeholder = "Enter task title", required = "required" })
+            @Html.ValidationMessageFor(model => model.Title, "", new { @class = "text-danger" })
+        </div>
+
+        <div class="form-group">
+            @Html.LabelFor(model => model.Description)
+            @Html.TextAreaFor(model => model.Description, new { @class = "form-control", placeholder = "Enter task description", rows = "3", required = "required" })
+            @Html.ValidationMessageFor(model => model.Description, "", new { @class = "text-danger" })
+        </div>
+
+        <div class="form-group">
+            @Html.LabelFor(model => model.DueDate)
+            @Html.TextBoxFor(model => model.DueDate, "{0:yyyy-MM-dd}", new { @type = "date", @class = "form-control", required = "required" })
+            @Html.ValidationMessageFor(model => model.DueDate, "", new { @class = "text-danger" })
+        </div>
+
+        <div class="form-group">
+            @Html.LabelFor(model => model.Status)
+            @Html.DropDownListFor(model => model.Status, ViewBag.Status as IEnumerable<SelectListItem>, "Select Status", new { @class = "form-control", required = "required" })
+            @Html.ValidationMessageFor(model => model.Status, "", new { @class = "text-danger" })
+        </div>
+
+        <div class="form-group">
+            @Html.LabelFor(model => model.AssignedTo)
+            @Html.DropDownListFor(model => model.AssignedTo, ViewBag.Users as IEnumerable<SelectListItem>, "Assign to User", new { @class = "form-control" })
+            @Html.ValidationMessageFor(model => model.AssignedTo, "", new { @class = "text-danger" })
+        </div>
+
+        <div class="form-group">
+            @Html.LabelFor(model => model.AssignedDepartment)
+            @Html.DropDownListFor(model => model.AssignedDepartment, ViewBag.Departments as IEnumerable<SelectListItem>, "Assign to Department", new { @class = "form-control" })
+            @Html.ValidationMessageFor(model => model.AssignedDepartment, "", new { @class = "text-danger" })
+        </div>
+
+        <div class="form-group">
+            <label>
+                @Html.CheckBoxFor(model => model.IsRecurring)
+                Is Recurring?
+            </label>
+            @Html.ValidationMessageFor(model => model.IsRecurring, "", new { @class = "text-danger" })
+        </div>
+
+        <div class="form-group">
+            @Html.LabelFor(model => model.RecurrenceType)
+            @Html.DropDownListFor(model => model.RecurrenceType, ViewBag.RecurrenceTypes as IEnumerable<SelectListItem>, "Select Recurrence", new { @class = "form-control" })
+            @Html.ValidationMessageFor(model => model.RecurrenceType, "", new { @class = "text-danger" })
+        </div>
+
+        <button type="submit" class="btn btn-primary w-100">
+            <i class="fas fa-plus"></i> Create Task
+        </button>
+    }
+</div>
+
+<!-- Font Awesome for Icons -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">

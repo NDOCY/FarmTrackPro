@@ -1,0 +1,252 @@
+﻿@model FarmTrack.Models.User
+
+@{
+    ViewBag.Title = "Edit User";
+}
+
+<style>
+    :root {
+        --color-earth: #8B7355;
+        --color-soil: #654321;
+        --color-wheat: #F5DEB3;
+        --color-hay: #DAA520;
+        --border-radius: 12px;
+        --card-shadow: 0 6px 18px rgba(0,0,0,0.1);
+    }
+
+    .page-header {
+        margin-bottom: 30px;
+        padding-bottom: 15px;
+        border-bottom: 2px solid var(--color-wheat);
+    }
+
+    .form-container {
+        background-color: white;
+        border-radius: var(--border-radius);
+        box-shadow: var(--card-shadow);
+        padding: 30px;
+        margin-bottom: 30px;
+    }
+
+    .form-group {
+        margin-bottom: 20px;
+    }
+
+    .control-label {
+        font-weight: 600;
+        color: var(--color-soil);
+    }
+
+    .form-control {
+        border-radius: 6px;
+        border: 1px solid #ddd;
+        padding: 10px 15px;
+        transition: border-color 0.3s;
+    }
+
+        .form-control:focus {
+            border-color: var(--color-earth);
+            box-shadow: 0 0 0 0.2rem rgba(139, 115, 85, 0.25);
+        }
+
+        .form-control[readonly] {
+            background-color: #f8f8f8;
+        }
+
+    .btn-primary {
+        background-color: var(--color-earth);
+        border-color: var(--color-earth);
+        color: white;
+        padding: 10px 25px;
+        border-radius: 6px;
+        font-weight: 600;
+        transition: all 0.3s;
+    }
+
+        .btn-primary:hover {
+            background-color: var(--color-hay);
+            border-color: var(--color-hay);
+            color: white;
+        }
+
+    .btn-secondary {
+        background-color: #f8f8f8;
+        border-color: #ddd;
+        color: var(--color-soil);
+        padding: 10px 25px;
+        border-radius: 6px;
+        font-weight: 600;
+        transition: all 0.3s;
+    }
+
+        .btn-secondary:hover {
+            background-color: var(--color-wheat);
+            border-color: var(--color-wheat);
+            color: var(--color-soil);
+        }
+
+    .actions-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: 30px;
+    }
+
+    .section-divider {
+        border-top: 1px solid #eee;
+        margin: 25px 0;
+    }
+
+    .radio-group {
+        display: flex;
+        gap: 20px;
+        padding: 10px 0;
+    }
+
+    .radio-container {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+        .radio-container input[type="radio"] {
+            accent-color: var(--color-earth);
+        }
+
+    .text-danger {
+        color: #dc3545;
+        font-size: 0.9rem;
+        margin-top: 5px;
+    }
+
+    .form-section {
+        margin-bottom: 30px;
+    }
+
+    .form-section-title {
+        color: var(--color-soil);
+        font-weight: 600;
+        margin-bottom: 15px;
+        padding-bottom: 10px;
+        border-bottom: 1px solid var(--color-wheat);
+    }
+</style>
+
+<div class="page-header">
+    <h2>Edit User Profile</h2>
+    <p class="lead">Update user information and settings</p>
+</div>
+
+<div class="form-container">
+    @using (Html.BeginForm())
+    {
+        @Html.AntiForgeryToken()
+        @Html.HiddenFor(model => model.UserId)
+
+        <div class="form-section">
+            <h4 class="form-section-title">Personal Information</h4>
+
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="form-group">
+                        @Html.LabelFor(model => model.FullName, htmlAttributes: new { @class = "control-label" })
+                        @Html.EditorFor(model => model.FullName, new { htmlAttributes = new { @class = "form-control" } })
+                        @Html.ValidationMessageFor(model => model.FullName, "", new { @class = "text-danger" })
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        @Html.LabelFor(model => model.Email, htmlAttributes: new { @class = "control-label" })
+                        @Html.EditorFor(model => model.Email, new { htmlAttributes = new { @class = "form-control" } })
+                        @Html.ValidationMessageFor(model => model.Email, "", new { @class = "text-danger" })
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="form-group">
+                        @Html.LabelFor(model => model.PhoneNumber, htmlAttributes: new { @class = "control-label" })
+                        @Html.EditorFor(model => model.PhoneNumber, new { htmlAttributes = new { @class = "form-control" } })
+                        @Html.ValidationMessageFor(model => model.PhoneNumber, "", new { @class = "text-danger" })
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        @Html.LabelFor(model => model.Department, htmlAttributes: new { @class = "control-label" })
+                        @Html.TextBoxFor(model => model.Department, new { @class = "form-control", placeholder = "Type to create a new department or select existing" })
+                        @Html.ValidationMessageFor(model => model.Department, "", new { @class = "text-danger" })
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-group">
+                @Html.LabelFor(model => model.Address, htmlAttributes: new { @class = "control-label" })
+                @Html.EditorFor(model => model.Address, new { htmlAttributes = new { @class = "form-control" } })
+                @Html.ValidationMessageFor(model => model.Address, "", new { @class = "text-danger" })
+            </div>
+        </div>
+
+        <div class="section-divider"></div>
+
+        <div class="form-section">
+            <h4 class="form-section-title">Account Information</h4>
+
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="form-group">
+                        @Html.LabelFor(model => model.PasswordHash, htmlAttributes: new { @class = "control-label" })
+                        @Html.EditorFor(model => model.PasswordHash, new { htmlAttributes = new { @class = "form-control", @readonly = "readonly" } })
+                        <small class="form-text text-muted">Password hash cannot be edited directly</small>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        @Html.LabelFor(model => model.DateRegistered, htmlAttributes: new { @class = "control-label" })
+                        @Html.EditorFor(model => model.DateRegistered, new { htmlAttributes = new { @class = "form-control", @readonly = "readonly" } })
+                        <small class="form-text text-muted">Registration date cannot be modified</small>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-group">
+                @Html.LabelFor(model => model.ProfilePictureUrl, htmlAttributes: new { @class = "control-label" })
+                @Html.EditorFor(model => model.ProfilePictureUrl, new { htmlAttributes = new { @class = "form-control" } })
+                @Html.ValidationMessageFor(model => model.ProfilePictureUrl, "", new { @class = "text-danger" })
+            </div>
+
+            <div class="form-group">
+                @Html.LabelFor(model => model.Role, htmlAttributes: new { @class = "control-label" })
+                <div class="radio-group">
+                    <div class="radio-container">
+                        @Html.RadioButtonFor(model => model.Role, "User", new { id = "role-user" })
+                        <label for="role-user">User</label>
+                    </div>
+                    <div class="radio-container">
+                        @Html.RadioButtonFor(model => model.Role, "Admin", new { id = "role-admin" })
+                        <label for="role-admin">Admin</label>
+                    </div>
+                    <div class="radio-container">
+                        @Html.RadioButtonFor(model => model.Role, "Owner", new { id = "role-owner" })
+                        <label for="role-owner">Owner</label>
+                    </div>
+                </div>
+                @Html.ValidationMessageFor(model => model.Role, "", new { @class = "text-danger" })
+            </div>
+        </div>
+
+        <div class="actions-row">
+            <a href="@Url.Action("Index", "Users")" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Back to List
+            </a>
+            <button type="submit" class="btn btn-primary">
+                <i class="fas fa-save"></i> Save Changes
+            </button>
+        </div>
+    }
+</div>
+
+@section Scripts {
+    @Scripts.Render("~/bundles/jqueryval")
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/js/all.min.js"></script>
+}

@@ -1,0 +1,898 @@
+﻿@*@using farm.Models
+    @{
+        ViewBag.Title = "Admin Dashboard";
+    }
+    <h2>Admin Dashboard</h2>
+
+    <div>
+        <h3>Farm Overview</h3>
+        <ul>
+            <li>Total Users: @ViewBag.Users.Count</li>
+            <li>Livestock Count: @ViewBag.LivestockCount</li>
+            <li>Inventory Items: @ViewBag.InventoryCount</li>
+            <li>Job Listings: @ViewBag.JobsCount</li>
+            <li>Active Tasks: @ViewBag.TasksCount</li>
+        </ul>
+    </div>
+    <div>
+        <h3>Livestock Types and Counts</h3>
+        <ul>
+            @foreach (var group in ViewBag.LivestockGroupedByType as List<LivestockGroupViewModel>)
+            {
+                <li>@group.Type: @group.Count</li>
+            }
+        </ul>
+    </div>
+
+    <div>
+        @Html.ActionLink("View Livestock", "Index", "Livestock")
+    </div>
+    <div>
+        @Html.ActionLink("View Users", "Index", "Account")
+    </div>
+    <div>
+        @Html.ActionLink("View Tasks", "Index", "Task")
+    </div>
+    <div>
+        @Html.ActionLink("View Inventory", "InventoryList", "Inventory")
+    </div>
+    <div>
+        @Html.ActionLink("View Jobs", "Index", "Jobs")
+    </div>
+    <h3>Manage Users</h3>
+    <table border="1">
+        <tr>
+            <th>Full Name</th>
+            <th>Email</th>
+            <th>Role</th>
+            <th>Action</th>
+        </tr>
+        @foreach (var user in ViewBag.Users)
+        {
+            <tr>
+                <td>@user.FullName</td>
+                <td>@user.Email</td>
+                <td>@user.Role</td> //Display the role directly
+                <td>
+                    @if (Session["Role"] != null && Session["Role"].ToString() == "Owner") // Only Owner can promote
+                    {
+                        if (user.Role == "User") // Prevent promoting another Admin
+                        {
+                            <a href="@Url.Action("PromoteToAdmin", "Dashboard", new { id = user.UserId })">Make Admin</a>
+                        }
+                    }
+                </td>
+            </tr>
+        }
+    </table>
+    <table class="table table-bordered">
+        <thead>
+            <tr>
+                <th>User</th>
+                <th>Activity</th>
+                <th>Timestamp</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var log in Model)
+            {
+                <tr>
+                    <td>@log.User.FullName</td>
+                    <td>@log.Description</td>
+                    <td>@log.Timestamp</td>
+                </tr>
+            }
+        </tbody>
+    </table>*@
+@*@using farm.Models
+    @{
+        ViewBag.Title = "Admin Dashboard";
+    }
+    <h2 class="text-center mt-3">Admin Dashboard</h2>
+
+    <div class="container mt-4">
+        <div class="row">
+            <!-- Overview Cards -->
+            <div class="col-md-4">
+                <div class="card text-white bg-primary mb-3">
+                    <div class="card-header">Total Users</div>
+                    <div class="card-body">
+                        <h4 class="card-title">@ViewBag.Users.Count</h4>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card text-white bg-success mb-3">
+                    <div class="card-header">Livestock Count</div>
+                    <div class="card-body">
+                        <h4 class="card-title">@ViewBag.LivestockCount</h4>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card text-white bg-warning mb-3">
+                    <div class="card-header">Inventory Items</div>
+                    <div class="card-body">
+                        <h4 class="card-title">@ViewBag.InventoryCount</h4>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card text-white bg-danger mb-3">
+                    <div class="card-header">Job Listings</div>
+                    <div class="card-body">
+                        <h4 class="card-title">@ViewBag.JobsCount</h4>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card text-white bg-info mb-3">
+                    <div class="card-header">Active Tasks</div>
+                    <div class="card-body">
+                        <h4 class="card-title">@ViewBag.TasksCount</h4>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Livestock Summary -->
+        <div class="card mt-3">
+            <div class="card-header">
+                <h4>Livestock Types and Counts</h4>
+            </div>
+            <div class="card-body">
+                <ul class="list-group">
+                    @foreach (var group in ViewBag.LivestockGroupedByType as List<LivestockGroupViewModel>)
+                    {
+                        <li class="list-group-item d-flex justify-content-between">
+                            <span>@group.Type</span>
+                            <span class="badge bg-primary">@group.Count</span>
+                        </li>
+                    }
+                </ul>
+            </div>
+        </div>
+
+        <!-- Navigation Links -->
+        <div class="mt-4 text-center">
+            <a href="@Url.Action("Index", "Livestock")" class="btn btn-outline-primary m-2">View Livestock</a>
+            <a href="@Url.Action("Index", "Account")" class="btn btn-outline-secondary m-2">View Users</a>
+            <a href="@Url.Action("Index", "Task")" class="btn btn-outline-success m-2">View Tasks</a>
+            <a href="@Url.Action("InventoryList", "Inventory")" class="btn btn-outline-warning m-2">View Inventory</a>
+            <a href="@Url.Action("Index", "Jobs")" class="btn btn-outline-danger m-2">View Jobs</a>
+        </div>
+
+        <!-- User Management Table -->
+        <div class="card mt-4">
+            <div class="card-header">
+                <h4>Manage Users</h4>
+            </div>
+            <div class="card-body">
+                <table class="table table-bordered table-striped">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>Full Name</th>
+                            <th>Email</th>
+                            <th>Role</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var user in ViewBag.Users)
+                        {
+                            <tr>
+                                <td>@user.FullName</td>
+                                <td>@user.Email</td>
+                                <td>@user.Role</td>
+                                <td>
+                                    @if (Session["Role"] != null && Session["Role"].ToString() == "Owner")
+                                    {
+                                        if (user.Role == "User")
+                                        {
+                                            <a href="@Url.Action("PromoteToAdmin", "Dashboard", new { id = user.UserId })" class="btn btn-sm btn-primary">
+                                                Make Admin
+                                            </a>
+                                        }
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Activity Logs -->
+        <div class="card mt-4">
+            <div class="card-header">
+                <h4>Recent Activity Logs</h4>
+            </div>
+            <div class="card-body">
+                <table class="table table-bordered table-hover">
+                    <thead class="table-light">
+                        <tr>
+                            <th>User</th>
+                            <th>Activity</th>
+                            <th>Timestamp</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var log in Model)
+                        {
+                            <tr>
+                                <td>@log.User.FullName</td>
+                                <td>@log.Description</td>
+                                <td>@log.Timestamp</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>*@
+@using FarmTrack.Models
+@{
+    ViewBag.Title = "Farm Management Dashboard";
+
+}
+
+<style>
+    :root {
+        /* Natural farm color palette */
+        --color-earth: #8B7355;
+        --color-soil: #654321;
+        --color-foliage: #4CAF50;
+        --color-wheat: #F5DEB3;
+        --color-hay: #DAA520;
+        /* Grid settings */
+        --grid-row-height: 60px;
+        --border-radius: 12px;
+        --card-shadow: 0 6px 18px rgba(0,0,0,0.1);
+    }
+
+    body {
+        background-color: #F9F7F4;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    .dashboard-title {
+        color: var(--color-soil);
+        font-size: 1.8rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        margin: 1.5rem 0;
+        text-align: center;
+        position: relative;
+    }
+
+        .dashboard-title:after {
+            content: "";
+            display: block;
+            width: 60px;
+            height: 4px;
+            background-color: var(--color-foliage);
+            margin: 8px auto 0;
+            border-radius: 2px;
+        }
+
+    .parent {
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        grid-template-rows: repeat(11, var(--grid-row-height));
+        gap: 16px;
+        height: 100%;
+        min-height: 700px;
+        padding: 0 10px;
+    }
+
+    .div1 {
+        grid-column: 1 / 2;
+        grid-row: 1 / 10;
+    }
+
+    .div2 {
+        grid-column: 2 / 4;
+        grid-row: 1 / 6;
+    }
+
+    .div3 {
+        grid-column: 2 / 4;
+        grid-row: 6 / 10;
+    }
+
+    .div4 {
+        grid-column: 4 / 6;
+        grid-row: 1 / 10;
+    }
+
+    .div5 {
+        grid-column: 1 / 6;
+        grid-row: 10 / 12;
+    }
+
+    /* Card styling */
+    .card {
+        display: flex;
+        flex-direction: column;
+        border-radius: var(--border-radius);
+        box-shadow: var(--card-shadow);
+        height: 100%;
+        transition: transform 0.2s, box-shadow 0.2s;
+        overflow: hidden;
+        border: none;
+    }
+
+        .card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.15);
+        }
+
+    .card-header {
+        padding: 16px 20px;
+        font-weight: 600;
+        font-size: 1.1rem;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+        display: flex;
+        align-items: center;
+    }
+
+        .card-header i {
+            margin-right: 10px;
+            font-size: 1.2rem;
+        }
+
+    .card-body {
+        padding: 20px;
+        flex: 1;
+    }
+
+    /* Farm overview card */
+    .farm-overview {
+        background: linear-gradient(135deg, var(--color-earth), var(--color-soil));
+        color: white;
+    }
+
+    .stat-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 12px 0;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+        .stat-item:last-child {
+            border-bottom: none;
+        }
+
+    .stat-value {
+        font-size: 1.25rem;
+        font-weight: 600;
+        background: rgba(0, 0, 0, 0.2);
+        padding: 4px 12px;
+        border-radius: 20px;
+    }
+
+    /* Livestock card - using similar style to farm overview */
+    .livestock {
+        background: linear-gradient(135deg, var(--color-earth), var(--color-soil));
+        color: white;
+    }
+
+        .livestock .list-group {
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .livestock .list-group-item {
+            border-color: rgba(255, 255, 255, 0.15);
+            transition: background-color 0.2s;
+            padding: 12px 16px;
+            background-color: transparent;
+        }
+
+            .livestock .list-group-item:hover {
+                background-color: rgba(255, 255, 255, 0.1);
+            }
+
+        .livestock .badge {
+            font-size: 0.9rem;
+            padding: 6px 10px;
+            border-radius: 20px;
+        }
+
+    /* Quick links card */
+    .quick-links {
+        background: linear-gradient(135deg, var(--color-wheat), var(--color-hay));
+        color: #5D4037;
+    }
+
+        .quick-links .btn {
+            transition: all 0.2s;
+            border-radius: 8px;
+            font-weight: 600;
+            padding: 8px 16px;
+            margin: 8px;
+            min-width: 120px;
+            border: 2px solid rgba(93, 64, 55, 0.6);
+            background-color: rgba(255, 255, 255, 0.2);
+            color: #5D4037;
+        }
+
+            .quick-links .btn:hover {
+                background-color: #5D4037;
+                color: var(--color-wheat);
+                transform: translateY(-2px);
+            }
+
+        .quick-links .btn-primary {
+            background-color: #5D4037;
+            color: var(--color-wheat);
+            border-color: #5D4037;
+        }
+
+            .quick-links .btn-primary:hover {
+                background-color: #3E2723;
+                border-color: #3E2723;
+            }
+
+    /* Users card - now using farm overview style */
+    .users {
+        background: linear-gradient(135deg, var(--color-earth), var(--color-soil));
+        color: white;
+    }
+
+        .users .table {
+            color: white;
+        }
+
+        .users thead {
+            background-color: rgba(255, 255, 255, 0.15);
+        }
+
+        .users th {
+            font-weight: 600;
+            color: white;
+            border-color: rgba(255, 255, 255, 0.1);
+        }
+
+        .users td {
+            border-color: rgba(255, 255, 255, 0.1);
+        }
+
+        .users tbody tr {
+            transition: background-color 0.2s;
+        }
+
+            .users tbody tr:hover {
+                background-color: rgba(255, 255, 255, 0.08);
+            }
+    .activity {
+        background: linear-gradient(135deg, var(--color-earth), var(--color-soil));
+        color: white;
+    }
+
+        .activity .table {
+            color: white;
+        }
+
+        .activity thead {
+            background-color: rgba(255, 255, 255, 0.15);
+        }
+
+        .activity th {
+            font-weight: 600;
+            color: white;
+            border-color: rgba(255, 255, 255, 0.1);
+        }
+
+        .activity td {
+            border-color: rgba(255, 255, 255, 0.1);
+        }
+
+        .activity tbody tr {
+            transition: background-color 0.2s;
+        }
+
+            .activity tbody tr:hover {
+                background-color: rgba(255, 255, 255, 0.08);
+            }
+
+          /*  .users {
+    background: linear-gradient(135deg, var(--color-earth), var(--color-soil));
+    color: white;
+}
+
+    .users .table {
+        color: white;
+    }
+
+    .users thead {
+        background-color: rgba(255, 255, 255, 0.15);
+    }
+
+    .users th {
+        font-weight: 600;
+        color: white;
+        border-color: rgba(255, 255, 255, 0.1);
+    }
+
+    .users td {
+        border-color: rgba(255, 255, 255, 0.1);
+    }
+
+    .users tbody tr {
+        transition: background-color 0.2s;
+    }
+
+        .users tbody tr:hover {
+            background-color: rgba(255, 255, 255, 0.08);
+        }*/
+
+    /* Activity logs card - now using quick links style */
+    /*
+    .activity {
+        background: linear-gradient(135deg, var(--color-wheat), var(--color-hay));
+        color: #5D4037;
+    }
+
+        .activity .table {
+            color: #5D4037;
+        }
+
+        .activity thead {
+            background-color: rgba(93, 64, 55, 0.1); 
+        }
+
+        .activity th {
+            font-weight: 600;
+            color: #5D4037;
+            border-color: rgba(93, 64, 55, 0.1);
+        }
+
+        .activity td {
+            border-color: rgba(93, 64, 55, 0.1);
+        }
+
+        .activity tbody tr {
+            transition: background-color 0.2s;
+        }
+
+            .activity tbody tr:hover {
+                background-color: rgba(93, 64, 55, 0.05);
+            }*/
+
+
+    /* Scrollable containers */
+    .scrollable {
+        overflow-y: auto;
+        height: 100%;
+        max-height: 100%;
+        scrollbar-width: thin;
+        scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+    }
+
+        .scrollable::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .scrollable::-webkit-scrollbar-thumb {
+            background-color: rgba(255, 255, 255, 0.2);
+            border-radius: 3px;
+        }
+
+        .scrollable::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+    /* Role indicators */
+    .role-indicator {
+        display: inline-block;
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        margin-right: 8px;
+    }
+
+    .role-owner {
+        background-color: #FFD700;
+    }
+
+    .role-manager {
+        background-color: #FFFFFF;
+    }
+
+    .role-worker {
+        background-color: #E6DFD6;
+    }
+
+    /* Activity timestamp styling */
+    .timestamp {
+        font-size: 0.85rem;
+        opacity: 0.8;
+    }
+
+    /* Add a subtle grain texture to all cards for farm feel */
+    .card::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.05'/%3E%3C/svg%3E");
+        opacity: 0.05;
+        pointer-events: none;
+    }
+</style>
+
+<!-- Add Font Awesome for icons -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
+<h2 class="dashboard-title">FarmTrack Pro</h2>
+
+<div class="parent">
+    <!-- Farm Overview -->
+    <div class="div1">
+        <div class="card farm-overview h-100">
+            <div class="card-header">
+                <i class="fas fa-tractor"></i> Farm Overview
+            </div>
+            <div class="card-body scrollable">
+                <div class="stat-item">
+                    <strong><i class="fas fa-users"></i> Total Users</strong>
+                    <span class="stat-value">@ViewBag.Users.Count</span>
+                </div>
+                <div class="stat-item">
+                    <strong><i class="fas fa-horse"></i> Livestock Count</strong>
+                    <span class="stat-value">@ViewBag.LivestockCount</span>
+                </div>
+                <div class="stat-item">
+                    <strong><i class="fas fa-warehouse"></i> Inventory Items</strong>
+                    <span class="stat-value">@ViewBag.InventoryCount</span>
+                </div>
+                <div class="stat-item">
+                    <strong><i class="fas fa-briefcase"></i> Job Listings</strong>
+                    <span class="stat-value">@ViewBag.JobsCount</span>
+                </div>
+                <div class="stat-item">
+                    <strong><i class="fas fa-tasks"></i> Active Tasks</strong>
+                    <span class="stat-value">@ViewBag.TasksCount</span>
+                </div>
+                <div class="stat-item">
+                    <strong><i class="fas fa-exclamation-triangle"></i> Low Stock Items</strong>
+                    <span class="stat-value text-danger">@ViewBag.LowStockCount</span>
+                </div>
+                <div class="stat-item">
+                    <strong><i class="fas fa-qrcode"></i> </strong>
+                    <a href="@Url.Action("ScanQR", "Livestock")" class="btn m-3">
+                        <i class="fas fa-qrcode"></i> Scan QR Code
+                    </a>
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Livestock Summary -->
+    <div class="div2">
+        <div class="card livestock h-100">
+            <div class="card-header">
+                <i class="fas fa-cow"></i> Livestock Summary
+            </div>
+            <div class="card-body scrollable">
+                <ul class="list-group">
+                    @foreach (var group in ViewBag.LivestockGroupedByType as List<LivestockGroupViewModel>)
+                    {
+                        <li class="list-group-item d-flex justify-content-between bg-transparent text-white">
+                            <span><i class="fas fa-paw"></i> @group.Type</span>
+                            <span class="badge bg-light text-dark">@group.Count</span>
+                        </li>
+                    }
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Links -->
+    <div class="div3">
+        <div class="card quick-links h-100">
+            <div class="card-header">
+                <i class="fas fa-link"></i> Quick Access
+            </div>
+            <div class="card-body text-center scrollable">
+                <a href="@Url.Action("Index", "Livestock")" class="btn m-1">
+                    <i class="fas fa-horse"></i> Livestock
+                </a>
+                <a href="@Url.Action("Index", "Task")" class="btn m-1">
+                    <i class="fas fa-tasks"></i> Tasks
+                </a>
+                <a href="@Url.Action("InventoryList", "Inventory")" class="btn m-1">
+                    <i class="fas fa-boxes"></i> Inventory
+                </a>
+                <a href="@Url.Action("Index", "Jobs")" class="btn m-1">
+                    <i class="fas fa-briefcase"></i> Jobs
+                </a>
+                <a href="@Url.Action("Index", "Account")" class="btn m-1"> 
+                    <i class="fas fa-users"></i> Users
+                </a>
+                <a href="@Url.Action("Index", "Equipment")" class="btn m-1">
+                    <i class="fas fa-tractor"></i> Equipment
+                </a>
+                @if (Session["Role"] != null && Session["Role"].ToString() == "Owner")
+                {
+                    <a href="@Url.Action("JobApplications", "Jobs")" class="btn btn-primary mt-3">
+                        <i class="fas fa-file-alt"></i> View Job Applications
+                    </a>
+                }
+            </div>
+        </div>
+    </div>
+
+
+    <!-- User Management -->
+    <div class="div4">
+        <div class="card users h-100">
+            <div class="card-header">
+                <i class="fas fa-user-cog"></i> Manage Users
+            </div>
+            <div class="card-body scrollable p-0">
+                @if (Session["Role"] != null && Session["Role"].ToString() == "Owner")
+                {
+                    <table class="table table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th><i class="fas fa-id-card"></i> Full Name</th>
+                                <th><i class="fas fa-envelope"></i> Email</th>
+                                <th><i class="fas fa-user-tag"></i> Role</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var user in ViewBag.Users)
+                            {
+                                <tr>
+                                    <td>@user.FullName</td>
+                                    <td>@user.Email</td>
+                                    <td>
+                                        <span class="indicator @(user.Role == "Owner" ? "indicator-red" : (user.Role == "Manager" ? "indicator-yellow" : "indicator-green"))"></span>
+                                        @user.Role
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                }
+                else
+                {
+                    <table class="table table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th><i class="fas fa-clipboard-list"></i> Task Title</th>
+                                <th><i class="fas fa-calendar-day"></i> Due Date</th>
+                                <th><i class="fas fa-user-tie"></i> Assigned User</th>
+                                <th><i class="fas fa-building"></i> Assigned Department</th>
+                                <th><i class="fas fa-cogs"></i> Status</th>
+                                <!--<th>Actions</th> <!-- Added Actions column -->
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if (Session["Role"] != null && Session["Role"].ToString() == "Admin")
+                            {
+                                var adminDepartment = Session["Department"]?.ToString(); // Admin's department from session
+                                var adminTasks = ((List<FarmTask>)ViewBag.AllTasks)
+                                                .Where(t => t.AssignedDepartment == adminDepartment)
+                                                .ToList();
+
+                                if (!adminTasks.Any()) // If there are no tasks to display
+                                {
+                                    <tr><td colspan="6">No tasks assigned.</td></tr>
+                                }
+                                else
+                                {
+                                    foreach (var task in adminTasks)
+                                    {
+                                        <tr class="clickable-row" data-href="@Url.Action("Details", "Task", new { id = task.TaskId })">
+                                            <td>@task.Title</td>
+                                            <td>@task.DueDate.ToString("MM/dd/yyyy")</td>
+                                            <td>@task.AssignedUser.FullName</td>
+                                            <td>@task.AssignedDepartment</td>
+                                            <td>
+                                                <span class="indicator @(task.Status == "Completed" ? "indicator-green" : (task.Status == "In Progress" ? "indicator-yellow" : "indicator-red"))"></span>
+                                                @task.Status
+                                            </td>
+                                            <!--<td>
+                                                <a href="@Url.Action("Details", "Task", new { id = task.TaskId })" class="btn btn-sm btn-primary">
+                                                    <i class="fas fa-eye"></i> View Details
+                                                </a>
+                                            </td>-->
+                                        </tr>
+                                    }
+                                }
+                            }
+                        </tbody>
+                    </table>
+
+                }
+            </div>
+        </div>
+    </div>
+
+
+    <!-- Activity Logs -->
+    <div class="div5">
+        <div class="card activity h-100">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <div>
+                    <i class="fas fa-history"></i> Recent Activity Logs
+                </div>
+                <a href="@Url.Action("Index", "ActivityLogs")" class="btn m-1">
+                    <i class="fas fa-list"></i> View All
+                </a>
+            </div>
+            <div class="card-body scrollable p-0">
+                <table class="table table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th><i class="fas fa-user"></i> User</th>
+                            <th><i class="fas fa-clipboard-list"></i> Activity</th>
+                            <th><i class="fas fa-clock"></i> Timestamp</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var log in Model)
+                        {
+                            <tr>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="avatar-sm me-2 bg-light rounded-circle text-center">
+                                            <span class="text-secondary fw-bold">@log.User.FullName.Substring(0, 1)</span>
+                                        </div>
+                                        @log.User.FullName
+                                    </div>
+                                </td>
+                                <td>
+                                    @{
+                                        string badgeClass = "bg-secondary";
+                                        if (log.Description.Contains("created") || log.Description.Contains("added"))
+                                        {
+                                            badgeClass = "bg-success";
+                                        }
+                                        else if (log.Description.Contains("deleted") || log.Description.Contains("removed"))
+                                        {
+                                            badgeClass = "bg-danger";
+                                        }
+                                        else if (log.Description.Contains("updated") || log.Description.Contains("modified"))
+                                        {
+                                            badgeClass = "bg-warning text-dark";
+                                        }
+                                    }
+                                    <span class="badge @badgeClass me-2">@log.Description.Split(' ')[0]</span>
+                                    @log.Description
+                                </td>
+                                <td class="text-muted">
+                                    <small>@log.Timestamp.ToString("MMM dd, yyyy HH:mm")</small>
+                                </td>
+                            </tr>
+                        }
+
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+</div>
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        let rows = document.querySelectorAll(".clickable-row");
+        rows.forEach(row => {
+            row.addEventListener("click", function () {
+                let url = this.getAttribute("data-href");
+                if (url) {
+                    window.location.href = url;
+                }
+            });
+        });
+    });
+
+</script>

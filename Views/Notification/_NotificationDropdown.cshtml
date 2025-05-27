@@ -1,0 +1,18 @@
+﻿@model List<FarmTrack.Models.NotificationViewModel>
+
+<ul class="dropdown-menu dropdown-menu-end show" style="max-height: 300px; overflow-y: auto;">
+    @if (!Model.Any())
+    {
+        <li class="dropdown-item text-muted">No notifications</li>
+    }
+    else
+    {
+        foreach (var item in Model)
+        {
+            <li class="dropdown-item">
+                <strong>@item.Type:</strong> @item.Content <br />
+                <small class="text-muted">@item.Time.ToShortTimeString()</small>
+            </li>
+        }
+    }
+</ul>
