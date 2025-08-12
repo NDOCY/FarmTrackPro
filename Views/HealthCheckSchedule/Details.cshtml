@@ -236,6 +236,22 @@
                     </span>
                 }
             </td>
+
+        </tr>
+        <tr>
+            <th><i class="fas fa-user"></i> Assigned Vet</th>
+            <td>
+                @if (Model.IsOutsourced && Model.Veterinarian != null)
+                {
+                    <strong>@Model.Veterinarian.FullName</strong><br />
+                    <small class="text-muted">@Model.Veterinarian.ClinicName</small>
+                }
+                else
+                {
+                    <em>N/A</em>
+                }
+                        )
+                    </td>
         </tr>
     </table>
 

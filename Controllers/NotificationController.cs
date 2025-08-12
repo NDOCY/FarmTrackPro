@@ -9,7 +9,7 @@ namespace FarmTrack.Controllers
     public class NotificationController : Controller
     {
         private FarmTrackContext db = new FarmTrackContext();
-
+        /*
         [HttpGet]
         public JsonResult Check()
         {
@@ -118,6 +118,6 @@ namespace FarmTrack.Controllers
             return PartialView("_NotificationDropdown", sorted);
         }
 
-
+        */
     }
 }

@@ -1,0 +1,179 @@
+﻿@model FarmTrack.Models.Veterinarian
+
+<style>
+    /* Unified FarmTrack Color Scheme */
+    :root {
+        --color-earth: #8B7355;
+        --color-soil: #654321;
+        --color-foliage: #4CAF50;
+        --color-wheat: #F5DEB3;
+        --color-danger: #FF6B6B;
+        --color-white: #FFFFFF;
+        --color-info: #3F88C5;
+        --color-health: #3F88C5;
+        --color-light-earth: #d9c8b4;
+    }
+
+    /* Page Header */
+    .vet-detail-header {
+        background: linear-gradient(135deg, var(--color-wheat), var(--color-light-earth));
+        padding: 20px 25px;
+        border-radius: 12px;
+        margin-bottom: 30px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        border-left: 5px solid var(--color-health);
+    }
+
+        .vet-detail-header h2 {
+            color: var(--color-soil);
+            margin: 0;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+    /* Detail Card */
+    .vet-detail-card {
+        border: none;
+        border-radius: 12px;
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+        overflow: hidden;
+        background-color: var(--color-white);
+        margin-bottom: 30px;
+    }
+
+    .vet-detail-card-header {
+        background: linear-gradient(135deg, var(--color-soil), var(--color-earth));
+        color: white;
+        padding: 15px 20px;
+        font-size: 1.4rem;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .vet-detail-card-body {
+        padding: 25px;
+    }
+
+    .vet-detail-item {
+        display: flex;
+        margin-bottom: 20px;
+        align-items: flex-start;
+    }
+
+    .vet-detail-icon {
+        width: 40px;
+        height: 40px;
+        background: linear-gradient(135deg, var(--color-health), #2c6da3);
+        color: white;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 15px;
+        flex-shrink: 0;
+    }
+
+    .vet-detail-label {
+        font-weight: 600;
+        color: var(--color-soil);
+        margin-bottom: 5px;
+        display: block;
+    }
+
+    .vet-detail-value {
+        color: var(--color-earth);
+        font-size: 1.1rem;
+    }
+
+    /* Action Buttons */
+    .vet-action-btns {
+        display: flex;
+        gap: 15px;
+        margin-top: 30px;
+    }
+
+    .btn-vet {
+        border-radius: 8px;
+        padding: 10px 20px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        border: none;
+        cursor: pointer;
+    }
+
+    .btn-edit {
+        background: linear-gradient(135deg, var(--color-earth), var(--color-soil));
+        color: white;
+    }
+
+    .btn-back {
+        background: linear-gradient(135deg, #6c757d, #5a6268);
+        color: white;
+    }
+
+    .btn-vet:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+    }
+</style>
+
+<div class="vet-detail-header">
+    <h2>
+        <i class="fas fa-user-md"></i>
+        Veterinarian Details
+    </h2>
+</div>
+
+<div class="vet-detail-card">
+    <div class="vet-detail-card-header">
+        <i class="fas fa-clinic-medical"></i>
+        @Model.FullName
+    </div>
+    <div class="vet-detail-card-body">
+        <div class="vet-detail-item">
+            <div class="vet-detail-icon">
+                <i class="fas fa-hospital"></i>
+            </div>
+            <div>
+                <span class="vet-detail-label">Clinic</span>
+                <span class="vet-detail-value">@Model.ClinicName</span>
+            </div>
+        </div>
+
+        <div class="vet-detail-item">
+            <div class="vet-detail-icon">
+                <i class="fas fa-phone"></i>
+            </div>
+            <div>
+                <span class="vet-detail-label">Phone</span>
+                <span class="vet-detail-value">@Model.Phone</span>
+            </div>
+        </div>
+
+        <div class="vet-detail-item">
+            <div class="vet-detail-icon">
+                <i class="fas fa-envelope"></i>
+            </div>
+            <div>
+                <span class="vet-detail-label">Email</span>
+                <span class="vet-detail-value">@Model.Email</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="vet-action-btns">
+    @Html.ActionLink("Edit", "Edit", new { id = Model.Id }, new { @class = "btn-vet btn-edit" })
+    @Html.ActionLink("Back to List", "Index", null, new { @class = "btn-vet btn-back" })
+</div>
+
+<!-- Font Awesome for Icons -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">

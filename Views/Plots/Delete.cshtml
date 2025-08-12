@@ -1,0 +1,128 @@
+﻿@model FarmTrack.Models.Plot
+
+@{
+    ViewBag.Title = "Delete";
+}
+
+<h2>Delete</h2>
+
+<h3>Are you sure you want to delete this?</h3>
+<div>
+    <h4>Plot</h4>
+    <hr />
+    <dl class="dl-horizontal">
+        <dt>
+            @Html.DisplayNameFor(model => model.Crop.Name)
+        </dt>
+
+        <dd>
+            @Html.DisplayFor(model => model.Crop.Name)
+        </dd>
+
+        <dt>
+            @Html.DisplayNameFor(model => model.Name)
+        </dt>
+
+        <dd>
+            @Html.DisplayFor(model => model.Name)
+        </dd>
+
+        <dt>
+            @Html.DisplayNameFor(model => model.SoilType)
+        </dt>
+
+        <dd>
+            @Html.DisplayFor(model => model.SoilType)
+        </dd>
+
+        <dt>
+            @Html.DisplayNameFor(model => model.IrrigationMethod)
+        </dt>
+
+        <dd>
+            @Html.DisplayFor(model => model.IrrigationMethod)
+        </dd>
+
+        <dt>
+            @Html.DisplayNameFor(model => model.FertilizerType)
+        </dt>
+
+        <dd>
+            @Html.DisplayFor(model => model.FertilizerType)
+        </dd>
+
+        <dt>
+            @Html.DisplayNameFor(model => model.SizeInHectares)
+        </dt>
+
+        <dd>
+            @Html.DisplayFor(model => model.SizeInHectares)
+        </dd>
+
+        <dt>
+            @Html.DisplayNameFor(model => model.PlantingDate)
+        </dt>
+
+        <dd>
+            @Html.DisplayFor(model => model.PlantingDate)
+        </dd>
+
+        <dt>
+            @Html.DisplayNameFor(model => model.MaturityDate)
+        </dt>
+
+        <dd>
+            @Html.DisplayFor(model => model.MaturityDate)
+        </dd>
+
+        <dt>
+            @Html.DisplayNameFor(model => model.Status)
+        </dt>
+
+        <dd>
+            @Html.DisplayFor(model => model.Status)
+        </dd>
+
+        <dt>
+            @Html.DisplayNameFor(model => model.Coordinates)
+        </dt>
+
+        <dd>
+            @Html.DisplayFor(model => model.Coordinates)
+        </dd>
+
+        <dt>
+            @Html.DisplayNameFor(model => model.LastInspectionDate)
+        </dt>
+
+        <dd>
+            @Html.DisplayFor(model => model.LastInspectionDate)
+        </dd>
+
+        <dt>
+            @Html.DisplayNameFor(model => model.IrrigationFrequency)
+        </dt>
+
+        <dd>
+            @Html.DisplayFor(model => model.IrrigationFrequency)
+        </dd>
+
+        <dt>
+            @Html.DisplayNameFor(model => model.Notes)
+        </dt>
+
+        <dd>
+            @Html.DisplayFor(model => model.Notes)
+        </dd>
+
+    </dl>
+
+    @using (Html.BeginForm()) {
+        @Html.AntiForgeryToken()
+
+        <div class="form-actions no-color">
+            <input type="submit" value="Delete" class="btn btn-default" /> |
+            @Html.ActionLink("Back to List", "Index")
+        </div>
+    }
+</div>

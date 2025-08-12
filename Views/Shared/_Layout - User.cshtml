@@ -6,6 +6,8 @@
     <title>@ViewBag.Title - FarmTrack Pro</title>
     @Styles.Render("~/Content/css")
     @Scripts.Render("~/bundles/modernizr")
+    @RenderSection("Styles", required: false)
+
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         :root {
@@ -90,9 +92,9 @@
             <div class="collapse navbar-collapse d-sm-inline-flex justify-content-between">
                 <ul class="navbar-nav ms-auto">
                     <li class="nav-item">
-                            <a href="@Url.Action("ScanQR", "Livestock")">
-                                <i class="fas fa-qrcode me-1"></i> Scan QR Code
-                            </a>
+                        <a href="@Url.Action("ScanQR", "Livestock")">
+                            <i class="fas fa-qrcode me-1"></i> Scan QR Code
+                        </a>
                     </li>
 
                     <li class="nav-item dropdown" id="notificationDropdown">
@@ -136,117 +138,119 @@
 
     @Scripts.Render("~/bundles/bootstrap")
     @RenderSection("scripts", required: false)
-    <script>
-        const defaultNotificationState = {
-            unreadMessages: 0,
-            pendingTask: 0,
-            lowStock: 0,
-            newStatusUpdate: 0
-        };
+    <!-- In your _Layout.cshtml -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!--<script>
+            const defaultNotificationState = {
+                unreadMessages: 0,
+                pendingTask: 0,
+                lowStock: 0,
+                newStatusUpdate: 0
+            };
 
-        function getLastState() {
-            const saved = localStorage.getItem("lastNotificationState");
-            return saved ? JSON.parse(saved) : defaultNotificationState;
-        }
-
-        function saveLastState(state) {
-            localStorage.setItem("lastNotificationState", JSON.stringify(state));
-        }
-
-        function playSound(url) {
-            const audio = new Audio(url);
-            audio.play().catch(e => console.warn("Sound play failed:", e));
-        }
-
-        function updateBadge(id, count) {
-            const el = document.getElementById(id);
-            if (!el) return;
-            el.innerText = count > 0 ? count : '';
-            el.style.display = count > 0 ? 'inline-block' : 'none';
-        }
-
-        function loadNotifications() {
-            fetch('/Notification/Dropdown')
-                .then(res => res.text())
-                .then(html => {
-                    document.getElementById('notifContent').innerHTML = html;
-                });
-        }
-
-        function checkNotifications() {
-            fetch('/Notification/Check')
-                .then(res => res.json())
-                .then(data => {
-                    const { unreadMessages, pendingTask, lowStock, newStatusUpdate } = data;
-
-                    // Update badges
-                    updateBadge('messageBadge', unreadMessages);
-                    updateBadge('taskBadge', pendingTask);
-                    updateBadge('lowStockBadge', lowStock);
-                    updateBadge('statusUpdateBadge', newStatusUpdate);
-                    updateBadge('notifCount', unreadMessages + pendingTask + lowStock + newStatusUpdate);
-
-                    const last = getLastState();
-
-                    // Only notify if counts increased
-                    if (unreadMessages > last.unreadMessages) {
-                        playSound('/Content/notify.mp3');
-                        if (Notification.permission === "granted") {
-                            new Notification("You have new messages.");
-                        }
-                    }
-
-                    if (pendingTask > last.pendingTask) {
-                        playSound('/Content/notify.mp3');
-                        if (Notification.permission === "granted") {
-                            new Notification("You have pending tasks.");
-                        }
-                    }
-
-                    if (lowStock > last.lowStock) {
-                        playSound('/Content/notify.mp3');
-                        if (Notification.permission === "granted") {
-                            new Notification(`Low stock alert: ${lowStock} items.`);
-                        }
-                    }
-
-                    if (newStatusUpdate > last.newStatusUpdate) {
-                        playSound('/Content/notify.mp3');
-                        if (Notification.permission === "granted") {
-                            new Notification("New task status updates.");
-                        }
-                    }
-
-                    saveLastState({ unreadMessages, pendingTask, lowStock, newStatusUpdate });
-                });
-        }
-
-        document.addEventListener('DOMContentLoaded', () => {
-            // Request notification permission on first load
-            if ("Notification" in window && Notification.permission !== "granted") {
-                Notification.requestPermission();
+            function getLastState() {
+                const saved = localStorage.getItem("lastNotificationState");
+                return saved ? JSON.parse(saved) : defaultNotificationState;
             }
 
-            // Load immediately and then every 30s
-            checkNotifications();
-            loadNotifications();
-            setInterval(() => {
+            function saveLastState(state) {
+                localStorage.setItem("lastNotificationState", JSON.stringify(state));
+            }
+
+            function playSound(url) {
+                const audio = new Audio(url);
+                audio.play().catch(e => console.warn("Sound play failed:", e));
+            }
+
+            function updateBadge(id, count) {
+                const el = document.getElementById(id);
+                if (!el) return;
+                el.innerText = count > 0 ? count : '';
+                el.style.display = count > 0 ? 'inline-block' : 'none';
+            }
+
+            function loadNotifications() {
+                fetch('/Notification/Dropdown')
+                    .then(res => res.text())
+                    .then(html => {
+                        document.getElementById('notifContent').innerHTML = html;
+                    });
+            }
+
+            function checkNotifications() {
+                fetch('/Notification/Check')
+                    .then(res => res.json())
+                    .then(data => {
+                        const { unreadMessages, pendingTask, lowStock, newStatusUpdate } = data;
+
+                        // Update badges
+                        updateBadge('messageBadge', unreadMessages);
+                        updateBadge('taskBadge', pendingTask);
+                        updateBadge('lowStockBadge', lowStock);
+                        updateBadge('statusUpdateBadge', newStatusUpdate);
+                        updateBadge('notifCount', unreadMessages + pendingTask + lowStock + newStatusUpdate);
+
+                        const last = getLastState();
+
+                        // Only notify if counts increased
+                        if (unreadMessages > last.unreadMessages) {
+                            playSound('/Content/notify.mp3');
+                            if (Notification.permission === "granted") {
+                                new Notification("You have new messages.");
+                            }
+                        }
+
+                        if (pendingTask > last.pendingTask) {
+                            playSound('/Content/notify.mp3');
+                            if (Notification.permission === "granted") {
+                                new Notification("You have pending tasks.");
+                            }
+                        }
+
+                        if (lowStock > last.lowStock) {
+                            playSound('/Content/notify.mp3');
+                            if (Notification.permission === "granted") {
+                                new Notification(`Low stock alert: ${lowStock} items.`);
+                            }
+                        }
+
+                        if (newStatusUpdate > last.newStatusUpdate) {
+                            playSound('/Content/notify.mp3');
+                            if (Notification.permission === "granted") {
+                                new Notification("New task status updates.");
+                            }
+                        }
+
+                        saveLastState({ unreadMessages, pendingTask, lowStock, newStatusUpdate });
+                    });
+            }
+
+            document.addEventListener('DOMContentLoaded', () => {
+                // Request notification permission on first load
+                if ("Notification" in window && Notification.permission !== "granted") {
+                    Notification.requestPermission();
+                }
+
+                // Load immediately and then every 30s
                 checkNotifications();
                 loadNotifications();
-            }, 30000);
-
-            // Refresh dropdown when bell is clicked
-            const notifToggle = document.getElementById('notifToggle');
-            if (notifToggle) {
-                notifToggle.addEventListener('click', () => {
+                setInterval(() => {
+                    checkNotifications();
                     loadNotifications();
-                });
-            }
-        });
-    </script>
+                }, 30000);
 
+                // Refresh dropdown when bell is clicked
+                const notifToggle = document.getElementById('notifToggle');
+                if (notifToggle) {
+                    notifToggle.addEventListener('click', () => {
+                        loadNotifications();
+                    });
+                }
+            });
+        </script>
+        -->
 
 
 
 </body>
-</html>
+    </html>

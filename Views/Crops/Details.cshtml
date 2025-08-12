@@ -1,0 +1,598 @@
+﻿@model FarmTrack.Models.Crop
+
+@{
+    ViewBag.Title = "Crop Details";
+}
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        <i class="fas fa-check-circle me-2"></i> @TempData["Success"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <i class="fas fa-exclamation-circle me-2"></i> @TempData["Error"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+<style>
+    /* Custom Color Scheme */
+    :root {
+        --color-earth: #8B7355; /* Primary */
+        --color-soil: #654321; /* Secondary */
+        --color-foliage: #4CAF50; /* Tertiary */
+        --color-wheat: #F5DEB3; /* Accent */
+        --color-danger: #FF6B6B; /* Error */
+        --color-white: #FFFFFF; /* Neutral */
+        --color-light-earth: #e5d9cc; /* Light version of earth */
+        --color-light-foliage: #e8f5e9; /* Light version of foliage */
+        --color-success: #4CAF50;
+        --color-info: #2196F3;
+    }
+
+    body {
+        background-color: #f9f7f4;
+    }
+
+    /* Dashboard Header */
+    .dashboard-header {
+        background: linear-gradient(135deg, var(--color-earth) 0%, var(--color-soil) 100%);
+        border-radius: 12px;
+        padding: 30px;
+        margin-bottom: 30px;
+        position: relative;
+        overflow: hidden;
+        box-shadow: 0 10px 20px rgba(101, 67, 33, 0.2);
+    }
+
+        .dashboard-header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 250px;
+            height: 100%;
+            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23F5DEB3" opacity="0.1"><path d="M12 2L13.09 8.26L22 9L13.09 9.74L12 16L10.91 9.74L2 9L10.91 8.26L12 2Z"/></svg>');
+            background-repeat: no-repeat;
+            background-position: right center;
+            background-size: 180px;
+            opacity: 0.2;
+        }
+
+        .dashboard-header h1 {
+            color: var(--color-white);
+            font-weight: 700;
+            margin-bottom: 10px;
+            font-size: 2.2rem;
+        }
+
+        .dashboard-header p {
+            color: var(--color-wheat);
+            font-size: 1.2rem;
+            max-width: 600px;
+        }
+
+    /* Crop Info Cards */
+    .info-card {
+        background-color: var(--color-white);
+        border-radius: 12px;
+        padding: 25px;
+        margin-bottom: 25px;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+    }
+
+        .info-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, var(--color-earth), var(--color-foliage));
+        }
+
+        .info-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.12);
+        }
+
+    .card-header {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 20px;
+        padding-bottom: 15px;
+        border-bottom: 2px solid rgba(139, 115, 85, 0.1);
+    }
+
+        .card-header h3 {
+            color: var(--color-soil);
+            font-weight: 700;
+            margin: 0;
+            font-size: 1.5rem;
+        }
+
+        .card-header .icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            color: var(--color-white);
+        }
+
+    .basic-info-icon {
+        background: linear-gradient(135deg, var(--color-foliage), #45a049);
+    }
+
+    .requirements-icon {
+        background: linear-gradient(135deg, var(--color-earth), var(--color-soil));
+    }
+
+    /* Details List */
+    .details-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 20px;
+        margin-top: 15px;
+    }
+
+    .detail-item {
+        display: flex;
+        flex-direction: column;
+        background-color: #f8f9fa;
+        border-radius: 8px;
+        padding: 15px;
+        transition: all 0.2s ease;
+        border-left: 4px solid var(--color-wheat);
+    }
+
+        .detail-item:hover {
+            background-color: var(--color-light-earth);
+            border-left-color: var(--color-earth);
+        }
+
+    .detail-label {
+        font-weight: 600;
+        color: var(--color-soil);
+        margin-bottom: 5px;
+        font-size: 0.9rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .detail-value {
+        color: #333;
+        font-size: 1rem;
+        line-height: 1.4;
+    }
+
+    /* No Data State */
+    .no-data-card {
+        background: linear-gradient(135deg, #f8f9fa, #ffffff);
+        border: 2px dashed var(--color-wheat);
+        border-radius: 12px;
+        padding: 40px;
+        text-align: center;
+        margin-bottom: 25px;
+    }
+
+        .no-data-card .icon {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--color-wheat), #e6c89a);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px;
+            font-size: 2rem;
+            color: var(--color-soil);
+        }
+
+        .no-data-card h4 {
+            color: var(--color-soil);
+            margin-bottom: 15px;
+            font-weight: 600;
+        }
+
+        .no-data-card p {
+            color: #666;
+            margin-bottom: 20px;
+        }
+
+    /* Action Buttons */
+    .action-button {
+        background: linear-gradient(135deg, var(--color-foliage) 0%, #45a049 100%);
+        color: white;
+        border: none;
+        border-radius: 8px;
+        padding: 12px 24px;
+        font-weight: 600;
+        font-size: 0.95rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3);
+        transition: all 0.3s ease;
+        text-decoration: none;
+        cursor: pointer;
+    }
+
+        .action-button:hover {
+            background: linear-gradient(135deg, #45a049 0%, var(--color-foliage) 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(76, 175, 80, 0.4);
+            color: white;
+            text-decoration: none;
+        }
+
+    .action-button.info {
+        background: linear-gradient(135deg, var(--color-info), #1976d2);
+        box-shadow: 0 4px 15px rgba(33, 150, 243, 0.3);
+    }
+
+        .action-button.info:hover {
+            background: linear-gradient(135deg, #1976d2, var(--color-info));
+            box-shadow: 0 6px 20px rgba(33, 150, 243, 0.4);
+        }
+
+    .secondary-button {
+        background: transparent;
+        color: var(--color-soil);
+        border: 2px solid var(--color-earth);
+        border-radius: 8px;
+        padding: 10px 22px;
+        font-weight: 600;
+        font-size: 0.95rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        transition: all 0.3s ease;
+        text-decoration: none;
+    }
+
+        .secondary-button:hover {
+            background-color: var(--color-earth);
+            color: var(--color-white);
+            text-decoration: none;
+            transform: translateY(-1px);
+        }
+
+    /* Button Container */
+    .button-container {
+        display: flex;
+        gap: 15px;
+        margin-top: 30px;
+        flex-wrap: wrap;
+        align-items: center;
+    }
+
+    /* Navigation Breadcrumb */
+    .breadcrumb-nav {
+        background-color: rgba(255, 255, 255, 0.9);
+        border-radius: 8px;
+        padding: 12px 20px;
+        margin-bottom: 20px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+    }
+
+        .breadcrumb-nav a {
+            color: var(--color-earth);
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.2s ease;
+        }
+
+            .breadcrumb-nav a:hover {
+                color: var(--color-soil);
+            }
+
+        .breadcrumb-nav .separator {
+            margin: 0 10px;
+            color: #999;
+        }
+
+        .breadcrumb-nav .current {
+            color: var(--color-soil);
+            font-weight: 600;
+        }
+
+    /* Alert Styling */
+    .alert {
+        border: none;
+        border-radius: 10px;
+        padding: 15px 20px;
+        margin-bottom: 25px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        display: flex;
+        align-items: center;
+    }
+
+    .alert-success {
+        background: linear-gradient(135deg, var(--color-light-foliage), #f1f8e9);
+        color: var(--color-foliage);
+        border-left: 4px solid var(--color-foliage);
+    }
+
+    .alert-danger {
+        background: linear-gradient(135deg, #ffebee, #fce4ec);
+        color: var(--color-danger);
+        border-left: 4px solid var(--color-danger);
+    }
+
+    /* Inline Form */
+    .inline-form {
+        display: inline-block;
+        margin: 0;
+    }
+
+    /* Responsive Design */
+    @@media (max-width: 768px) {
+        .dashboard-header {
+            padding: 20px;
+        }
+
+        .dashboard-header h1 {
+            font-size: 1.8rem;
+        }
+
+        .details-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .info-card {
+            padding: 20px;
+        }
+
+        .button-container {
+            flex-direction: column;
+            align-items: stretch;
+        }
+
+        .action-button,
+        .secondary-button {
+            width: 100%;
+            justify-content: center;
+        }
+    }
+
+    /* Loading Animation */
+    @@keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+
+    .loading {
+        animation: spin 1s linear infinite;
+    }
+
+    /* Highlight Animation */
+    @@keyframes highlight {
+        0% { background-color: transparent; }
+        50% { background-color: rgba(76, 175, 80, 0.1); }
+        100% { background-color: transparent; }
+    }
+
+    .highlight-animation {
+        animation: highlight 2s ease-in-out;
+    }
+</style>
+
+<!-- Dashboard Header -->
+<div class="dashboard-header">
+    <h1><i class="fas fa-leaf me-2"></i>@Model.Name Details</h1>
+    <p>Comprehensive information about your crop variety and growing requirements</p>
+</div>
+
+<!-- Breadcrumb Navigation -->
+<div class="breadcrumb-nav">
+    @Html.ActionLink("Crops", "Index")
+    <span class="separator">/</span>
+    <span class="current">@Model.Name Details</span>
+</div>
+
+<!-- Basic Crop Information -->
+<div class="info-card">
+    <div class="card-header">
+        <div class="icon basic-info-icon">
+            <i class="fas fa-seedling"></i>
+        </div>
+        <h3>Basic Information</h3>
+    </div>
+
+    <div class="details-grid">
+        @if (Model.CropRequirement != null && !string.IsNullOrEmpty(Model.CropRequirement.ScientificName))
+        {
+            <div class="detail-item">
+                <div class="detail-label">Scientific Name</div>
+                <div class="detail-value">@Model.CropRequirement.ScientificName</div>
+            </div>
+        }
+
+        <div class="detail-item">
+            <div class="detail-label">Crop Name</div>
+            <div class="detail-value">@Model.Name</div>
+        </div>
+
+        <div class="detail-item">
+            <div class="detail-label">Variety</div>
+            <div class="detail-value">@Model.Variety</div>
+        </div>
+    </div>
+</div>
+
+<!-- Crop Requirements -->
+@if (Model.CropRequirement != null)
+{
+    <div class="info-card">
+        <div class="card-header">
+            <div class="icon requirements-icon">
+                <i class="fas fa-cogs"></i>
+            </div>
+            <h3>Growing Requirements</h3>
+        </div>
+
+        <div class="details-grid">
+            @if (!string.IsNullOrEmpty(Model.CropRequirement.Type))
+            {
+                <div class="detail-item">
+                    <div class="detail-label">Crop Type</div>
+                    <div class="detail-value">@Model.CropRequirement.Type</div>
+                </div>
+            }
+
+            @if (!string.IsNullOrEmpty(Model.CropRequirement.PlantingSeason))
+            {
+                <div class="detail-item">
+                    <div class="detail-label">Optimal Planting Season</div>
+                    <div class="detail-value">@Model.CropRequirement.PlantingSeason</div>
+                </div>
+            }
+
+            @if (Model.CropRequirement.GrowthDurationDays.HasValue)
+            {
+                <div class="detail-item">
+                    <div class="detail-label">Growth Duration</div>
+                    <div class="detail-value">@Model.CropRequirement.GrowthDurationDays days</div>
+                </div>
+            }
+
+            @if (Model.CropRequirement.ExpectedYieldKgPerHectare.HasValue)
+            {
+                <div class="detail-item">
+                    <div class="detail-label">Expected Yield</div>
+                    <div class="detail-value">@Model.CropRequirement.ExpectedYieldKgPerHectare kg/ha</div>
+                </div>
+            }
+
+            @if (!string.IsNullOrEmpty(Model.CropRequirement.PreferredSoil))
+            {
+                <div class="detail-item">
+                    <div class="detail-label">Preferred Soil Type</div>
+                    <div class="detail-value">@Model.CropRequirement.PreferredSoil</div>
+                </div>
+            }
+
+            @if (!string.IsNullOrEmpty(Model.CropRequirement.CommonPestsDiseases))
+            {
+                <div class="detail-item">
+                    <div class="detail-label">Common Pests & Diseases</div>
+                    <div class="detail-value">@Model.CropRequirement.CommonPestsDiseases</div>
+                </div>
+            }
+
+            @if (!string.IsNullOrEmpty(Model.CropRequirement.Notes))
+            {
+                <div class="detail-item">
+                    <div class="detail-label">Additional Notes</div>
+                    <div class="detail-value">@Model.CropRequirement.Notes</div>
+                </div>
+            }
+
+            @if (!string.IsNullOrEmpty(Model.CropRequirement.Source))
+            {
+                <div class="detail-item">
+                    <div class="detail-label">Data Source</div>
+                    <div class="detail-value">@Model.CropRequirement.Source</div>
+                </div>
+            }
+        </div>
+    </div>
+}
+else
+{
+    <div class="no-data-card">
+        <div class="icon">
+            <i class="fas fa-info-circle"></i>
+        </div>
+        <h4>No Growing Requirements Available</h4>
+        <p>Crop requirement data has not been found for this variety. You can fetch detailed growing information from our agricultural database.</p>
+
+        @using (Html.BeginForm("FetchFromApi", "Crops", FormMethod.Post, new { @class = "inline-form" }))
+        {
+            @Html.Hidden("id", Model.Id)
+            <button type="submit" class="action-button info" onclick="this.innerHTML='<i class=\'fas fa-spinner loading\'></i> Fetching Data...'; this.disabled=true;">
+                <i class="fas fa-download"></i> Fetch from Agricultural API
+            </button>
+        }
+    </div>
+}
+
+<!-- Action Buttons -->
+<div class="button-container">
+    @Html.ActionLink("Edit Crop", "Edit", new { id = Model.Id }, new { @class = "action-button" })
+    @Html.ActionLink("Back to Crops", "Index", null, new { @class = "secondary-button" })
+</div>
+
+<!-- Font Awesome for Icons -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
+<!-- Bootstrap JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        // Add highlight animation to newly fetched data
+        if (window.location.search.includes('fetched=true')) {
+            const requirementsCard = document.querySelector('.info-card:last-of-type');
+            if (requirementsCard) {
+                requirementsCard.classList.add('highlight-animation');
+            }
+        }
+
+        // Enhance the API fetch button
+        const fetchForm = document.querySelector('.inline-form');
+        if (fetchForm) {
+            fetchForm.addEventListener('submit', function(e) {
+                const button = this.querySelector('button');
+                const originalContent = button.innerHTML;
+
+                button.innerHTML = '<i class="fas fa-spinner loading"></i> Fetching Data...';
+                button.disabled = true;
+
+                // Add a timeout to prevent indefinite loading state
+                setTimeout(() => {
+                    if (button.disabled) {
+                        button.innerHTML = originalContent;
+                        button.disabled = false;
+                    }
+                }, 30000); // 30 seconds timeout
+            });
+        }
+
+        // Add smooth scrolling for better UX
+        const links = document.querySelectorAll('a[href^="#"]');
+        links.forEach(link => {
+            link.addEventListener('click', function(e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({ behavior: 'smooth' });
+                }
+            });
+        });
+
+        // Add hover effects to detail items
+        const detailItems = document.querySelectorAll('.detail-item');
+        detailItems.forEach(item => {
+            item.addEventListener('mouseenter', function() {
+                this.style.transform = 'translateY(-2px)';
+            });
+
+            item.addEventListener('mouseleave', function() {
+                this.style.transform = 'translateY(0)';
+            });
+        });
+    });
+</script>

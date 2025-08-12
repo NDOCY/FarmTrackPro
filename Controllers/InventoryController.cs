@@ -259,7 +259,7 @@ namespace FarmTrack.Controllers
 
                     return RedirectToAction("RestockList");
                 }
-                catch (Exception ex)
+                catch (Exception )
                 {
                     TempData["Error"] = "Failed to create restock request. Please try again.";
                     // Log the exception for debugging

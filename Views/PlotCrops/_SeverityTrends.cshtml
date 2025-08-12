@@ -1,0 +1,83 @@
+﻿@model IEnumerable<FarmTrack.Models.Activity>
+
+@{
+    var pestData = Model
+        .Where(a => a.ActivityType == "Pest")
+        .GroupBy(a => string.IsNullOrEmpty(a.Severity) ? "Unknown" : a.Severity)
+        .ToDictionary(g => g.Key, g => g.Count());
+
+    var diseaseData = Model
+        .Where(a => a.ActivityType == "Disease")
+        .GroupBy(a => string.IsNullOrEmpty(a.Severity) ? "Unknown" : a.Severity)
+        .ToDictionary(g => g.Key, g => g.Count());
+}
+@*@{
+    var pestData = Model.Where(a => a.ActivityType == "Pest")
+                       .GroupBy(a => a.Severity)
+                       .ToDictionary(g => g.Key, g => g.Count());
+
+    var diseaseData = Model.Where(a => a.ActivityType == "Disease")
+                         .GroupBy(a => a.Severity)
+                         .ToDictionary(g => g.Key, g => g.Count());
+}*@
+
+<div class="card mb-4">
+    <div class="card-header">
+        <h5>Severity Trends</h5>
+    </div>
+    <div class="card-body">
+        <canvas id="severityChart" height="200"></canvas>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        var ctx = document.getElementById('severityChart').getContext('2d');
+        var chart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: ['Low', 'Medium', 'High', 'Critical'],
+                datasets: [
+                    {
+                        label: 'Pests',
+                        data: [
+                            @(pestData.ContainsKey("Low") ? pestData["Low"] : 0),
+                            @(pestData.ContainsKey("Medium") ? pestData["Medium"] : 0),
+                            @(pestData.ContainsKey("High") ? pestData["High"] : 0),
+                            @(pestData.ContainsKey("Critical") ? pestData["Critical"] : 0)
+                        ],
+                        backgroundColor: 'rgba(255, 99, 132, 0.7)'
+                    },
+                    {
+                        label: 'Diseases',
+                        data: [
+                            @(diseaseData.ContainsKey("Low") ? diseaseData["Low"] : 0),
+                            @(diseaseData.ContainsKey("Medium") ? diseaseData["Medium"] : 0),
+                            @(diseaseData.ContainsKey("High") ? diseaseData["High"] : 0),
+                            @(diseaseData.ContainsKey("Critical") ? diseaseData["Critical"] : 0)
+                        ],
+                        backgroundColor: 'rgba(54, 162, 235, 0.7)'
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'Occurrences'
+                        }
+                    },
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Severity Level'
+                        }
+                    }
+                }
+            }
+        });
+    });
+</script>

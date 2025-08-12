@@ -1,0 +1,146 @@
+﻿@model FarmTrack.Models.Plot
+
+@{
+    ViewBag.Title = "Edit";
+}
+
+<h2>Edit Plot</h2>
+
+<!-- Leaflet core -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
+<!-- Leaflet Draw plugin -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js"></script>
+
+@using (Html.BeginForm())
+{
+    @Html.AntiForgeryToken()
+
+    <div class="form-horizontal">
+        @Html.HiddenFor(model => model.Id)
+        <h4>Plot</h4>
+        <hr />
+        @Html.ValidationSummary(true, "", new { @class = "text-danger" })
+
+        <!-- Existing form groups here -->
+        <!-- ... Same as your original form: Name, CropId, SoilType, etc ... -->
+
+        <div class="form-group">
+            <label class="control-label col-md-2">Draw/Update Boundary</label>
+            <div class="col-md-10">
+                <p><small class="text-muted">Use the map below to update the plot boundary.</small></p>
+                <div id="map" style="height: 400px; border-radius: 6px; border: 2px solid #198754; margin-bottom: 15px;"></div>
+                @Html.HiddenFor(model => model.Coordinates)
+            </div>
+        </div>
+
+        <!-- Remaining form fields -->
+        <div class="form-group">
+            @Html.LabelFor(model => model.LastInspectionDate, htmlAttributes: new { @class = "control-label col-md-2" })
+            <div class="col-md-10">
+                @Html.EditorFor(model => model.LastInspectionDate, new { htmlAttributes = new { @class = "form-control" } })
+                @Html.ValidationMessageFor(model => model.LastInspectionDate, "", new { @class = "text-danger" })
+            </div>
+        </div>
+
+        <div class="form-group">
+            @Html.LabelFor(model => model.IrrigationFrequency, htmlAttributes: new { @class = "control-label col-md-2" })
+            <div class="col-md-10">
+                @Html.EditorFor(model => model.IrrigationFrequency, new { htmlAttributes = new { @class = "form-control" } })
+                @Html.ValidationMessageFor(model => model.IrrigationFrequency, "", new { @class = "text-danger" })
+            </div>
+        </div>
+
+        <div class="form-group">
+            @Html.LabelFor(model => model.Notes, htmlAttributes: new { @class = "control-label col-md-2" })
+            <div class="col-md-10">
+                @Html.EditorFor(model => model.Notes, new { htmlAttributes = new { @class = "form-control" } })
+                @Html.ValidationMessageFor(model => model.Notes, "", new { @class = "text-danger" })
+            </div>
+        </div>
+        <div class="form-group">
+            @Html.LabelFor(model => model.CropId, "Crop", htmlAttributes: new { @class = "control-label col-md-2" })
+            <div class="col-md-10">
+                @Html.DropDownList("CropId", null, htmlAttributes: new { @class = "form-control" })
+                @Html.ValidationMessageFor(model => model.CropId, "", new { @class = "text-danger" })
+            </div>
+        </div>
+
+
+        <div class="form-group">
+            <div class="col-md-offset-2 col-md-10">
+                <input type="submit" value="Save" class="btn btn-success" />
+            </div>
+        </div>
+    </div>
+}
+
+<div>
+    @Html.ActionLink("Back to List", "Index")
+</div>
+
+@{
+    var safeCoords = Model != null && Model.Coordinates != null
+        ? Html.Raw(Model.Coordinates).ToHtmlString()
+        : "";
+}
+
+
+<script>
+    var map = L.map('map').setView([-28.4793, 24.6727], 8); // South Africa
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap contributors'
+    }).addTo(map);
+
+    var drawnItems = new L.FeatureGroup();
+    map.addLayer(drawnItems);
+
+    var drawControl = new L.Control.Draw({
+        draw: {
+            polyline: false,
+            rectangle: false,
+            circle: false,
+            marker: false,
+            circlemarker: false,
+            polygon: {
+                allowIntersection: false,
+                showArea: true
+            }
+        },
+        edit: {
+            featureGroup: drawnItems
+        }
+    });
+    map.addControl(drawControl);
+
+    // Load existing polygon
+    var existingCoords = @Html.Raw(Json.Encode(safeCoords));
+
+    if (existingCoords) {
+        var shape = L.geoJSON(JSON.parse(existingCoords));
+        shape.eachLayer(function (layer) {
+            drawnItems.addLayer(layer);
+            map.fitBounds(layer.getBounds());
+        });
+    }
+
+    map.on('draw:created', function (e) {
+        drawnItems.clearLayers(); // Only one
+        drawnItems.addLayer(e.layer);
+
+        var coords = e.layer.toGeoJSON();
+        var geoString = JSON.stringify(coords.geometry);
+        document.getElementById("Coordinates").value = geoString;
+    });
+
+    map.on('draw:edited', function (e) {
+        e.layers.eachLayer(function (layer) {
+            var coords = layer.toGeoJSON();
+            var geoString = JSON.stringify(coords.geometry);
+            document.getElementById("Coordinates").value = geoString;
+        });
+    });
+</script>

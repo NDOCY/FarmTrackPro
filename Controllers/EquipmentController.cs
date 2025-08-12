@@ -264,22 +264,37 @@ namespace FarmPro.Controllers
             if (schedule == null || schedule.Status == "Completed")
                 return HttpNotFound();
 
+            // Populate ViewBag for dropdown
+            ViewBag.EquipmentStatusOptions = new List<SelectListItem>
+    {
+        new SelectListItem { Text = "Active", Value = "Active" },
+        
+        new SelectListItem { Text = "Out of Service", Value = "Out of Service" },
+        new SelectListItem { Text = "Dead", Value = "Dead" }
+    };
+
             return View(schedule);
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public ActionResult CompleteRepair(int id, string logNotes)
+        public ActionResult CompleteRepair(int id, string logNotes, string equipmentStatus)
         {
-
             var schedule = db.EquipmentRepairs
                 .Include("Equipment")
                 .Include("InHouseUser")
                 .FirstOrDefault(r => r.RepairId == id);
+
             if (schedule == null)
                 return HttpNotFound();
 
             schedule.Status = "Completed";
+
+            // Optional: Update equipment status if needed
+            var equipment = db.Equipments.Find(schedule.EquipmentId);
+            if (equipment != null)
+                equipment.Status = equipmentStatus;
+
             db.EquipmentRepairLogs.Add(new EquipmentRepairLog
             {
                 EquipmentId = schedule.EquipmentId,
@@ -289,7 +304,6 @@ namespace FarmPro.Controllers
                     ? (schedule.InHouseUser?.FullName ?? "Unknown In-house Technician")
                     : (schedule.OutsourcedTechnicianName ?? "Unknown Outsourced Technician")
             });
-
 
             db.SaveChanges();
 

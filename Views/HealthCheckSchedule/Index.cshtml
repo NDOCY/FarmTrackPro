@@ -1,247 +1,841 @@
-﻿@model IEnumerable<FarmTrack.Models.HealthCheckSchedule>
+﻿@*@model IEnumerable<FarmTrack.Models.HealthCheckSchedule>
+    @{
+        ViewBag.Title = "Health Check Schedules";
+    }
+
+    <style>
+        /* Custom Color Scheme */
+        :root {
+            --color-earth: #8B7355; /* Primary */
+            --color-soil: #654321; /* Secondary */
+            --color-foliage: #4CAF50; /* Tertiary */
+            --color-wheat: #F5DEB3; /* Accent */
+            --color-danger: #FF6B6B; /* Error */
+            --color-white: #FFFFFF; /* Neutral */
+        }
+
+        /* Page Header */
+        .page-header {
+            background-color: var(--color-wheat);
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+            .page-header h2 {
+                color: var(--color-soil);
+                font-weight: 700;
+                margin-bottom: 0;
+            }
+
+        /* Content Container */
+        .content-container {
+            background-color: var(--color-white);
+            border: 1px solid var(--color-wheat);
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+
+        /* Button Styling */
+        .btn {
+            border-radius: 6px;
+            padding: 8px 16px;
+            font-weight: 500;
+        }
+
+        .btn-primary {
+            background-color: var(--color-earth);
+            border-color: var(--color-earth);
+            color: var(--color-white);
+        }
+
+            .btn-primary:hover {
+                background-color: var(--color-soil);
+                border-color: var(--color-soil);
+            }
+
+        .btn-success {
+            background-color: var(--color-foliage);
+            border-color: var(--color-foliage);
+            color: var(--color-white);
+        }
+
+            .btn-success:hover {
+                background-color: #3d8b40;
+                border-color: #3d8b40;
+            }
+
+        .btn-sm {
+            padding: 4px 8px;
+            font-size: 0.875rem;
+        }
+
+        /* Table Styling */
+        .table {
+            width: 100%;
+            margin-bottom: 1rem;
+            background-color: transparent;
+            border-collapse: collapse;
+        }
+
+        .table-bordered {
+            border: 1px solid var(--color-wheat);
+        }
+
+        .table-striped tbody tr:nth-of-type(odd) {
+            background-color: rgba(245, 222, 179, 0.1);
+        }
+
+        .table thead th {
+            background-color: var(--color-earth);
+            color: var(--color-white);
+            border-bottom: 2px solid var(--color-soil);
+            padding: 12px;
+            text-align: left;
+        }
+
+        .table td {
+            padding: 12px;
+            border-top: 1px solid var(--color-wheat);
+            vertical-align: middle;
+        }
+
+        /* Alert Styling */
+        .alert {
+            position: relative;
+            padding: 12px 20px;
+            margin-bottom: 16px;
+            border: 1px solid transparent;
+            border-radius: 6px;
+        }
+
+        .alert-success {
+            color: #155724;
+            background-color: #d4edda;
+            border-color: #c3e6cb;
+        }
+
+        /* Clickable row styling */
+        .clickable-row {
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+            .clickable-row:hover {
+                background-color: rgba(245, 222, 179, 0.3) !important;
+            }
+
+        /* Status styling */
+        .text-muted {
+            color: #6c757d;
+        }
+
+        .status-pending {
+            color: #856404;
+            background-color: #fff3cd;
+            border-radius: 4px;
+            padding: 2px 6px;
+            font-size: 0.875rem;
+        }
+
+        .status-completed {
+            color: #155724;
+            background-color: #d4edda;
+            border-radius: 4px;
+            padding: 2px 6px;
+            font-size: 0.875rem;
+        }
+    </style>
+
+    <!-- Page Header -->
+    <div class="page-header">
+        <h2><i class="fas fa-calendar-check"></i> Health Check Schedules</h2>
+    </div>
+
+    <div class="content-container">
+        <div class="mb-3">
+            <a class="btn btn-primary" href="@Url.Action("Create")">
+                <i class="fas fa-plus"></i> Create New Schedule
+            </a>
+        </div>
+
+        @if (TempData["Message"] != null)
+        {
+            <div class="alert alert-success">
+                <i class="fas fa-check-circle"></i> @TempData["Message"]
+            </div>
+        }
+
+        <div class="table-responsive">
+            <table class="table table-bordered table-striped">
+                <thead>
+                    <tr>
+                        <th><i class="fas fa-stethoscope"></i> Check Type</th>
+                        <th><i class="fas fa-calendar-alt"></i> Scheduled Date</th>
+                        <th><i class="fas fa-user"></i> Assigned To</th>
+                        <th><i class="fas fa-tasks"></i> Status</th>
+                        <th><i class="fas fa-cow"></i> Livestock Count</th>
+                        <th><i class="fas fa-cogs"></i> Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model)
+                    {
+                        <tr class="clickable-row" data-href="@Url.Action("Details", "HealthCheckSchedule", new { id = item.Id })">
+                            <td>@item.CheckType</td>
+                            <td>@item.ScheduledDate.ToShortDateString()</td>
+                            <td>@($"{item.AssignedToUser?.FullName}")</td>
+                            <td>
+                                @if (item.Status == "Pending")
+                                {
+                                    <span class="status-pending"><i class="fas fa-hourglass-half"></i> Pending</span>
+                                }
+                                else
+                                {
+                                    <span class="status-completed"><i class="fas fa-check"></i> Completed</span>
+                                }
+                            </td>
+                            <td>
+                                @{
+                                    var livestockCounts = ViewBag.LivestockCounts as Dictionary<int, int>;
+                                    var count = livestockCounts != null && livestockCounts.ContainsKey(item.Id) ? livestockCounts[item.Id] : 0;
+                                }
+                                @count
+                            </td>
+                            <td onclick="event.stopPropagation();">
+                                @if (item.Status == "Pending")
+                                {
+                                    using (Html.BeginForm("MarkAsCompleted", "HealthCheckSchedule", FormMethod.Post))
+                                    {
+                                        @Html.AntiForgeryToken()
+                                        @Html.ValidationSummary(true)
+                                        @Html.Hidden("id", item.Id)
+                                        <button type="submit" class="btn btn-sm btn-success">
+                                            <i class="fas fa-check"></i> Mark as Completed
+                                        </button>
+                                    }
+                                }
+                                else
+                                {
+                                    <span class="text-muted"><i class="fas fa-check-circle"></i> Completed</span>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Font Awesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            let rows = document.querySelectorAll(".clickable-row");
+            rows.forEach(row => {
+                row.addEventListener("click", function () {
+                    let url = this.getAttribute("data-href");
+                    if (url) {
+                        window.location.href = url;
+                    }
+                });
+            });
+        });
+    </script>*@
+@model List<FarmTrack.Models.HealthCheckSchedule>
 @{
-    ViewBag.Title = "Health Check Schedules";
+    ViewBag.Title = "Health Check Appointments";
+    var livestockCounts = ViewBag.LivestockCounts as Dictionary<int, int> ?? new Dictionary<int, int>();
 }
 
 <style>
-    /* Custom Color Scheme */
+    /* Unified FarmTrack Color Scheme */
     :root {
-        --color-earth: #8B7355; /* Primary */
-        --color-soil: #654321; /* Secondary */
-        --color-foliage: #4CAF50; /* Tertiary */
-        --color-wheat: #F5DEB3; /* Accent */
-        --color-danger: #FF6B6B; /* Error */
-        --color-white: #FFFFFF; /* Neutral */
+        --color-earth: #8B7355;
+        --color-soil: #654321;
+        --color-foliage: #4CAF50;
+        --color-wheat: #F5DEB3;
+        --color-danger: #FF6B6B;
+        --color-white: #FFFFFF;
+        --color-info: #3F88C5;
+        --color-health: #3F88C5;
+        --color-light-earth: #d9c8b4;
+        --color-warning: #ffc107;
+        --color-success: #28a745;
     }
 
     /* Page Header */
-    .page-header {
-        background-color: var(--color-wheat);
-        padding: 20px;
-        border-radius: 8px;
-        margin-bottom: 20px;
+    .healthcheck-header {
+        background: linear-gradient(135deg, var(--color-wheat), var(--color-light-earth));
+        padding: 20px 25px;
+        border-radius: 12px;
+        margin-bottom: 30px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        border-left: 5px solid var(--color-health);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
     }
 
-        .page-header h2 {
+        .healthcheck-header h2 {
             color: var(--color-soil);
+            margin: 0;
             font-weight: 700;
-            margin-bottom: 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
         }
 
-    /* Content Container */
-    .content-container {
-        background-color: var(--color-white);
-        border: 1px solid var(--color-wheat);
+    /* Action Buttons */
+    .btn-healthcheck {
         border-radius: 8px;
-        padding: 20px;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-        margin-bottom: 20px;
-    }
-
-    /* Button Styling */
-    .btn {
-        border-radius: 6px;
-        padding: 8px 16px;
-        font-weight: 500;
-    }
-
-    .btn-primary {
-        background-color: var(--color-earth);
-        border-color: var(--color-earth);
-        color: var(--color-white);
-    }
-
-        .btn-primary:hover {
-            background-color: var(--color-soil);
-            border-color: var(--color-soil);
-        }
-
-    .btn-success {
-        background-color: var(--color-foliage);
-        border-color: var(--color-foliage);
-        color: var(--color-white);
-    }
-
-        .btn-success:hover {
-            background-color: #3d8b40;
-            border-color: #3d8b40;
-        }
-
-    .btn-sm {
-        padding: 4px 8px;
-        font-size: 0.875rem;
-    }
-
-    /* Table Styling */
-    .table {
-        width: 100%;
-        margin-bottom: 1rem;
-        background-color: transparent;
-        border-collapse: collapse;
-    }
-
-    .table-bordered {
-        border: 1px solid var(--color-wheat);
-    }
-
-    .table-striped tbody tr:nth-of-type(odd) {
-        background-color: rgba(245, 222, 179, 0.1);
-    }
-
-    .table thead th {
-        background-color: var(--color-earth);
-        color: var(--color-white);
-        border-bottom: 2px solid var(--color-soil);
-        padding: 12px;
-        text-align: left;
-    }
-
-    .table td {
-        padding: 12px;
-        border-top: 1px solid var(--color-wheat);
-        vertical-align: middle;
-    }
-
-    /* Alert Styling */
-    .alert {
-        position: relative;
-        padding: 12px 20px;
-        margin-bottom: 16px;
-        border: 1px solid transparent;
-        border-radius: 6px;
-    }
-
-    .alert-success {
-        color: #155724;
-        background-color: #d4edda;
-        border-color: #c3e6cb;
-    }
-
-    /* Clickable row styling */
-    .clickable-row {
+        padding: 10px 20px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        border: none;
         cursor: pointer;
-        transition: background-color 0.2s;
+        color: white !important;
     }
 
-        .clickable-row:hover {
-            background-color: rgba(245, 222, 179, 0.3) !important;
+    .btn-primary-health {
+        background: linear-gradient(135deg, var(--color-health), #2c6da3);
+        color: white !important;
+    }
+
+    .btn-danger-health {
+        background: linear-gradient(135deg, var(--color-danger), #dc3545);
+        color: white !important;
+    }
+
+    .btn-warning-health {
+        background: linear-gradient(135deg, var(--color-warning), #e0a800);
+        color: var(--color-soil) !important;
+    }
+
+    .btn-success-health {
+        background: linear-gradient(135deg, var(--color-foliage), var(--color-success));
+        color: white !important;
+    }
+
+    .btn-healthcheck:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+        text-decoration: none;
+    }
+
+    /* Filter Tabs */
+    .healthcheck-tabs {
+        border-bottom: 2px solid var(--color-wheat);
+        margin-bottom: 25px;
+    }
+
+        .healthcheck-tabs .nav-link {
+            color: var(--color-soil);
+            font-weight: 500;
+            border: none;
+            padding: 12px 20px;
+            position: relative;
+            transition: all 0.3s ease;
+            text-decoration: none;
         }
 
-    /* Status styling */
-    .text-muted {
-        color: #6c757d;
+            .healthcheck-tabs .nav-link:hover {
+                color: var(--color-earth);
+                text-decoration: none;
+            }
+
+            .healthcheck-tabs .nav-link.active {
+                color: var(--color-health);
+                background: transparent;
+                border-bottom: 3px solid var(--color-health);
+            }
+
+    /* View Toggle Buttons */
+    .view-toggle {
+        margin-bottom: 20px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 15px;
+    }
+
+    .view-toggle-btn {
+        border-radius: 6px;
+        padding: 8px 15px;
+        font-weight: 500;
+        transition: all 0.3s ease;
+        border: 2px solid var(--color-earth);
+        background: var(--color-white);
+        color: var(--color-earth);
+        cursor: pointer;
+    }
+
+        .view-toggle-btn.active {
+            background: var(--color-earth);
+            color: white;
+        }
+
+        .view-toggle-btn:hover {
+            background: var(--color-light-earth);
+            color: var(--color-soil);
+        }
+
+        .view-toggle-btn.active:hover {
+            background: var(--color-soil);
+            color: white;
+        }
+
+    /* Legend */
+    .healthcheck-legend {
+        display: flex;
+        gap: 15px;
+        align-items: center;
+        flex-wrap: wrap;
+    }
+
+    .legend-item {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        font-size: 0.9rem;
+        color: var(--color-soil);
+    }
+
+    .legend-color {
+        width: 15px;
+        height: 15px;
+        border-radius: 3px;
+    }
+
+    /* Calendar View */
+    .healthcheck-calendar {
+        background-color: var(--color-white);
+        border-radius: 12px;
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+        margin-bottom: 30px;
+        padding: 20px;
+    }
+
+    /* Override FullCalendar colors */
+    .fc-theme-standard .fc-header-toolbar {
+        background: var(--color-wheat);
+        border-radius: 8px;
+        padding: 10px;
+    }
+
+    .fc-theme-standard .fc-button-primary {
+        background: var(--color-earth) !important;
+        border-color: var(--color-earth) !important;
+        color: white !important;
+    }
+
+        .fc-theme-standard .fc-button-primary:hover {
+            background: var(--color-soil) !important;
+            border-color: var(--color-soil) !important;
+        }
+
+        .fc-theme-standard .fc-button-primary:disabled {
+            background: var(--color-light-earth) !important;
+            border-color: var(--color-light-earth) !important;
+        }
+
+    /* List View */
+    .healthcheck-table {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0;
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    }
+
+        .healthcheck-table thead {
+            background: linear-gradient(135deg, var(--color-soil), var(--color-earth));
+            color: white;
+        }
+
+        .healthcheck-table th {
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+        }
+
+        .healthcheck-table td {
+            padding: 12px 15px;
+            border-bottom: 1px solid var(--color-wheat);
+            background-color: var(--color-white);
+            color: var(--color-soil);
+        }
+
+        .healthcheck-table tr:hover td {
+            background-color: rgba(245, 222, 179, 0.2);
+        }
+
+    /* Status Badges */
+    .status-badge {
+        padding: 4px 10px;
+        border-radius: 12px;
+        font-size: 0.8rem;
+        font-weight: 600;
     }
 
     .status-pending {
-        color: #856404;
-        background-color: #fff3cd;
-        border-radius: 4px;
-        padding: 2px 6px;
-        font-size: 0.875rem;
+        background-color: rgba(255, 193, 7, 0.2);
+        color: #b8860b;
+        border: 1px solid rgba(255, 193, 7, 0.3);
     }
 
     .status-completed {
-        color: #155724;
-        background-color: #d4edda;
-        border-radius: 4px;
-        padding: 2px 6px;
+        background-color: rgba(76, 175, 80, 0.2);
+        color: var(--color-foliage);
+        border: 1px solid rgba(76, 175, 80, 0.3);
+    }
+
+    .status-emergency {
+        background-color: rgba(255, 107, 107, 0.2);
+        color: var(--color-danger);
+        border: 1px solid rgba(255, 107, 107, 0.3);
+    }
+
+    .status-outsourced {
+        background-color: rgba(63, 136, 197, 0.2);
+        color: var(--color-info);
+        border: 1px solid rgba(63, 136, 197, 0.3);
+    }
+
+    .status-inhouse {
+        background-color: rgba(139, 115, 85, 0.2);
+        color: var(--color-earth);
+        border: 1px solid rgba(139, 115, 85, 0.3);
+    }
+
+    .badge-animals {
+        background-color: var(--color-light-earth);
+        color: var(--color-soil);
+        padding: 3px 8px;
+        border-radius: 10px;
+        font-size: 0.8rem;
+        font-weight: 500;
+    }
+
+    /* Empty State */
+    .empty-healthchecks {
+        text-align: center;
+        padding: 40px;
+        background-color: var(--color-white);
+        border-radius: 12px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        border: 1px dashed var(--color-wheat);
+        color: var(--color-soil);
+    }
+
+        .empty-healthchecks p {
+            color: var(--color-soil);
+            font-size: 1.1rem;
+            margin-bottom: 20px;
+        }
+
+    /* Utility classes */
+    .text-muted {
+        color: #6c757d !important;
+    }
+
+    .ms-2 {
+        margin-left: 0.5rem;
+    }
+
+    .btn-group {
+        display: inline-flex;
+        gap: 5px;
+    }
+
+    .btn-group-sm .btn-healthcheck {
+        padding: 5px 10px;
         font-size: 0.875rem;
     }
 </style>
 
-<!-- Page Header -->
-<div class="page-header">
-    <h2><i class="fas fa-calendar-check"></i> Health Check Schedules</h2>
+<!-- FullCalendar CSS and JS -->
+<link href="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/5.11.3/main.min.css" rel="stylesheet" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/5.11.3/main.min.js"></script>
+
+<div class="healthcheck-header">
+    <h2>
+        <i class="fas fa-calendar-alt"></i>
+        Health Check Appointments
+    </h2>
+    <div>
+        @Html.ActionLink("New Health Schedule", "Create", null, new { @class = "btn-healthcheck btn-primary-health" })
+        @Html.ActionLink("Veterinarians", "Index", "Veterinarian", null, new { @class = "btn-healthcheck btn-danger-health ms-2" })
+    </div>
 </div>
 
-<div class="content-container">
-    <div class="mb-3">
-        <a class="btn btn-primary" href="@Url.Action("Create")">
-            <i class="fas fa-plus"></i> Create New Schedule
-        </a>
-    </div>
-
-    @if (TempData["Message"] != null)
+<!-- Filter Tabs -->
+<ul class="nav healthcheck-tabs">
+    @{ string[] filters = { "all", "pending", "completed", "outsourced", "inhouse", "today", "upcoming" }; }
+    @foreach (var filter in filters)
     {
-        <div class="alert alert-success">
-            <i class="fas fa-check-circle"></i> @TempData["Message"]
-        </div>
+        <li class="nav-item">
+            @Html.ActionLink(
+                filter.Substring(0, 1).ToUpper() + filter.Substring(1),
+                "Index",
+                new { filter = filter },
+                new { @class = ViewBag.CurrentFilter == filter ? "nav-link active" : "nav-link" }
+            )
+        </li>
     }
+</ul>
 
-    <div class="table-responsive">
-        <table class="table table-bordered table-striped">
+<!-- Legend and View Toggle -->
+<div class="view-toggle">
+    <div class="healthcheck-legend">
+        <span class="legend-item">
+            <span class="legend-color" style="background-color: var(--color-earth);"></span>
+            <span>In-House</span>
+        </span>
+        <span class="legend-item">
+            <span class="legend-color" style="background-color: var(--color-info);"></span>
+            <span>Outsourced</span>
+        </span>
+        <span class="legend-item">
+            <span class="legend-color" style="background-color: var(--color-foliage);"></span>
+            <span>Completed</span>
+        </span>
+        <span class="legend-item">
+            <span class="legend-color" style="background-color: var(--color-danger);"></span>
+            <span>Emergency</span>
+        </span>
+    </div>
+    <div class="btn-group">
+        <button type="button" class="view-toggle-btn" id="calendarViewBtn">
+            <i class="fas fa-calendar"></i> Calendar View
+        </button>
+        <button type="button" class="view-toggle-btn active" id="listViewBtn">
+            <i class="fas fa-list"></i> List View
+        </button>
+    </div>
+</div>
+
+<!-- Calendar View -->
+<div id="calendarView" style="display:none;">
+    <div class="healthcheck-calendar">
+        <div id="calendar"></div>
+    </div>
+</div>
+
+<!-- List View -->
+<div id="listView">
+    @if (Model.Any())
+    {
+        <table class="healthcheck-table">
             <thead>
                 <tr>
-                    <th><i class="fas fa-stethoscope"></i> Check Type</th>
-                    <th><i class="fas fa-calendar-alt"></i> Scheduled Date</th>
-                    <th><i class="fas fa-user"></i> Assigned To</th>
-                    <th><i class="fas fa-tasks"></i> Status</th>
-                    <th><i class="fas fa-cow"></i> Livestock Count</th>
-                    <th><i class="fas fa-cogs"></i> Actions</th>
+                    <th>Date & Time</th>
+                    <th>Type</th>
+                    <th>Animals</th>
+                    <th>Assigned To</th>
+                    <th>Veterinarian</th>
+                    <th>Status</th>
+                    <th>Cost</th>
+                    <th>Actions</th>
                 </tr>
             </thead>
             <tbody>
-                @foreach (var item in Model)
+                @foreach (var schedule in Model)
                 {
-                    <tr class="clickable-row" data-href="@Url.Action("Details", "HealthCheckSchedule", new { id = item.Id })">
-                        <td>@item.CheckType</td>
-                        <td>@item.ScheduledDate.ToShortDateString()</td>
-                        <td>@($"{item.AssignedToUser?.FullName}")</td>
+                    var animalCount = livestockCounts.ContainsKey(schedule.Id) ? livestockCounts[schedule.Id] : 0;
+                    var isCompleted = schedule.Status?.ToLower() == "completed";
+                    var isEmergency = schedule.CheckType?.Contains("Emergency") == true;
+
+                    <tr>
                         <td>
-                            @if (item.Status == "Pending")
+                            <strong>@schedule.ScheduledDate.ToString("MMM dd, yyyy")</strong><br />
+                            <small class="text-muted">@schedule.ScheduledDate.ToString("HH:mm")</small>
+                        </td>
+                        <td>
+                            <span class="status-badge @(isEmergency ? "status-emergency" : (schedule.IsOutsourced ? "status-outsourced" : "status-inhouse"))">
+                                @schedule.CheckType
+                            </span>
+                            @if (schedule.IsOutsourced)
                             {
-                                <span class="status-pending"><i class="fas fa-hourglass-half"></i> Pending</span>
+                                <br /><small class="text-muted">Outsourced</small>
+                            }
+                        </td>
+                        <td>
+                            <span class="badge-animals">@animalCount animals</span>
+                        </td>
+                        <td>
+                            @if (schedule.AssignedToUser != null)
+                            {
+                                @schedule.AssignedToUser.FullName
                             }
                             else
                             {
-                                <span class="status-completed"><i class="fas fa-check"></i> Completed</span>
+                                <em class="text-muted">Unassigned</em>
                             }
                         </td>
                         <td>
-                            @{
-                                var livestockCounts = ViewBag.LivestockCounts as Dictionary<int, int>;
-                                var count = livestockCounts != null && livestockCounts.ContainsKey(item.Id) ? livestockCounts[item.Id] : 0;
-                            }
-                            @count
-                        </td>
-                        <td onclick="event.stopPropagation();">
-                            @if (item.Status == "Pending")
+                            @if (schedule.IsOutsourced && schedule.Veterinarian != null)
                             {
-                                using (Html.BeginForm("MarkAsCompleted", "HealthCheckSchedule", FormMethod.Post))
+                                <strong>@schedule.Veterinarian.FullName</strong>
+                                if (!string.IsNullOrEmpty(schedule.Veterinarian.ClinicName))
                                 {
-                                    @Html.AntiForgeryToken()
-                                    @Html.ValidationSummary(true)
-                                    @Html.Hidden("id", item.Id)
-                                    <button type="submit" class="btn btn-sm btn-success">
-                                        <i class="fas fa-check"></i> Mark as Completed
-                                    </button>
+                                    <br /><small class="text-muted">@schedule.Veterinarian.ClinicName</small>
                                 }
                             }
                             else
                             {
-                                <span class="text-muted"><i class="fas fa-check-circle"></i> Completed</span>
+                                <em class="text-muted">N/A</em>
                             }
+                        </td>
+                        <td>
+                            <span class="status-badge @(isCompleted ? "status-completed" :
+                                                      schedule.Status?.ToLower() == "pending" ? "status-pending" :
+                                                      isEmergency ? "status-emergency" : "status-pending")">
+                                @(schedule.Status ?? "Pending")
+                            </span>
+                        </td>
+                        <td>
+                            @if (schedule.EstimatedCost.HasValue)
+                            {
+                                string.Format("R{0:0.00}", schedule.EstimatedCost.Value);
+                            }
+                            else
+                            {
+                                <em class="text-muted">TBD</em>
+                            }
+                        </td>
+                        <td>
+                            <div class="btn-group btn-group-sm" role="group">
+                                @Html.ActionLink("Details", "Details", new { id = schedule.Id }, new { @class = "btn-healthcheck btn-primary-health" })
+
+                                @if (!isCompleted)
+                                {
+                                    @Html.ActionLink("Finalize", "MarkAsCompleted", new { id = schedule.Id }, new { @class = "btn-healthcheck btn-warning-health" })
+                                }
+                                else
+                                {
+                                    <span class="btn-healthcheck btn-success-health" style="cursor: default;">
+                                        <i class="fas fa-check"></i> Completed
+                                    </span>
+                                }
+                            </div>
                         </td>
                     </tr>
                 }
             </tbody>
         </table>
-    </div>
+    }
+    else
+    {
+        <div class="empty-healthchecks">
+            <p><i class="fas fa-calendar-times"></i> No health check appointments found for the selected filter.</p>
+            @Html.ActionLink("Create New Appointment", "Create", null, new { @class = "btn-healthcheck btn-primary-health" })
+        </div>
+    }
 </div>
+
+
+
+<script>
+    // Initialize variables
+    window.calendarInitialized = false;
+    let calendar = null;
+
+    // View toggle functionality
+    document.getElementById("calendarViewBtn").addEventListener("click", function () {
+        document.getElementById("calendarView").style.display = "block";
+        document.getElementById("listView").style.display = "none";
+        this.classList.add("active");
+        document.getElementById("listViewBtn").classList.remove("active");
+
+        // Initialize calendar if not already done
+        if (!window.calendarInitialized) {
+            initializeCalendar();
+            window.calendarInitialized = true;
+        }
+
+        // Resize calendar to ensure proper display
+        if (calendar) {
+            setTimeout(() => {
+                calendar.updateSize();
+            }, 100);
+        }
+    });
+
+    document.getElementById("listViewBtn").addEventListener("click", function () {
+        document.getElementById("calendarView").style.display = "none";
+        document.getElementById("listView").style.display = "block";
+        this.classList.add("active");
+        document.getElementById("calendarViewBtn").classList.remove("active");
+    });
+
+    function initializeCalendar() {
+        var calendarEl = document.getElementById('calendar');
+
+        // Clear any existing calendar
+        if (calendar) {
+            calendar.destroy();
+        }
+
+        // Build events array - FIXED VERSION
+        var events = [];
+        @foreach (var schedule in Model)
+        {
+            var color = schedule.Status?.ToLower() == "completed" ? "#4CAF50" :
+                       (schedule.CheckType?.Contains("Emergency") == true) ? "#FF6B6B" :
+                       schedule.IsOutsourced ? "#3F88C5" : "#8B7355";
+
+            var title = Html.Raw(Json.Encode(schedule.CheckType?.Replace("'", "\\'") ?? "Health Check"));
+            var startDate = schedule.ScheduledDate.ToString("yyyy-MM-ddTHH:mm:ss");
+
+            <text>
+            events.push({
+                title: @title,
+                start: '@startDate',
+                backgroundColor: '@color',
+                borderColor: '@color',
+                textColor: 'white'
+            });
+            </text>
+        }
+
+        calendar = new FullCalendar.Calendar(calendarEl, {
+            initialView: 'dayGridMonth',
+            headerToolbar: {
+                left: 'prev,next today',
+                center: 'title',
+                right: 'dayGridMonth,timeGridWeek,timeGridDay'
+            },
+            height: 'auto',
+            events: events,
+            eventClick: function(info) {
+                // You can add click handling here if needed
+                console.log('Event clicked:', info.event.title);
+            }
+        });
+
+        calendar.render();
+    }
+
+    // Initialize calendar immediately if calendar view is active on page load
+    document.addEventListener('DOMContentLoaded', function() {
+        // Check if calendar view should be default based on URL params or other logic
+        var urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('view') === 'calendar') {
+            document.getElementById("calendarViewBtn").click();
+        }
+    });
+</script>
 
 <!-- Font Awesome for Icons -->
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-
-<script>
-    document.addEventListener("DOMContentLoaded", function () {
-        let rows = document.querySelectorAll(".clickable-row");
-        rows.forEach(row => {
-            row.addEventListener("click", function () {
-                let url = this.getAttribute("data-href");
-                if (url) {
-                    window.location.href = url;
-                }
-            });
-        });
-    });
-</script>

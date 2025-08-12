@@ -1,0 +1,59 @@
+﻿@model IEnumerable<FarmTrack.Models.Activity>
+
+
+<div class="activity-feed">
+    @foreach (var activity in Model)
+    {
+        <div class="activity-item mb-3 p-2 border-bottom">
+            <div class="d-flex justify-content-between">
+                <strong>@activity.ActivityType</strong>
+                <small class="text-muted">@activity.ActivityDate.ToString("g")</small>
+            </div>
+            <div>@activity.Description</div>
+            @if (!string.IsNullOrEmpty(activity.Notes))
+            {
+                <div class="text-muted small">@activity.Notes</div>
+            }
+            @if (activity.AmountUsed.HasValue)
+            {
+                <div>Amount: @activity.AmountUsed @activity.Unit</div>
+            }
+            @if (!string.IsNullOrEmpty(activity.Severity))
+            {
+                <div>Severity: <span class="badge bg-@(activity.Severity == "Critical" ? "danger" : "warning")">@activity.Severity</span></div>
+            }
+            @if (activity.Tags != null && activity.Tags.Any())
+            {
+                <div class="mt-1">
+                    @foreach (var tag in activity.Tags)
+                    {
+                        <span class="badge" style="background-color: @tag.Color">@tag.Name</span>
+                    }
+                </div>
+            }
+            @if (!string.IsNullOrEmpty(activity.ImagePath))
+            {
+                <div class="mt-2">
+                    <img src="@activity.ImagePath" class="img-thumbnail" style="max-height: 150px;"
+                         data-toggle="modal" data-target="#imageModal-@activity.Id">
+
+                    <!-- Image Modal -->
+                    <div class="modal fade" id="imageModal-@activity.Id" tabindex="-1" role="dialog">
+                        <div class="modal-dialog modal-lg" role="document">
+                            <div class="modal-content">
+                                <div class="modal-body text-center">
+                                    <img src="@activity.ImagePath" class="img-fluid">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+
+    @if (!Model.Any())
+    {
+        <div class="text-muted">No activities recorded yet</div>
+    }
+</div>

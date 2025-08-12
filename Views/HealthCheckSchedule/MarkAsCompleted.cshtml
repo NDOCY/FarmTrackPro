@@ -1,0 +1,273 @@
+﻿@model FarmTrack.Models.CompleteHealthCheckViewModel
+
+@{
+    ViewBag.Title = "Mark Health Check as Completed";
+}
+
+<style>
+    /* Custom Color Scheme */
+    :root {
+        --color-earth: #8B7355;
+        --color-soil: #654321;
+        --color-foliage: #4CAF50;
+        --color-wheat: #F5DEB3;
+        --color-danger: #FF6B6B;
+        --color-white: #FFFFFF;
+    }
+
+    .page-header {
+        background-color: var(--color-wheat);
+        padding: 20px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+    }
+
+        .page-header h2 {
+            color: var(--color-soil);
+            font-weight: 700;
+            margin-bottom: 0;
+        }
+
+    .content-container {
+        background-color: var(--color-white);
+        border: 1px solid var(--color-wheat);
+        border-radius: 8px;
+        padding: 20px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        margin-bottom: 20px;
+    }
+
+    .table th {
+        background-color: var(--color-earth);
+        color: var(--color-white);
+        border: none;
+    }
+
+    .table td {
+        border-color: var(--color-wheat);
+    }
+
+    .btn-success {
+        background-color: var(--color-foliage);
+        border-color: var(--color-foliage);
+    }
+
+        .btn-success:hover {
+            background-color: #45a049;
+            border-color: #45a049;
+        }
+
+    .btn-secondary {
+        background-color: var(--color-soil);
+        border-color: var(--color-soil);
+    }
+
+    .form-control {
+        border-color: var(--color-wheat);
+    }
+
+        .form-control:focus {
+            border-color: var(--color-earth);
+            box-shadow: 0 0 5px rgba(139, 115, 85, 0.5);
+        }
+
+    .outsourced-section {
+        background-color: #f8f9fa;
+        padding: 15px;
+        border-radius: 5px;
+        margin-top: 20px;
+        border-left: 4px solid var(--color-earth);
+    }
+
+    .validation-summary-errors {
+        background-color: #f8d7da;
+        border: 1px solid #f5c6cb;
+        color: #721c24;
+        padding: 10px;
+        border-radius: 4px;
+        margin-bottom: 20px;
+    }
+
+    .field-validation-error {
+        color: var(--color-danger);
+        font-size: 0.875em;
+        margin-top: 5px;
+    }
+</style>
+
+<!-- Page Header -->
+<div class="page-header">
+    <h2><i class="fas fa-check-circle"></i> Mark Health Check as Completed</h2>
+</div>
+
+<div class="content-container">
+    <!-- Display validation summary -->
+    @Html.ValidationSummary(true, "", new { @class = "validation-summary-errors" })
+
+    @using (Html.BeginForm())
+    {
+        @Html.AntiForgeryToken()
+        @Html.HiddenFor(m => m.ScheduleId)
+
+        <div class="row mb-3">
+            <div class="col-md-6">
+                <h4>Health Check Details</h4>
+                <p><strong>Type:</strong> @Model.CheckType</p>
+                <p><strong>Date:</strong> @Model.ScheduledDate.ToString("dddd, MMMM dd, yyyy")</p>
+            </div>
+        </div>
+
+        <h5>Livestock Results</h5>
+        <div class="table-responsive">
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Tag Number</th>
+                        <th>Type</th>
+                        <th>Is Sick?</th>
+                        <th>Notes</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @for (int i = 0; i < Model.LivestockResults.Count; i++)
+                    {
+                        <tr>
+                            <td>
+                                @Model.LivestockResults[i].TagNumber
+                                @Html.HiddenFor(m => m.LivestockResults[i].LivestockId)
+                                @Html.HiddenFor(m => m.LivestockResults[i].TagNumber)
+                                @Html.HiddenFor(m => m.LivestockResults[i].Type)
+                            </td>
+                            <td>@Model.LivestockResults[i].Type</td>
+                            <td>
+                                <div class="form-check">
+                                    @Html.CheckBoxFor(m => m.LivestockResults[i].IsSick, new { @class = "form-check-input" })
+                                    <label class="form-check-label text-danger">
+                                        <small>Mark if animal needs attention</small>
+                                    </label>
+                                </div>
+                            </td>
+                            <td>
+                                @Html.TextAreaFor(m => m.LivestockResults[i].Notes, new { @class = "form-control", rows = "2", placeholder = "Enter observations, treatments, or notes..." })
+                                @Html.ValidationMessageFor(m => m.LivestockResults[i].Notes, "", new { @class = "field-validation-error" })
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        if (ViewBag.IsOutsourced != null && (bool)ViewBag.IsOutsourced)
+        {
+            <div class="outsourced-section">
+                <h5><i class="fas fa-user-md"></i> Veterinary Details</h5>
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="VetInstructions">Veterinarian Instructions</label>
+                            @Html.TextAreaFor(m => m.VetInstructions, new { @class = "form-control", rows = "3", placeholder = "Enter veterinarian's instructions and recommendations..." })
+                            @Html.ValidationMessageFor(m => m.VetInstructions, "", new { @class = "field-validation-error" })
+                        </div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="ActualCost">Actual Cost</label>
+                            <div class="input-group">
+                                <div class="input-group-prepend">
+                                    <span class="input-group-text">R</span>
+                                </div>
+                                @Html.TextBoxFor(m => m.ActualCost, new { @class = "form-control", type = "number", step = "0.01", placeholder = "0.00" })
+                            </div>
+                            @Html.ValidationMessageFor(m => m.ActualCost, "", new { @class = "field-validation-error" })
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <div class="form-check">
+                                @Html.CheckBoxFor(m => m.RequiresFollowUp, new { @class = "form-check-input", id = "RequiresFollowUp" })
+                                <label class="form-check-label" for="RequiresFollowUp">
+                                    <strong>Requires Follow-up Appointment</strong>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6" id="followUpSection" style="display: none;">
+                        <div class="form-group">
+                            <label for="FollowUpDate">Follow-up Date</label>
+                            @Html.TextBoxFor(m => m.FollowUpDate, "{0:yyyy-MM-dd}", new { @class = "form-control", type = "date" })
+                            @Html.ValidationMessageFor(m => m.FollowUpDate, "", new { @class = "field-validation-error" })
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+
+        <div class="form-actions mt-4">
+            <button type="submit" class="btn btn-success btn-lg">
+                <i class="fas fa-check"></i> Mark as Completed
+            </button>
+            @Html.ActionLink("Cancel", "Index", null, new { @class = "btn btn-secondary btn-lg ml-2" })
+        </div>
+    }
+</div>
+
+@section Scripts {
+    <script>
+        // Show/hide follow-up date section based on checkbox
+        document.getElementById('RequiresFollowUp').addEventListener('change', function() {
+            const followUpSection = document.getElementById('followUpSection');
+            followUpSection.style.display = this.checked ? 'block' : 'none';
+
+            // Clear the date if unchecked
+            if (!this.checked) {
+                document.querySelector('input[name="FollowUpDate"]').value = '';
+            }
+        });
+
+        // Initialize the follow-up section visibility on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            const followUpCheckbox = document.getElementById('RequiresFollowUp');
+            const followUpSection = document.getElementById('followUpSection');
+
+            if (followUpCheckbox && followUpCheckbox.checked) {
+                followUpSection.style.display = 'block';
+            }
+        });
+
+        // Form validation
+        document.querySelector('form').addEventListener('submit', function(e) {
+            const followUpCheckbox = document.getElementById('RequiresFollowUp');
+            const followUpDate = document.querySelector('input[name="FollowUpDate"]');
+
+            if (followUpCheckbox && followUpCheckbox.checked) {
+                if (!followUpDate.value) {
+                    e.preventDefault();
+                    alert('Please select a follow-up date.');
+                    followUpDate.focus();
+                    return false;
+                }
+
+                // Ensure follow-up date is in the future
+                const selectedDate = new Date(followUpDate.value);
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+
+                if (selectedDate <= today) {
+                    e.preventDefault();
+                    alert('Follow-up date must be in the future.');
+                    followUpDate.focus();
+                    return false;
+                }
+            }
+        });
+    </script>
+}
+
+<!-- Font Awesome for Icons -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">

@@ -1,0 +1,123 @@
+﻿@model FarmTrack.Models.Veterinarian
+
+<style>
+    /* Unified FarmTrack Color Scheme */
+    :root {
+        --color-earth: #8B7355;
+        --color-soil: #654321;
+        --color-foliage: #4CAF50;
+        --color-wheat: #F5DEB3;
+        --color-danger: #FF6B6B;
+        --color-white: #FFFFFF;
+        --color-info: #3F88C5;
+        --color-health: #3F88C5;
+        --color-light-earth: #d9c8b4;
+        --color-warning: #ffc107;
+    }
+
+    /* Page Header */
+    .vet-delete-header {
+        background: linear-gradient(135deg, var(--color-wheat), var(--color-light-earth));
+        padding: 20px 25px;
+        border-radius: 12px;
+        margin-bottom: 30px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        border-left: 5px solid var(--color-danger);
+    }
+
+        .vet-delete-header h2 {
+            color: var(--color-soil);
+            margin: 0;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+    /* Warning Alert */
+    .vet-delete-alert {
+        background-color: rgba(255, 193, 7, 0.15);
+        border-left: 5px solid var(--color-warning);
+        border-radius: 8px;
+        padding: 20px;
+        margin-bottom: 30px;
+        display: flex;
+        align-items: center;
+        gap: 15px;
+    }
+
+        .vet-delete-alert i {
+            color: var(--color-warning);
+            font-size: 1.5rem;
+        }
+
+        .vet-delete-alert strong {
+            color: var(--color-soil);
+        }
+
+    /* Action Buttons */
+    .vet-delete-actions {
+        display: flex;
+        gap: 15px;
+    }
+
+    .btn-vet-delete {
+        border-radius: 8px;
+        padding: 12px 25px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        border: none;
+        cursor: pointer;
+    }
+
+    .btn-delete-confirm {
+        background: linear-gradient(135deg, var(--color-danger), #dc3545);
+        color: white;
+    }
+
+    .btn-delete-cancel {
+        background: linear-gradient(135deg, #6c757d, #5a6268);
+        color: white;
+    }
+
+    .btn-vet-delete:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+    }
+</style>
+
+<div class="vet-delete-header">
+    <h2>
+        <i class="fas fa-user-md"></i>
+        Delete Veterinarian
+    </h2>
+</div>
+
+<div class="vet-delete-alert">
+    <i class="fas fa-exclamation-triangle"></i>
+    <div>
+        Are you sure you want to delete <strong>@Model.FullName</strong> from the system?
+        <div class="mt-2" style="font-size: 0.9rem; color: var(--color-soil);">
+            <i class="fas fa-info-circle"></i> This action cannot be undone.
+        </div>
+    </div>
+</div>
+
+@using (Html.BeginForm())
+{
+    @Html.AntiForgeryToken()
+
+    <div class="vet-delete-actions">
+        <button type="submit" class="btn-vet-delete btn-delete-confirm">
+            <i class="fas fa-trash-alt"></i> Delete
+        </button>
+        @Html.ActionLink("Cancel", "Index", null, new { @class = "btn-vet-delete btn-delete-cancel" })
+    </div>
+}
+
+<!-- Font Awesome for Icons -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">

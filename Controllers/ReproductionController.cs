@@ -141,15 +141,34 @@ public class ReproductionController : Controller
     public ActionResult Details(int id)
     {
         var record = db.ReproductionRecords
-                       .Include("FemaleLivestock")
-                       .Include("FemaleLivestock.Offspring")
-                       .Include("MaleLivestock")
-                       .FirstOrDefault(r => r.Id == id);
+            .Include("FemaleLivestock")
+            .Include("MaleLivestock")
+            .Include("Offspring")
+            .FirstOrDefault(r => r.Id == id);
 
-        if (record == null) return HttpNotFound();
+        if (record == null)
+            return HttpNotFound();
 
-        return View(record);
+        var viewModel = new ReproductionDetailsViewModel
+        {
+            Id = record.Id,
+            FemaleTag = record.FemaleLivestock?.TagNumber ?? "Not Specified",
+            MaleTag = record.MaleLivestock?.TagNumber ?? "Not Specified",
+            BreedingDate = record.BreedingDate,
+            ExpectedBirthDate = record.ExpectedDueDate,
+            BirthOutcome = record.BirthOutcome ?? "Not Recorded",
+            Offspring = record.Offspring?.Select(o => new OffspringViewModel
+            {
+                Id = o.LivestockId,
+                Tag = o.TagNumber,
+                Gender = o.Sex,
+                BirthDate = o.DateOfBirth
+            }).ToList() ?? new List<OffspringViewModel>()
+        };
+
+        return View(viewModel);
     }
+
 
     public ActionResult Index()
     {

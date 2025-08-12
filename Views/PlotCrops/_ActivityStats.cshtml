@@ -1,0 +1,21 @@
+﻿@model FarmTrack.Models.ActivityStatsViewModel
+
+<dl class="row">
+    <dt class="col-sm-6">Total Activities:</dt>
+    <dd class="col-sm-6">@Model.TotalActivities</dd>
+
+    <dt class="col-sm-6">Pest Reports:</dt>
+    <dd class="col-sm-6">@Model.PestCount</dd>
+
+    <dt class="col-sm-6">Disease Reports:</dt>
+    <dd class="col-sm-6">@Model.DiseaseCount</dd>
+
+    @if (Model.LastFertilization != null)
+    {
+        <dt class="col-sm-6">Last Fertilization:</dt>
+        <dd class="col-sm-6">
+            @Model.LastFertilization.ActivityDate.ToString("d")<br>
+            @Model.LastFertilization.ProductName
+        </dd>
+    }
+</dl>

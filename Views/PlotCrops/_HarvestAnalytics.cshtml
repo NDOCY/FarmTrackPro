@@ -1,0 +1,119 @@
+﻿@model FarmTrack.Models.HarvestAnalyticsViewModel
+
+@if (ViewBag.NoData == true || Model == null)
+{
+    <div class="alert alert-info">
+        <i class="fas fa-info-circle"></i> No harvest data available yet.
+    </div>
+}
+else
+{
+    <div class="row">
+        <!-- Stats Cards -->
+        <div class="col-md-3 mb-3">
+            <div class="card border-left-primary shadow h-100 py-2">
+                <div class="card-body">
+                    <h6 class="text-primary text-uppercase">Expected Yield</h6>
+                    <h4>@Model.ExpectedYield.ToString("N0") kg</h4>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card border-left-success shadow h-100 py-2">
+                <div class="card-body">
+                    <h6 class="text-success text-uppercase">Actual Yield</h6>
+                    <h4>@Model.ActualYield.ToString("N0") kg</h4>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card border-left-warning shadow h-100 py-2">
+                <div class="card-body">
+                    <h6 class="text-warning text-uppercase">Losses</h6>
+                    <h4>@Model.LossKg.ToString("N0") kg (@Model.LossPercentage.ToString("N1")%)</h4>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card border-left-info shadow h-100 py-2">
+                <div class="card-body">
+                    <h6 class="text-info text-uppercase">Days to Harvest</h6>
+                    <h4>@Model.DaysFromPlantingToHarvest days</h4>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts Row -->
+    <div class="row mt-4">
+        <div class="col-md-6 mb-4">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    Expected vs Actual Yield
+                </div>
+                <div class="card-body">
+                    <canvas id="yieldChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6 mb-4">
+            <div class="card shadow">
+                <div class="card-header bg-warning text-white">
+                    Loss Percentage
+                </div>
+                <div class="card-body">
+                    <canvas id="lossChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loss Reason -->
+    <div class="card mt-3 shadow">
+        <div class="card-header bg-secondary text-white">
+            Loss Reason / Notes
+        </div>
+        <div class="card-body">
+            @Model.LossReason
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        // Yield Comparison Chart
+        var ctxYield = document.getElementById('yieldChart').getContext('2d');
+        new Chart(ctxYield, {
+            type: 'bar',
+            data: {
+                labels: ['Expected', 'Actual'],
+                datasets: [{
+                    label: 'Yield (kg)',
+                    data: [@Model.ExpectedYield, @Model.ActualYield],
+                    backgroundColor: ['#4CAF50', '#2196F3']
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: { legend: { display: false } }
+            }
+        });
+
+        // Loss Percentage Doughnut Chart
+        var ctxLoss = document.getElementById('lossChart').getContext('2d');
+        new Chart(ctxLoss, {
+            type: 'doughnut',
+            data: {
+                labels: ['Losses', 'Usable Yield'],
+                datasets: [{
+                    data: [@Model.LossKg, @Model.ActualYield],
+                    backgroundColor: ['#FF6B6B', '#4CAF50']
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: { legend: { position: 'bottom' } }
+            }
+        });
+    </script>
+}

@@ -33,6 +33,7 @@ namespace FarmTrack.Models
 
         public virtual Livestock FemaleLivestock { get; set; }
         public virtual Livestock MaleLivestock { get; set; }
+        public virtual ICollection<Livestock> Offspring { get; set; } = new List<Livestock>();
     }
 
 

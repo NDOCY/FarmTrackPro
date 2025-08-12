@@ -1,0 +1,175 @@
+﻿@model FarmTrack.Models.Veterinarian
+@{
+    var isEdit = ViewBag.Title == "Edit Veterinarian";
+}
+
+<style>
+    /* Unified FarmTrack Color Scheme */
+    :root {
+        --color-earth: #8B7355;
+        --color-soil: #654321;
+        --color-foliage: #4CAF50;
+        --color-wheat: #F5DEB3;
+        --color-danger: #FF6B6B;
+        --color-white: #FFFFFF;
+        --color-info: #3F88C5;
+        --color-health: #3F88C5;
+        --color-light-earth: #d9c8b4;
+    }
+
+    /* Page Header */
+    .vet-form-header {
+        background: linear-gradient(135deg, var(--color-wheat), var(--color-light-earth));
+        padding: 20px 25px;
+        border-radius: 12px;
+        margin-bottom: 30px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        border-left: 5px solid var(--color-health);
+    }
+
+        .vet-form-header h2 {
+            color: var(--color-soil);
+            margin: 0;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+    /* Form Container */
+    .vet-form-container {
+        background-color: var(--color-white);
+        border-radius: 12px;
+        padding: 30px;
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+        margin-bottom: 30px;
+    }
+
+    /* Form Groups */
+    .form-group-vet {
+        margin-bottom: 25px;
+        position: relative;
+    }
+
+        .form-group-vet label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: var(--color-soil);
+        }
+
+    .form-control-vet {
+        width: 100%;
+        padding: 12px 15px;
+        border: 2px solid var(--color-wheat);
+        border-radius: 8px;
+        font-size: 1rem;
+        transition: all 0.3s ease;
+        background-color: var(--color-white);
+    }
+
+        .form-control-vet:focus {
+            border-color: var(--color-health);
+            box-shadow: 0 0 0 3px rgba(63, 136, 197, 0.1);
+            outline: none;
+        }
+
+    /* Validation Styles */
+    .field-validation-error {
+        color: var(--color-danger);
+        font-size: 0.85rem;
+        margin-top: 5px;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+    }
+
+        .field-validation-error::before {
+            content: '⚠';
+            font-size: 0.9rem;
+        }
+
+    /* Action Buttons */
+    .vet-form-actions {
+        display: flex;
+        gap: 15px;
+        margin-top: 30px;
+    }
+
+    .btn-vet-form {
+        border-radius: 8px;
+        padding: 12px 25px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        border: none;
+        cursor: pointer;
+    }
+
+    .btn-submit {
+        background: linear-gradient(135deg, var(--color-health), #2c6da3);
+        color: white;
+    }
+
+    .btn-cancel {
+        background: linear-gradient(135deg, #6c757d, #5a6268);
+        color: white;
+    }
+
+    .btn-vet-form:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+    }
+</style>
+
+<div class="vet-form-header">
+    <h2>
+        <i class="fas fa-user-md"></i>
+        @ViewBag.Title
+    </h2>
+</div>
+
+@using (Html.BeginForm())
+{
+    @Html.AntiForgeryToken()
+
+    <div class="vet-form-container">
+        <div class="form-group-vet">
+            @Html.LabelFor(m => m.FullName)
+            @Html.TextBoxFor(m => m.FullName, new { @class = "form-control-vet" })
+            @Html.ValidationMessageFor(m => m.FullName)
+        </div>
+
+        <div class="form-group-vet">
+            @Html.LabelFor(m => m.ClinicName)
+            @Html.TextBoxFor(m => m.ClinicName, new { @class = "form-control-vet" })
+            @Html.ValidationMessageFor(m => m.ClinicName)
+        </div>
+
+        <div class="form-group-vet">
+            @Html.LabelFor(m => m.Phone)
+            @Html.TextBoxFor(m => m.Phone, new { @class = "form-control-vet" })
+            @Html.ValidationMessageFor(m => m.Phone)
+        </div>
+
+        <div class="form-group-vet">
+            @Html.LabelFor(m => m.Email)
+            @Html.TextBoxFor(m => m.Email, new { @class = "form-control-vet" })
+            @Html.ValidationMessageFor(m => m.Email)
+        </div>
+
+        <div class="vet-form-actions">
+            <button type="submit" class="btn-vet-form btn-submit">
+                <i class="fas @((isEdit) ? "fa-save" : "fa-plus-circle")"></i>
+                @((isEdit) ? "Save Changes" : "Create")
+            </button>
+            @Html.ActionLink("Cancel", "Index", null, new { @class = "btn-vet-form btn-cancel" })
+        </div>
+    </div>
+}
+
+<!-- Font Awesome for Icons -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">

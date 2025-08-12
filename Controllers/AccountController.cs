@@ -174,7 +174,7 @@ namespace FarmTrack.Controllers
                 db.Users.Add(model);
                 db.SaveChanges();
 
-                db.LogActivity(model.UserId, $"Registered a new account: {model.FullName} ({model.Email})");
+                //db.LogActivity(model.UserId, $"Registered a new account: {model.FullName} ({model.Email})");
 
                 TempData["SuccessMessage"] = "Your registration has been successful.";
                 return RedirectToAction("Login");

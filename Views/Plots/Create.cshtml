@@ -1,0 +1,959 @@
+﻿@model FarmTrack.Models.Plot
+@{
+    ViewBag.Title = "Create New Plot";
+}
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        <i class="fas fa-check-circle me-2"></i> @TempData["SuccessMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+<!-- Leaflet CSS/JS -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js"></script>
+<!-- Add Leaflet GeometryUtil for area calculation -->
+<script src="https://unpkg.com/leaflet-geometryutil/src/leaflet.geometryutil.js"></script>
+<!-- Font Awesome for Icons -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
+<style>
+    /* Custom Color Scheme - Matching other pages */
+    :root {
+        --color-earth: #8B7355; /* Primary */
+        --color-soil: #654321; /* Secondary */
+        --color-foliage: #4CAF50; /* Tertiary */
+        --color-wheat: #F5DEB3; /* Accent */
+        --color-danger: #FF6B6B; /* Error */
+        --color-white: #FFFFFF; /* Neutral */
+        --color-light-earth: #e5d9cc; /* Light version of earth */
+        --color-light-foliage: #e8f5e9; /* Light version of foliage */
+        --color-warning: #ff9800; /* Warning color */
+    }
+
+    body {
+        background-color: #f9f7f4;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    /* Dashboard Header */
+    .dashboard-header {
+        background: linear-gradient(135deg, var(--color-earth) 0%, var(--color-soil) 100%);
+        border-radius: 12px;
+        padding: 30px;
+        margin-bottom: 30px;
+        position: relative;
+        overflow: hidden;
+        box-shadow: 0 10px 20px rgba(101, 67, 33, 0.2);
+    }
+
+        .dashboard-header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 250px;
+            height: 100%;
+            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23F5DEB3" opacity="0.1"><path d="M12 2L2 7v10c0 5.55 3.84 9.74 9 10.5V22h2v-4.5c5.16-.76 9-4.95 9-10.5V7l-10-5z"/><path d="M12 6l8 3.5v7.5c0 4.4-3.6 8-8 8s-8-3.6-8-8V9.5L12 6z"/></svg>');
+            background-repeat: no-repeat;
+            background-position: right center;
+            background-size: 180px;
+            opacity: 0.2;
+        }
+
+        .dashboard-header h1 {
+            color: var(--color-white);
+            font-weight: 700;
+            margin-bottom: 10px;
+            font-size: 2.2rem;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .dashboard-header p {
+            color: var(--color-wheat);
+            font-size: 1.2rem;
+            max-width: 600px;
+            margin: 0;
+        }
+
+    /* Form Container */
+    .form-container {
+        max-width: 1200px;
+        margin: 0 auto;
+    }
+
+    /* Modern Card Design */
+    .form-card {
+        background-color: var(--color-white);
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+        margin-bottom: 20px;
+        transition: all 0.3s ease;
+    }
+
+        .form-card:hover {
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.12);
+        }
+
+    .card-header {
+        padding: 20px 25px;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        font-weight: 600;
+        font-size: 1.1rem;
+        color: var(--color-white);
+    }
+
+    .card-header.primary {
+        background: linear-gradient(135deg, var(--color-earth), var(--color-soil));
+    }
+
+    .card-header.secondary {
+        background: linear-gradient(135deg, var(--color-soil), #4a3728);
+    }
+
+    .card-header.success {
+        background: linear-gradient(135deg, var(--color-foliage), #3d8b40);
+    }
+
+    .card-header.info {
+        background: linear-gradient(135deg, #17a2b8, #138496);
+    }
+
+    .card-header.dark {
+        background: linear-gradient(135deg, #343a40, #23272b);
+    }
+
+    .card-body {
+        padding: 25px;
+    }
+
+    /* Form Groups */
+    .form-group {
+        margin-bottom: 20px;
+    }
+
+        .form-group.row {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+    .col-form-label {
+        font-weight: 600;
+        color: var(--color-soil);
+        margin-bottom: 8px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .form-control {
+        border: 2px solid #e9ecef;
+        border-radius: 8px;
+        padding: 12px 15px;
+        font-size: 14px;
+        transition: all 0.3s ease;
+        background-color: #fff;
+    }
+
+        .form-control:focus {
+            border-color: var(--color-earth);
+            box-shadow: 0 0 0 3px rgba(139, 115, 85, 0.1);
+            outline: none;
+        }
+
+        .form-control:hover {
+            border-color: var(--color-wheat);
+        }
+
+    .form-control.is-valid {
+        border-color: var(--color-foliage);
+        background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 8 8" fill="%234CAF50"><path d="M6.564.75l-3.59 3.612-1.538-1.55L0 4.26l2.974 2.99L8 2.193z"/></svg>');
+        background-repeat: no-repeat;
+        background-position: right 12px center;
+        background-size: 16px;
+    }
+
+    .form-control.is-invalid {
+        border-color: var(--color-danger);
+        background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 12 12" fill="%23FF6B6B"><circle cx="6" cy="6" r="4.5"/><path d="M5.8 3.6h.4L6 6.5z" fill="white"/><circle cx="6" cy="8.2" r=".6" fill="white"/></svg>');
+        background-repeat: no-repeat;
+        background-position: right 12px center;
+        background-size: 16px;
+    }
+
+    /* Select Styling */
+    select.form-control {
+        background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 4 5" fill="%23666"><path d="M2 0L0 2h4zm0 5L0 3h4z"/></svg>');
+        background-repeat: no-repeat;
+        background-position: right 12px center;
+        background-size: 12px;
+        appearance: none;
+        padding-right: 35px;
+    }
+
+    /* Text Area */
+    textarea.form-control {
+        resize: vertical;
+        min-height: 80px;
+    }
+
+    /* Help Text */
+    .form-text {
+        color: #6c757d;
+        font-size: 0.875rem;
+        margin-top: 5px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    /* Map Styling */
+    #map {
+        height: 450px;
+        border-radius: 12px;
+        border: 3px solid var(--color-foliage);
+        box-shadow: 0 8px 25px rgba(76, 175, 80, 0.15);
+        overflow: hidden;
+        position: relative;
+    }
+
+    #map::before {
+        content: 'Draw your plot boundary on the map';
+        position: absolute;
+        top: 10px;
+        left: 10px;
+        background: rgba(255, 255, 255, 0.95);
+        padding: 8px 12px;
+        border-radius: 6px;
+        font-size: 12px;
+        color: var(--color-soil);
+        font-weight: 600;
+        z-index: 1000;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    /* Coordinates Display */
+    #coordinatesDisplay {
+        background: var(--color-light-foliage);
+        border-radius: 8px;
+        padding: 12px 15px;
+        margin-top: 15px;
+        border-left: 4px solid var(--color-foliage);
+    }
+
+    #coordinatesDisplay small {
+        color: var(--color-soil);
+        font-weight: 500;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    /* Action Buttons */
+    .action-buttons {
+        display: flex;
+        gap: 15px;
+        justify-content: center;
+        margin-top: 30px;
+        padding: 20px 0;
+    }
+
+    .action-button {
+        background-color: var(--color-foliage);
+        color: white;
+        border: none;
+        border-radius: 50px;
+        padding: 15px 30px;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        box-shadow: 0 4px 12px rgba(76, 175, 80, 0.3);
+        transition: all 0.3s ease;
+        text-decoration: none;
+        font-size: 16px;
+        min-width: 150px;
+        justify-content: center;
+    }
+
+        .action-button:hover {
+            background-color: #3d8b40;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(76, 175, 80, 0.4);
+            color: white;
+        }
+
+        .action-button.secondary {
+            background-color: var(--color-wheat);
+            color: var(--color-soil);
+            box-shadow: 0 4px 12px rgba(245, 222, 179, 0.4);
+        }
+
+            .action-button.secondary:hover {
+                background-color: #e6c89a;
+                box-shadow: 0 6px 15px rgba(245, 222, 179, 0.5);
+                color: var(--color-soil);
+            }
+
+    /* Validation Messages */
+    .text-danger {
+        color: var(--color-danger) !important;
+        font-size: 0.875rem;
+        margin-top: 5px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+        .text-danger::before {
+            content: '\f071';
+            font-family: 'Font Awesome 6 Free';
+            font-weight: 900;
+            font-size: 12px;
+        }
+
+    /* Success Messages */
+    .alert-success {
+        background: linear-gradient(135deg, var(--color-light-foliage), #f1f8e9);
+        border: 1px solid var(--color-foliage);
+        color: var(--color-soil);
+        border-radius: 12px;
+        padding: 15px 20px;
+        margin-bottom: 20px;
+    }
+
+    /* Responsive Grid */
+    .row {
+        margin: 0 -10px;
+    }
+
+    .col-md-3 {
+        flex: 0 0 25%;
+        max-width: 25%;
+        padding: 0 10px;
+    }
+
+    .col-md-9 {
+        flex: 0 0 75%;
+        max-width: 75%;
+        padding: 0 10px;
+    }
+
+    /* Responsive Design */
+    @@media (max-width: 768px) {
+        .col-md-3, .col-md-9 {
+            flex: 0 0 100%;
+            max-width: 100%;
+            margin-bottom: 10px;
+        }
+
+        .form-group.row {
+            flex-direction: column;
+            align-items: stretch;
+        }
+
+        .dashboard-header {
+            padding: 20px;
+        }
+
+        .dashboard-header h1 {
+            font-size: 1.8rem;
+        }
+
+        .card-body {
+            padding: 20px;
+        }
+
+        .action-buttons {
+            flex-direction: column;
+            align-items: stretch;
+        }
+
+        .action-button {
+            margin: 0;
+        }
+
+        #map {
+            height: 300px;
+        }
+    }
+
+    /* Loading Animation */
+    .loading {
+        position: relative;
+        overflow: hidden;
+    }
+
+        .loading::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+            animation: loading 1.5s infinite;
+        }
+
+    @@keyframes loading {
+        0% {
+            left: -100%;
+        }
+        100% {
+            left: 100%;
+        }
+    }
+
+    /* Enhanced Focus States */
+    .form-control:focus,
+    .action-button:focus {
+        outline: 2px solid var(--color-earth);
+        outline-offset: 2px;
+    }
+
+    /* Custom Scrollbar for Textareas */
+    textarea.form-control::-webkit-scrollbar {
+        width: 8px;
+    }
+
+    textarea.form-control::-webkit-scrollbar-track {
+        background: #f1f1f1;
+        border-radius: 4px;
+    }
+
+    textarea.form-control::-webkit-scrollbar-thumb {
+        background: var(--color-wheat);
+        border-radius: 4px;
+    }
+
+        textarea.form-control::-webkit-scrollbar-thumb:hover {
+            background: var(--color-earth);
+        }
+
+    /* Icon Styling */
+    .card-header i {
+        font-size: 18px;
+    }
+
+    .col-form-label i {
+        color: var(--color-earth);
+    }
+
+    /* Modern Gradient Borders */
+    .form-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 3px;
+        background: linear-gradient(90deg, var(--color-earth), var(--color-foliage), var(--color-wheat));
+        border-radius: 12px 12px 0 0;
+    }
+
+    .form-card {
+        position: relative;
+    }
+</style>
+
+<!-- Dashboard Header -->
+<div class="dashboard-header">
+    <h1><i class="fas fa-map-marked-alt"></i>Create New Plot</h1>
+    <p>Define your agricultural plot with precise boundaries and comprehensive details</p>
+</div>
+
+<div class="form-container">
+    @using (Html.BeginForm("Create", "Plots", FormMethod.Post, new { id = "plotForm" }))
+    {
+        @Html.AntiForgeryToken()
+
+        @Html.ValidationSummary(true, "", new { @class = "text-danger" })
+
+        <!-- Basic Information Section -->
+        <div class="form-card">
+            <div class="card-header primary">
+                <i class="fas fa-info-circle"></i>
+                <span>Basic Information</span>
+            </div>
+            <div class="card-body">
+                <div class="form-group row">
+                    <label class="col-md-3 col-form-label">
+                        <i class="fas fa-tag"></i> Plot Name *
+                    </label>
+                    <div class="col-md-9">
+                        @Html.EditorFor(model => model.Name, new { htmlAttributes = new { @class = "form-control", required = "required", placeholder = "Enter a unique name for your plot" } })
+                        @Html.ValidationMessageFor(model => model.Name, "", new { @class = "text-danger" })
+                    </div>
+                </div>
+
+                <div class="form-group row">
+                    <label class="col-md-3 col-form-label">
+                        <i class="fas fa-seedling"></i> Crop
+                    </label>
+                    <div class="col-md-9">
+                        @Html.DropDownListFor(model => model.CropId, (SelectList)ViewBag.CropList, "-- Select Crop (Optional) --",
+                            new { @class = "form-control" })
+                        @Html.ValidationMessageFor(model => model.CropId, "", new { @class = "text-danger" })
+                        <small class="form-text text-muted">
+                            <i class="fas fa-info-circle"></i> Select the crop you plan to grow (optional)
+                        </small>
+                    </div>
+                </div>
+
+                <div class="form-group row">
+                    <label class="col-md-3 col-form-label">
+                        <i class="fas fa-tasks"></i> Status *
+                    </label>
+                    <div class="col-md-9">
+                        @Html.DropDownListFor(model => model.Status,
+                            new SelectList(new List<string> {
+                                "Idle",
+                                "UnderPreparation",
+                                "ReadyForPlanting",
+                                "Planted",
+                                "Harvested"
+                            }),
+                            "-- Select Status --",
+                            new { @class = "form-control", required = "required" })
+                        @Html.ValidationMessageFor(model => model.Status, "", new { @class = "text-danger" })
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Soil and Irrigation Section -->
+        <div class="form-card">
+            <div class="card-header secondary">
+                <i class="fas fa-tint"></i>
+                <span>Soil & Irrigation</span>
+            </div>
+            <div class="card-body">
+                <div class="form-group row">
+                    <label class="col-md-3 col-form-label">
+                        <i class="fas fa-mountain"></i> Soil Type *
+                    </label>
+                    <div class="col-md-9">
+                        @Html.DropDownListFor(model => model.SoilType,
+                            new SelectList(new List<string> {
+                                "Sandy",
+                                "Clay",
+                                "Loamy",
+                                "Silty",
+                                "Peaty",
+                                "Chalky"
+                            }),
+                            "-- Select Soil Type --",
+                            new { @class = "form-control", required = "required" })
+                        @Html.ValidationMessageFor(model => model.SoilType, "", new { @class = "text-danger" })
+                    </div>
+                </div>
+
+                <div class="form-group row">
+                    <label class="col-md-3 col-form-label">
+                        <i class="fas fa-shower"></i> Irrigation Method
+                    </label>
+                    <div class="col-md-9">
+                        @Html.DropDownListFor(model => model.IrrigationMethod,
+                            new SelectList(new List<string> {
+                                "Drip",
+                                "Sprinkler",
+                                "Flood",
+                                "Center Pivot",
+                                "Manual"
+                            }),
+                            "-- Select Method --",
+                            new { @class = "form-control" })
+                        <small class="form-text text-muted">
+                            <i class="fas fa-lightbulb"></i> Choose the irrigation method for this plot
+                        </small>
+                    </div>
+                </div>
+
+                <div class="form-group row">
+                    <label class="col-md-3 col-form-label">
+                        <i class="fas fa-clock"></i> Irrigation Frequency
+                    </label>
+                    <div class="col-md-9">
+                        @Html.DropDownListFor(model => model.IrrigationFrequency,
+                            new SelectList(new List<string> {
+                                "Daily",
+                                "Every 2 Days",
+                                "Weekly",
+                                "Bi-Weekly",
+                                "As Needed"
+                            }),
+                            "-- Select Frequency --",
+                            new { @class = "form-control" })
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Planting Information Section -->
+        <div class="form-card">
+            <div class="card-header success">
+                <i class="fas fa-leaf"></i>
+                <span>Planting Information</span>
+            </div>
+            <div class="card-body">
+                <div class="form-group row">
+                    <label class="col-md-3 col-form-label">
+                        <i class="fas fa-calendar-plus"></i> Planting Date
+                    </label>
+                    <div class="col-md-9">
+                        @Html.EditorFor(model => model.PlantingDate, new { htmlAttributes = new { @class = "form-control", type = "date" } })
+                    </div>
+                </div>
+
+                <div class="form-group row">
+                    <label class="col-md-3 col-form-label">
+                        <i class="fas fa-calendar-check"></i> Expected Maturity Date
+                    </label>
+                    <div class="col-md-9">
+                        @Html.EditorFor(model => model.MaturityDate, new { htmlAttributes = new { @class = "form-control", type = "date" } })
+                    </div>
+                </div>
+
+                <div class="form-group row">
+                    <label class="col-md-3 col-form-label">
+                        <i class="fas fa-prescription-bottle"></i> Fertilizer Type
+                    </label>
+                    <div class="col-md-9">
+                        @Html.DropDownListFor(model => model.FertilizerType,
+                            new SelectList(new List<string> {
+                                "Organic Compost",
+                                "NPK Blend",
+                                "Urea",
+                                "Ammonium Nitrate",
+                                "None"
+                            }),
+                            "-- Select Fertilizer --",
+                            new { @class = "form-control" })
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Plot Geometry Section -->
+        <div class="form-card">
+            <div class="card-header info">
+                <i class="fas fa-draw-polygon"></i>
+                <span>Plot Geometry</span>
+            </div>
+            <div class="card-body">
+                <div class="form-group row">
+                    <label class="col-md-3 col-form-label">
+                        <i class="fas fa-ruler-combined"></i> Size (Hectares)
+                    </label>
+                    <div class="col-md-9">
+                        @Html.EditorFor(model => model.SizeInHectares, new { htmlAttributes = new { @class = "form-control", min = "0", step = "0.01", placeholder = "0.00" } })
+                        <small class="form-text text-muted">
+                            <i class="fas fa-magic"></i> Size will be calculated automatically when you draw the plot boundary
+                        </small>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="col-form-label">
+                        <i class="fas fa-map"></i> Plot Boundary *
+                    </label>
+                    <p class="text-muted mb-3">
+                        <i class="fas fa-pencil-alt"></i> Draw your plot boundary on the map below. Only one polygon is allowed.
+                    </p>
+                    <div id="map"></div>
+                    @Html.HiddenFor(model => model.Coordinates, new { required = "required" })
+                    @Html.ValidationMessageFor(model => model.Coordinates, "", new { @class = "text-danger" })
+                    <div id="coordinatesDisplay" class="mt-2" style="display: none;">
+                        <small>
+                            <i class="fas fa-map-pin"></i>
+                            <strong>Coordinates Captured:</strong>
+                            <span id="coordsText"></span>
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Additional Information Section -->
+        <div class="form-card">
+            <div class="card-header dark">
+                <i class="fas fa-clipboard-list"></i>
+                <span>Additional Information</span>
+            </div>
+            <div class="card-body">
+                <div class="form-group row">
+                    <label class="col-md-3 col-form-label">
+                        <i class="fas fa-search"></i> Last Inspection Date
+                    </label>
+                    <div class="col-md-9">
+                        @Html.EditorFor(model => model.LastInspectionDate, new { htmlAttributes = new { @class = "form-control", type = "date" } })
+                    </div>
+                </div>
+
+                <div class="form-group row">
+                    <label class="col-md-3 col-form-label">
+                        <i class="fas fa-sticky-note"></i> Notes
+                    </label>
+                    <div class="col-md-9">
+                        @Html.TextAreaFor(model => model.Notes, new { @class = "form-control", rows = "4", placeholder = "Add any additional notes about this plot..." })
+                        <small class="form-text text-muted">
+                            <i class="fas fa-info-circle"></i> Any additional information about the plot
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="action-buttons">
+            <button type="submit" class="action-button">
+                <i class="fas fa-plus-circle"></i> Create Plot
+            </button>
+            @Html.ActionLink("Cancel", "Index", null, new { @class = "action-button secondary" })
+        </div>
+    }
+</div>
+
+@section Scripts {
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        // Wait for jQuery to be ready
+        $(document).ready(function() {
+            console.log("Document ready, initializing map...");
+
+            // Debug checks
+            console.log("Leaflet available?", typeof L !== 'undefined');
+            console.log("Map container found?", $('#map').length > 0);
+            console.log("GeometryUtil available?", typeof L.GeometryUtil !== 'undefined');
+
+            try {
+                // Initialize map with South Africa coordinates
+                var map = L.map('map').setView([-25.7479, 28.2293], 8); // Centered on Pretoria area
+                console.log("Map initialized successfully");
+
+                // Add tile layer
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    attribution: '© OpenStreetMap contributors',
+                    maxZoom: 20
+                }).addTo(map);
+
+                // Create feature group for drawn items
+                var drawnItems = new L.FeatureGroup();
+                map.addLayer(drawnItems);
+
+                // Initialize draw controls
+                var drawControl = new L.Control.Draw({
+                    draw: {
+                        polygon: {
+                            allowIntersection: false,
+                            showArea: true,
+                            drawError: {
+                                color: '#e1e100',
+                                message: '<strong>Error:</strong> Shape edges cannot cross!'
+                            }
+                        },
+                        marker: false,
+                        circle: false,
+                        rectangle: false,
+                        polyline: false,
+                        circlemarker: false
+                    },
+                    edit: {
+                        featureGroup: drawnItems,
+                        remove: true
+                    }
+                });
+                map.addControl(drawControl);
+
+                // Handle drawing events
+                map.on('draw:created', function (e) {
+                    console.log("Polygon drawn");
+
+                    // Clear existing polygons (only allow one)
+                    drawnItems.clearLayers();
+
+                    var layer = e.layer;
+                    drawnItems.addLayer(layer);
+
+                    // Get GeoJSON
+                    var geoJSON = layer.toGeoJSON();
+                    var coordinatesString = JSON.stringify(geoJSON.geometry);
+
+                    console.log("Coordinates:", coordinatesString);
+                    $('#Coordinates').val(coordinatesString);
+
+                    // Show coordinates in UI
+                    $('#coordinatesDisplay').show();
+                    $('#coordsText').text(coordinatesString.substring(0, 100) + '...');
+
+                    // Calculate area
+                    try {
+                        var latLngs = layer.getLatLngs()[0];
+
+                        // Use L.GeometryUtil if available, otherwise calculate manually
+                        var area = 0;
+                        if (typeof L.GeometryUtil !== 'undefined' && L.GeometryUtil.geodesicArea) {
+                            area = L.GeometryUtil.geodesicArea(latLngs);
+                        } else {
+                            // Simple area calculation (not as accurate for large areas)
+                            area = calculatePolygonArea(latLngs);
+                        }
+
+                        var hectares = (area / 10000).toFixed(2);
+                        $('#SizeInHectares').val(hectares);
+                        console.log("Area calculated:", hectares, "hectares");
+
+                    } catch (areaError) {
+                        console.error("Error calculating area:", areaError);
+                        // Don't break the flow, just log the error
+                    }
+                });
+
+                // Handle edit events
+                map.on('draw:edited', function (e) {
+                    console.log("Polygon edited");
+                    var layers = e.layers;
+                    layers.eachLayer(function (layer) {
+                        var geoJSON = layer.toGeoJSON();
+                        $('#Coordinates').val(JSON.stringify(geoJSON.geometry));
+
+                        // Recalculate area
+                        try {
+                            var latLngs = layer.getLatLngs()[0];
+                            var area = 0;
+                            if (typeof L.GeometryUtil !== 'undefined' && L.GeometryUtil.geodesicArea) {
+                                area = L.GeometryUtil.geodesicArea(latLngs);
+                            } else {
+                                area = calculatePolygonArea(latLngs);
+                            }
+                            var hectares = (area / 10000).toFixed(2);
+                            $('#SizeInHectares').val(hectares);
+                        } catch (areaError) {
+                            console.error("Error recalculating area:", areaError);
+                        }
+                    });
+                });
+
+                // Handle delete events
+                map.on('draw:deleted', function (e) {
+                    console.log("Polygon deleted");
+                    $('#Coordinates').val('');
+                    $('#SizeInHectares').val('');
+                    $('#coordinatesDisplay').hide();
+                });
+
+                // Load existing polygon if editing
+                @if (Model != null && !string.IsNullOrEmpty(Model.Coordinates))
+                {
+                    <text>
+                    try {
+                        var existingGeoJSON = JSON.parse('@Html.Raw(Model.Coordinates)');
+                        var shape = L.geoJSON(existingGeoJSON).addTo(drawnItems);
+                        map.fitBounds(shape.getBounds());
+                        $('#coordinatesDisplay').show();
+                        $('#coordsText').text('@Html.Raw(Model.Coordinates)'.substring(0, 100) + '...');
+                    } catch (e) {
+                        console.error("Error loading existing coordinates:", e);
+                    }
+                    </text>
+                }
+
+            } catch (e) {
+                console.error("Map initialization error:", e);
+                alert('Failed to initialize map. Error: ' + e.message);
+            }
+
+            // Simple polygon area calculation (fallback)
+            function calculatePolygonArea(latLngs) {
+                var area = 0;
+                var j = latLngs.length - 1;
+
+                for (var i = 0; i < latLngs.length; i++) {
+                    var xi = latLngs[i].lat;
+                    var yi = latLngs[i].lng;
+                    var xj = latLngs[j].lat;
+                    var yj = latLngs[j].lng;
+
+                    area += (xj + xi) * (yj - yi);
+                    j = i;
+                }
+
+                return Math.abs(area * 0.5) * 111319.9 * 111319.9; // Rough conversion to square meters
+            }
+
+            // Enhanced form validation
+            $('#plotForm').submit(function (e) {
+                console.log("Form submitted");
+
+                var coordinates = $('#Coordinates').val();
+                var plotName = $('#Name').val().trim();
+                var soilType = $('#SoilType').val();
+                var status = $('#Status').val();
+
+                console.log("Validation - Coordinates:", coordinates);
+                console.log("Validation - Name:", plotName);
+                console.log("Validation - Soil Type:", soilType);
+                console.log("Validation - Status:", status);
+
+                var isValid = true;
+                var errorMessages = [];
+
+                if (!coordinates) {
+                    errorMessages.push('Please draw the plot boundary on the map');
+                    isValid = false;
+                }
+
+                if (!plotName) {
+                    errorMessages.push('Plot name is required');
+                    isValid = false;
+                }
+
+                if (!soilType) {
+                    errorMessages.push('Soil type is required');
+                    isValid = false;
+                }
+
+                if (!status) {
+                    errorMessages.push('Status is required');
+                    isValid = false;
+                }
+
+                if (!isValid) {
+                    alert('Please fix the following errors:\n• ' + errorMessages.join('\n• '));
+                    e.preventDefault();
+                    return false;
+                }
+
+                console.log("Form validation passed, submitting...");
+                return true;
+            });
+
+            // Add some helpful UI feedback
+            $('#Name').on('blur', function() {
+                if ($(this).val().trim() === '') {
+                    $(this).addClass('is-invalid');
+                } else {
+                    $(this).removeClass('is-invalid').addClass('is-valid');
+                }
+            });
+
+            $('#SoilType, #Status').on('change', function() {
+                if ($(this).val() === '' || $(this).val() === null) {
+                    $(this).addClass('is-invalid');
+                } else {
+                    $(this).removeClass('is-invalid').addClass('is-valid');
+                }
+            });
+        });
+    </script>
+}

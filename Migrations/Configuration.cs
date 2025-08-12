@@ -1,4 +1,4 @@
-﻿namespace FarmTrack.Migrations
+﻿namespace FarmPro.Migrations
 {
     using System;
     using System.Data.Entity;

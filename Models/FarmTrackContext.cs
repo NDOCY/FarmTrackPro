@@ -1,5 +1,6 @@
 ﻿using FarmPro.Models;
 using FarmTrack.Models;
+//using FarmTrackPro.Models;
 using System;
 using System.Collections.Generic;
 using System.Data.Entity;
@@ -9,7 +10,7 @@ namespace FarmTrack.Models
 {
     public class FarmTrackContext : DbContext
     {
-        public FarmTrackContext() : base("DefaultConnection")
+        public FarmTrackContext() : base("FarmTrackDB")
         {
             this.Configuration.LazyLoadingEnabled = false;
         }
@@ -33,6 +34,23 @@ namespace FarmTrack.Models
         public DbSet<WeightRecord> WeightRecords { get; set; } // New DbSet for WeightRecord
         public DbSet<Supplier> Suppliers { get; set; }
         public DbSet<InventoryRestock> InventoryRestocks { get; set; }
+        public DbSet<Veterinarian> Veterinarians { get; set; } // New DbSet for Veterinarian
+        public DbSet<EmergencyContact> EmergencyContacts { get; set; } // New DbSet for EmergencyContact
+        public DbSet<EmergencyGuideline> EmergencyGuidelines { get; set; } // New DbSet for EmergencyGuideline
+        public DbSet<CareGuideline> CareGuidelines { get; set; } // New DbSet for CareGuideline
+        public DbSet<Crop> Crops { get; set; }
+        public DbSet<Plot> Plots { get; set; }
+        public DbSet<CropRequirements> CropRequirement { get; set; }
+        //public DbSet<CropAssignment> CropAssignments { get; set; }
+        public DbSet<PlotCrop> PlotCrops { get; set; }
+        public DbSet<PreparationTask> PreparationTasks { get; set; } // New DbSet for PreparationTask
+        public DbSet<Activity> Activities { get; set; }
+        public DbSet<Tag> Tags { get; set; }
+        public DbSet<GrowthRecord> GrowthRecords { get; set; }
+        public DbSet<HarvestOutcome> HarvestOutcomes { get; set; }
+
+
+
 
 
         protected override void OnModelCreating(DbModelBuilder modelBuilder)
@@ -116,6 +134,11 @@ namespace FarmTrack.Models
             .HasMany(l => l.Offspring)
             .WithOptional(o => o.Parent)
             .HasForeignKey(o => o.ParentId);
+
+            modelBuilder.Entity<FarmTask>()
+            .HasOptional(t => t.PlotCrop)
+            .WithMany(pc => pc.Tasks)
+            .HasForeignKey(t => t.PlotCropId);
 
         }
 

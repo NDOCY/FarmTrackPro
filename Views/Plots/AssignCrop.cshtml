@@ -1,0 +1,471 @@
+﻿@model FarmTrack.Models.Plot
+@{
+    ViewBag.Title = "Assign Crop to Plot";
+    var recommended = (SelectList)ViewBag.RecommendedCrops;
+    var other = (SelectList)ViewBag.OtherCrops;
+}
+
+<style>
+    /* Custom Color Scheme */
+    :root {
+        --color-earth: #8B7355; /* Primary */
+        --color-soil: #654321; /* Secondary */
+        --color-foliage: #4CAF50; /* Tertiary */
+        --color-wheat: #F5DEB3; /* Accent */
+        --color-danger: #FF6B6B; /* Error */
+        --color-white: #FFFFFF; /* Neutral */
+        --color-light-earth: #e5d9cc; /* Light version of earth */
+        --color-light-foliage: #e8f5e9; /* Light version of foliage */
+    }
+
+    body {
+        background-color: #f9f7f4;
+    }
+
+    /* Page Header */
+    .page-header {
+        background: linear-gradient(135deg, var(--color-earth) 0%, var(--color-soil) 100%);
+        border-radius: 12px;
+        padding: 30px;
+        margin-bottom: 30px;
+        position: relative;
+        overflow: hidden;
+        box-shadow: 0 10px 20px rgba(101, 67, 33, 0.2);
+    }
+
+        .page-header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 200px;
+            height: 100%;
+            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23F5DEB3" opacity="0.1"><path d="M12 2L2 7L12 12L22 7L12 2ZM2 17L12 22L22 17M2 12L12 17L22 12"/></svg>');
+            background-repeat: no-repeat;
+            background-position: right center;
+            background-size: 150px;
+            opacity: 0.2;
+        }
+
+        .page-header h1 {
+            color: var(--color-white);
+            font-weight: 700;
+            margin-bottom: 10px;
+            font-size: 2rem;
+        }
+
+        .page-header p {
+            color: var(--color-wheat);
+            font-size: 1.1rem;
+            margin: 0;
+        }
+
+    /* Plot Info Card */
+    .plot-info-card {
+        background-color: white;
+        border-radius: 12px;
+        padding: 25px;
+        margin-bottom: 30px;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+        border-left: 5px solid var(--color-foliage);
+    }
+
+    .plot-info-title {
+        color: var(--color-soil);
+        font-size: 1.2rem;
+        font-weight: 700;
+        margin-bottom: 15px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .plot-detail {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 10px;
+    }
+
+    .plot-detail-icon {
+        color: var(--color-foliage);
+        font-size: 1.1rem;
+        width: 20px;
+    }
+
+    .plot-detail-label {
+        font-weight: 600;
+        color: var(--color-soil);
+        min-width: 100px;
+    }
+
+    .plot-detail-value {
+        color: #555;
+        font-weight: 500;
+        background-color: var(--color-light-foliage);
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 0.9rem;
+    }
+
+    /* Form Container */
+    .form-container {
+        background-color: white;
+        border-radius: 12px;
+        padding: 30px;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+        max-width: 600px;
+        margin: 0 auto 30px;
+    }
+
+    .form-title {
+        color: var(--color-soil);
+        font-size: 1.4rem;
+        font-weight: 700;
+        margin-bottom: 25px;
+        text-align: center;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+    }
+
+    .form-group {
+        margin-bottom: 25px;
+    }
+
+    .form-group label {
+        color: var(--color-soil);
+        font-weight: 600;
+        margin-bottom: 10px;
+        display: block;
+        font-size: 1.1rem;
+    }
+
+    .form-control {
+        width: 100%;
+        padding: 15px;
+        border: 2px solid var(--color-wheat);
+        border-radius: 8px;
+        font-size: 1rem;
+        color: var(--color-soil);
+        background-color: white;
+        transition: all 0.3s ease;
+    }
+
+        .form-control:focus {
+            outline: none;
+            border-color: var(--color-earth);
+            box-shadow: 0 0 0 3px rgba(139, 115, 85, 0.1);
+            transform: translateY(-1px);
+        }
+
+    /* Enhanced Select Styling */
+    select.form-control {
+        background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23654321"><path d="M7 10l5 5 5-5z"/></svg>');
+        background-repeat: no-repeat;
+        background-position: right 15px center;
+        background-size: 20px;
+        appearance: none;
+        cursor: pointer;
+    }
+
+    /* Optgroup Styling */
+    optgroup {
+        font-weight: 700;
+        color: var(--color-soil);
+        font-size: 1rem;
+        padding: 10px 0;
+    }
+
+    optgroup[label*="Recommended"] {
+        background-color: var(--color-light-foliage);
+    }
+
+    optgroup[label*="Other"] {
+        background-color: var(--color-light-earth);
+    }
+
+    option {
+        padding: 8px 15px;
+        color: #555;
+        font-weight: 500;
+    }
+
+    /* Recommendation Badge */
+    .recommendation-badge {
+        display: inline-block;
+        background: linear-gradient(135deg, var(--color-foliage), #45a049);
+        color: white;
+        padding: 8px 15px;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        margin-bottom: 15px;
+        box-shadow: 0 3px 10px rgba(76, 175, 80, 0.3);
+    }
+
+    /* Action Buttons */
+    .action-buttons {
+        display: flex;
+        gap: 15px;
+        justify-content: center;
+        margin-top: 30px;
+    }
+
+    .action-button {
+        padding: 15px 30px;
+        border: none;
+        border-radius: 50px;
+        font-weight: 600;
+        font-size: 1rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        text-decoration: none;
+        min-width: 150px;
+        justify-content: center;
+    }
+
+    .btn-success {
+        background: linear-gradient(135deg, var(--color-foliage), #45a049);
+        color: white;
+        box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3);
+    }
+
+        .btn-success:hover {
+            background: linear-gradient(135deg, #45a049, #3d8b40);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(76, 175, 80, 0.4);
+            color: white;
+        }
+
+    .btn-secondary {
+        background-color: var(--color-wheat);
+        color: var(--color-soil);
+        box-shadow: 0 4px 15px rgba(245, 222, 179, 0.4);
+    }
+
+        .btn-secondary:hover {
+            background-color: #e6c89a;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(245, 222, 179, 0.5);
+            color: var(--color-soil);
+        }
+
+    /* Info Section */
+    .info-section {
+        background: linear-gradient(135deg, var(--color-light-foliage), #f1f8e9);
+        border-radius: 12px;
+        padding: 20px;
+        margin-bottom: 25px;
+        border-left: 5px solid var(--color-foliage);
+    }
+
+    .info-title {
+        color: var(--color-foliage);
+        font-weight: 700;
+        margin-bottom: 10px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .info-text {
+        color: var(--color-soil);
+        line-height: 1.6;
+        margin: 0;
+    }
+
+    /* Responsive Design */
+    @@media (max-width: 768px) {
+        .page-header {
+            padding: 20px;
+        }
+
+        .page-header h1 {
+            font-size: 1.6rem;
+        }
+
+        .form-container {
+            margin: 0 15px 30px;
+            padding: 25px 20px;
+        }
+
+        .action-buttons {
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .action-button {
+            width: 100%;
+            max-width: 300px;
+        }
+
+        .plot-info-card {
+            margin: 0 15px 30px;
+            padding: 20px;
+        }
+    }
+
+    /* Loading Animation */
+    .form-container.loading {
+        opacity: 0.7;
+        pointer-events: none;
+    }
+
+    .submit-loading {
+        position: relative;
+    }
+
+        .submit-loading::after {
+            content: '';
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            margin: auto;
+            border: 2px solid transparent;
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+    @@keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+</style>
+
+<!-- Page Header -->
+<div class="page-header">
+    <h1><i class="fas fa-seedling me-2"></i>Assign Crop to Plot</h1>
+    <p>Select the most suitable crop for @ViewBag.PlotName based on soil conditions</p>
+</div>
+
+<!-- Plot Information Card -->
+<div class="plot-info-card">
+    <div class="plot-info-title">
+        <i class="fas fa-map-marker-alt"></i>
+        Plot Information
+    </div>
+
+    <div class="plot-detail">
+        <i class="fas fa-tag plot-detail-icon"></i>
+        <span class="plot-detail-label">Plot Name:</span>
+        <span class="plot-detail-value">@ViewBag.PlotName</span>
+    </div>
+
+    <div class="plot-detail">
+        <i class="fas fa-mountain plot-detail-icon"></i>
+        <span class="plot-detail-label">Soil Type:</span>
+        <span class="plot-detail-value">@ViewBag.SoilType</span>
+    </div>
+</div>
+
+<!-- Information Section -->
+<div class="info-section">
+    <div class="info-title">
+        <i class="fas fa-lightbulb"></i>
+        Crop Selection Guide
+    </div>
+    <p class="info-text">
+        We've categorized crops based on their compatibility with your plot's soil type.
+        <strong>Recommended crops</strong> are optimally suited for @ViewBag.SoilType soil and typically yield better results.
+        <strong>Other crops</strong> can still be grown but may require additional care or soil amendments.
+    </p>
+</div>
+
+<!-- Form Container -->
+<div class="form-container">
+    <div class="form-title">
+        <i class="fas fa-plus-circle"></i>
+        Select Crop Assignment
+    </div>
+
+    @using (Html.BeginForm())
+    {
+        @Html.AntiForgeryToken()
+        @Html.HiddenFor(model => model.Id)
+
+        <div class="recommendation-badge">
+            <i class="fas fa-star me-2"></i>
+            @recommended.Count() recommended crops available
+        </div>
+
+        <div class="form-group">
+            <label for="CropId">
+                <i class="fas fa-seedling me-2"></i>
+                Choose Crop for Assignment
+            </label>
+            <select class="form-control" id="CropId" name="CropId" required>
+                <option value="" disabled selected>Please select a crop...</option>
+                <optgroup label="✅ Recommended for @ViewBag.SoilType soil">
+                    @foreach (var crop in recommended)
+                    {
+                        <option value="@crop.Value">@crop.Text</option>
+                    }
+                </optgroup>
+                <optgroup label="🌾 Other Available Crops">
+                    @foreach (var crop in other)
+                    {
+                        <option value="@crop.Value">@crop.Text</option>
+                    }
+                </optgroup>
+            </select>
+        </div>
+
+        <div class="action-buttons">
+            <button type="submit" class="action-button btn-success" id="assignBtn">
+                <i class="fas fa-check-circle"></i>
+                Assign Crop
+            </button>
+            @Html.ActionLink("Cancel", "Details", new { id = Model.Id }, new { @class = "action-button btn-secondary" })
+            <i class="fas fa-times-circle"></i>
+        </div>
+    }
+</div>
+
+<!-- Font Awesome for Icons -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const form = document.querySelector('form');
+        const assignBtn = document.getElementById('assignBtn');
+        const formContainer = document.querySelector('.form-container');
+
+        // Add form submission handling
+        form.addEventListener('submit', function(e) {
+            const cropSelect = document.getElementById('CropId');
+
+            if (!cropSelect.value) {
+                e.preventDefault();
+                alert('Please select a crop before assigning.');
+                return;
+            }
+
+            // Add loading state
+            assignBtn.classList.add('submit-loading');
+            assignBtn.disabled = true;
+            assignBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Assigning...';
+            formContainer.classList.add('loading');
+        });
+
+        // Add visual feedback for crop selection
+        const cropSelect = document.getElementById('CropId');
+        cropSelect.addEventListener('change', function() {
+            const selectedOption = this.options[this.selectedIndex];
+            const optgroup = selectedOption.parentNode;
+
+            if (optgroup.label.includes('Recommended')) {
+                this.style.borderColor = '#4CAF50';
+                this.style.backgroundColor = '#e8f5e9';
+            } else {
+                this.style.borderColor = '#8B7355';
+                this.style.backgroundColor = '#e5d9cc';
+            }
+        });
+    });
+</script>

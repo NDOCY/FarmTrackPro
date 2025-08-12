@@ -101,6 +101,31 @@
     .form-check-label {
         color: var(--color-soil);
     }
+
+    /* Validation Error Styling */
+    .field-validation-error {
+        color: var(--color-danger);
+        font-size: 0.875em;
+        margin-top: 5px;
+    }
+
+    .validation-summary-errors {
+        background-color: #f8d7da;
+        border: 1px solid #f5c6cb;
+        color: #721c24;
+        padding: 10px;
+        border-radius: 4px;
+        margin-bottom: 20px;
+    }
+
+        .validation-summary-errors ul {
+            margin: 0;
+            padding-left: 20px;
+        }
+
+    .input-validation-error {
+        border-color: var(--color-danger) !important;
+    }
 </style>
 
 <!-- Page Header -->
@@ -110,21 +135,25 @@
 
 <div class="content-container">
     <div class="form-container">
+
+        <!-- Display validation summary -->
+        @Html.ValidationSummary(true, "", new { @class = "validation-summary-errors" })
+
         @using (Html.BeginForm())
         {
             @Html.AntiForgeryToken()
+
             <div class="form-group">
                 @Html.LabelFor(m => m.CheckType)
                 <div class="input-group">
                     <div class="input-group-prepend">
                         <span class="input-group-text"><i class="fas fa-stethoscope"></i></span>
                     </div>
-                    @*@Html.TextBoxFor(m => m.CheckType, new { @class = "form-control", placeholder = "Enter check type (e.g. Vaccination, General Health)" })
-                    *@
-                    @Html.DropDownListFor(m => m.CheckType, new SelectList(ViewBag.HealthCheckTypes as List<string>), "-- Select Health Check Type --", new { @class = "form-control" })
-
+                    @Html.DropDownListFor(m => m.CheckType, new SelectList(ViewBag.HealthCheckTypes as List<string>, Model.CheckType), "-- Select Health Check Type --", new { @class = "form-control" })
                 </div>
+                @Html.ValidationMessageFor(m => m.CheckType, "", new { @class = "field-validation-error" })
             </div>
+
             <div class="form-group">
                 @Html.LabelFor(m => m.Notes)
                 <div class="input-group">
@@ -133,16 +162,20 @@
                     </div>
                     @Html.TextAreaFor(m => m.Notes, new { @class = "form-control", rows = "3", placeholder = "Enter any additional notes here" })
                 </div>
+                @Html.ValidationMessageFor(m => m.Notes, "", new { @class = "field-validation-error" })
             </div>
+
             <div class="form-group">
                 @Html.LabelFor(m => m.ScheduledDate)
                 <div class="input-group">
                     <div class="input-group-prepend">
                         <span class="input-group-text"><i class="fas fa-calendar-alt"></i></span>
                     </div>
-                    @Html.TextBoxFor(m => m.ScheduledDate, new { @class = "form-control", type = "date" })
+                    @Html.TextBoxFor(m => m.ScheduledDate, "{0:yyyy-MM-dd}", new { @class = "form-control", type = "date" })
                 </div>
+                @Html.ValidationMessageFor(m => m.ScheduledDate, "", new { @class = "field-validation-error" })
             </div>
+
             <div class="form-group">
                 @Html.Label("Assigned User")
                 <div class="input-group">
@@ -151,7 +184,33 @@
                     </div>
                     @Html.DropDownListFor(m => m.AssignedToUserId, (SelectList)ViewBag.Users, "-- Select User --", new { @class = "form-control" })
                 </div>
+                @Html.ValidationMessageFor(m => m.AssignedToUserId, "", new { @class = "field-validation-error" })
             </div>
+
+            <div class="form-group">
+                <div class="form-check">
+                    @Html.CheckBoxFor(m => m.IsOutsourced, new { @class = "form-check-input", id = "IsOutsourced" })
+                    <label class="form-check-label" for="IsOutsourced">Is Outsourced?</label>
+                </div>
+            </div>
+
+            <div class="form-group" id="vetSection" style="display:@(Model.IsOutsourced ? "block" : "none")">
+                @Html.LabelFor(m => m.VeterinarianId, "Select Veterinarian")
+                @Html.DropDownListFor(m => m.VeterinarianId, (SelectList)ViewBag.Veterinarians, "-- Select Vet --", new { @class = "form-control" })
+                @Html.ValidationMessageFor(m => m.VeterinarianId, "", new { @class = "field-validation-error" })
+            </div>
+
+            <div class="form-group" id="purposeSection" style="display:@(Model.IsOutsourced ? "block" : "none")">
+                @Html.LabelFor(m => m.Purpose, "Purpose")
+                <div class="input-group">
+                    <div class="input-group-prepend">
+                        <span class="input-group-text"><i class="fas fa-clipboard"></i></span>
+                    </div>
+                    @Html.TextAreaFor(m => m.Purpose, new { @class = "form-control", rows = "2", placeholder = "Enter the purpose of the veterinary appointment" })
+                </div>
+                @Html.ValidationMessageFor(m => m.Purpose, "", new { @class = "field-validation-error" })
+            </div>
+
             <div class="form-group">
                 <label>Filter by Type</label>
                 <div class="input-group">
@@ -167,8 +226,9 @@
                     </select>
                 </div>
             </div>
+
             <div class="form-group">
-                <label>Select Livestock</label>
+                <label>Select Livestock <span style="color: var(--color-danger);">*</span></label>
                 <div class="mb-2">
                     <button type="button" class="btn btn-sm btn-primary" id="selectAllBtn">
                         <i class="fas fa-check-square"></i> Select All Visible
@@ -188,7 +248,12 @@
                         </div>
                     }
                 </div>
+                <!-- Custom validation message for livestock selection -->
+                <div id="livestockValidation" class="field-validation-error" style="display: none;">
+                    Please select at least one animal.
+                </div>
             </div>
+
             <button type="submit" class="btn btn-success">
                 <i class="fas fa-save"></i> Schedule
             </button>
@@ -202,6 +267,9 @@
         const livestockOptions = document.querySelectorAll(".livestock-option");
         const selectAllBtn = document.getElementById("selectAllBtn");
         const clearAllBtn = document.getElementById("clearAllBtn");
+        const isOutsourcedCheckbox = document.getElementById("IsOutsourced");
+        const vetSection = document.getElementById("vetSection");
+        const purposeSection = document.getElementById("purposeSection");
 
         // Filter by livestock type
         livestockTypeSelect.addEventListener("change", function () {
@@ -225,9 +293,41 @@
         clearAllBtn.addEventListener("click", function () {
             document.querySelectorAll("input[name='SelectedLivestockIds']").forEach(cb => cb.checked = false);
         });
+
+        // Handle outsourced checkbox
+        isOutsourcedCheckbox.addEventListener("change", function () {
+            const isChecked = this.checked;
+            vetSection.style.display = isChecked ? "block" : "none";
+            purposeSection.style.display = isChecked ? "block" : "none";
+        });
+
+        // Form submission validation
+        document.querySelector("form").addEventListener("submit", function (e) {
+            const selectedLivestock = document.querySelectorAll("input[name='SelectedLivestockIds']:checked");
+            const livestockValidation = document.getElementById("livestockValidation");
+
+            if (selectedLivestock.length === 0) {
+                e.preventDefault();
+                livestockValidation.style.display = "block";
+                livestockValidation.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            } else {
+                livestockValidation.style.display = "none";
+            }
+        });
+
+        // Hide livestock validation when animals are selected
+        document.querySelectorAll("input[name='SelectedLivestockIds']").forEach(checkbox => {
+            checkbox.addEventListener("change", function () {
+                const selectedLivestock = document.querySelectorAll("input[name='SelectedLivestockIds']:checked");
+                const livestockValidation = document.getElementById("livestockValidation");
+
+                if (selectedLivestock.length > 0) {
+                    livestockValidation.style.display = "none";
+                }
+            });
+        });
     </script>
 }
-
 
 <!-- Font Awesome for Icons -->
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">

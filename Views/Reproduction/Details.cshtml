@@ -1,5 +1,4 @@
-﻿
-@model FarmTrack.Models.ReproductionRecord
+﻿@model FarmTrack.Models.ReproductionDetailsViewModel
 
 <style>
     /* Custom Color Scheme */
@@ -13,6 +12,7 @@
         --color-light-earth: #d9c8b4; /* Light version of primary */
         --color-female: #FF82AB; /* Pink for female */
         --color-male: #4169E1; /* Blue for male */
+        --color-due: #9C27B0; /* Purple for due date */
     }
 
     /* Page Header */
@@ -102,6 +102,11 @@
         border-left: 4px solid var(--color-wheat);
     }
 
+    .detail-item.due {
+        background-color: rgba(156, 39, 176, 0.1);
+        border-left: 4px solid var(--color-due);
+    }
+
     .detail-item.outcome {
         background-color: rgba(76, 175, 80, 0.1);
         border-left: 4px solid var(--color-foliage);
@@ -140,48 +145,68 @@
         gap: 10px;
     }
 
-    .offspring-list {
-        padding-left: 0;
-        list-style: none;
-        display: flex;
-        flex-wrap: wrap;
-        gap: 15px;
-    }
-
-    .offspring-item {
-        background-color: rgba(76, 175, 80, 0.08);
+    /* Offspring Table */
+    .offspring-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 10px;
+        background-color: var(--color-white);
         border-radius: 8px;
-        padding: 12px 18px;
-        transition: all 0.2s ease;
-        border-left: 4px solid var(--color-foliage);
-        flex: 1 0 200px;
-        max-width: 250px;
+        overflow: hidden;
         box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-        display: flex;
-        align-items: center;
     }
 
-    .offspring-item:hover {
-        transform: translateY(-3px);
-        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+    .offspring-table thead {
+        background-color: var(--color-wheat);
     }
 
-    .offspring-item i {
-        color: var(--color-foliage);
-        margin-right: 10px;
-        font-size: 1.2rem;
-    }
-
-    .offspring-item a {
+    .offspring-table th {
+        padding: 15px 12px;
+        text-align: left;
+        font-weight: 600;
         color: var(--color-soil);
-        text-decoration: none;
-        font-weight: 500;
-        transition: color 0.2s ease;
-        flex-grow: 1;
+        border-bottom: 2px solid var(--color-light-earth);
     }
 
-    .offspring-item a:hover {
-        color: var(--color-foliage);
+    .offspring-table td {
+        padding: 12px;
+        border-bottom: 1px solid rgba(245, 222, 179, 0.3);
+        color: #333;
+        transition: background-color 0.2s ease;
+    }
+
+    .offspring-table tbody tr:hover {
+        background-color: rgba(245, 222, 179, 0.1);
+    }
+
+    .offspring-table tbody tr:last-child td {
+        border-bottom: none;
+    }
+
+    /* Gender badges */
+    .gender-badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 4px 10px;
+        border-radius: 15px;
+        font-weight: 500;
+        font-size: 0.85rem;
+        gap: 5px;
+    }
+
+    .gender-female {
+        background-color: rgba(255, 130, 171, 0.15);
+        color: #c2185b;
+    }
+
+    .gender-male {
+        background-color: rgba(65, 105, 225, 0.15);
+        color: #1976d2;
+    }
+
+    .gender-unknown {
+        background-color: rgba(158, 158, 158, 0.15);
+        color: #616161;
     }
 
     /* No Offspring Message */
@@ -232,27 +257,32 @@
 </style>
 
 <div class="breeding-header">
-    <h3><i class="fas fa-baby"></i> Breeding Record Details</h3>
+    <h3><i class="fas fa-baby"></i> Reproduction Record Details</h3>
 </div>
 
 <div class="breeding-container">
     <div class="breeding-details">
         <div class="detail-item female">
             <strong><i class="fas fa-venus"></i> Female</strong>
-            <div class="value">@(Model.FemaleLivestock?.TagNumber ?? "Not Specified")</div>
+            <div class="value">@Model.FemaleTag</div>
         </div>
 
         <div class="detail-item male">
             <strong><i class="fas fa-mars"></i> Male</strong>
-            <div class="value">@(Model.MaleLivestock?.TagNumber ?? "Not Specified")</div>
+            <div class="value">@Model.MaleTag</div>
         </div>
 
         <div class="detail-item date">
             <strong><i class="fas fa-calendar-check"></i> Breeding Date</strong>
-            <div class="value">@Model.BreedingDate.ToString("MMMM d, yyyy")</div>
+            <div class="value">@Model.BreedingDate.ToShortDateString()</div>
         </div>
 
-        <div class="detail-item outcome">
+        <div class="detail-item due">
+            <strong><i class="fas fa-calendar-plus"></i> Expected Due Date</strong>
+            <div class="value">@(Model.ExpectedBirthDate?.ToShortDateString() ?? "Not Available")</div>
+        </div>
+
+        <div class="detail-item outcome" style="grid-column: 1 / -1;">
             <strong><i class="fas fa-heartbeat"></i> Birth Outcome</strong>
             <div class="value">
                 @{
@@ -290,17 +320,51 @@
     <div class="offspring-section">
         <h4><i class="fas fa-baby-carriage"></i> Offspring</h4>
 
-        @if (Model.FemaleLivestock != null && Model.FemaleLivestock.Offspring?.Any() == true)
+        @if (Model.Offspring.Any())
         {
-            <ul class="offspring-list">
-                @foreach (var child in Model.FemaleLivestock.Offspring)
-                {
-                    <li class="offspring-item">
-                        <i class="fas fa-tag"></i>
-                        @Html.ActionLink(child.TagNumber, "Details", "Livestock", new { id = child.LivestockId }, null)
-                    </li>
-                }
-            </ul>
+            <table class="offspring-table">
+                <thead>
+                    <tr>
+                        <th><i class="fas fa-tag"></i> Tag</th>
+                        <th><i class="fas fa-venus-mars"></i> Gender</th>
+                        <th><i class="fas fa-birthday-cake"></i> Birth Date</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var offspring in Model.Offspring)
+                    {
+                        <tr>
+                            <td><strong>@offspring.Tag</strong></td>
+                            <td>
+                                @{
+                                    var genderClass = "gender-unknown";
+                                    var genderIcon = "question";
+                                    var genderText = offspring.Gender ?? "Unknown";
+
+                                    if (!string.IsNullOrEmpty(offspring.Gender))
+                                    {
+                                        if (offspring.Gender.ToLower().Contains("female") || offspring.Gender.ToLower().Contains("f"))
+                                        {
+                                            genderClass = "gender-female";
+                                            genderIcon = "venus";
+                                        }
+                                        else if (offspring.Gender.ToLower().Contains("male") || offspring.Gender.ToLower().Contains("m"))
+                                        {
+                                            genderClass = "gender-male";
+                                            genderIcon = "mars";
+                                        }
+                                    }
+                                }
+                                <span class="gender-badge @genderClass">
+                                    <i class="fas fa-@genderIcon"></i>
+                                    @genderText
+                                </span>
+                            </td>
+                            <td>@(offspring.BirthDate?.ToShortDateString() ?? "N/A")</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
         }
         else
         {

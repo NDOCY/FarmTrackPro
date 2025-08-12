@@ -187,7 +187,9 @@
     <Compile Include="App_Start\RouteConfig.cs" />
     <Compile Include="Controllers\AccountController.cs" />
     <Compile Include="Controllers\ActivityLogsController.cs" />
+    <Compile Include="Controllers\CropsController.cs" />
     <Compile Include="Controllers\DashboardController.cs" />
+    <Compile Include="Controllers\EmergencyController.cs" />
     <Compile Include="Controllers\EquipmentController.cs" />
     <Compile Include="Controllers\HealthCheckScheduleController.cs" />
     <Compile Include="Controllers\HomeController.cs" />
@@ -196,22 +198,48 @@
     <Compile Include="Controllers\LivestockController.cs" />
     <Compile Include="Controllers\MessageController.cs" />
     <Compile Include="Controllers\NotificationController.cs" />
+    <Compile Include="Controllers\PlotCropsController.cs" />
+    <Compile Include="Controllers\PlotsController.cs" />
     <Compile Include="Controllers\ReproductionController.cs" />
     <Compile Include="Controllers\SuppliersController.cs" />
     <Compile Include="Controllers\TaskController.cs" />
+    <Compile Include="Controllers\VeterinarianController.cs" />
     <Compile Include="Global.asax.cs">
       <DependentUpon>Global.asax</DependentUpon>
     </Compile>
     <Compile Include="Helpers\LivestockBreedingHelper.cs" />
-    <Compile Include="Migrations\202505090533288_AddLow.cs" />
-    <Compile Include="Migrations\202505090533288_AddLow.Designer.cs">
-      <DependentUpon>202505090533288_AddLow.cs</DependentUpon>
+    <Compile Include="Helpers\TrefleApiHelper.cs" />
+    <Compile Include="Migrations\202507292325046_InitialCreate.cs" />
+    <Compile Include="Migrations\202507292325046_InitialCreate.Designer.cs">
+      <DependentUpon>202507292325046_InitialCreate.cs</DependentUpon>
     </Compile>
     <Compile Include="Migrations\Configuration.cs" />
+    <Compile Include="Models\Activity.cs" />
     <Compile Include="Models\ActivityLog.cs" />
+    <Compile Include="Models\ActivityViewModel.cs" />
+    <Compile Include="Models\CareGuideline.cs" />
+    <Compile Include="Models\CompleteHealthCheckViewModel.cs" />
+    <Compile Include="Models\Crop.cs" />
+    <Compile Include="Models\CropActivity.cs" />
+    <Compile Include="Models\CropRequirements.cs" />
+    <Compile Include="Models\EmergencyDashboardViewModel.cs" />
+    <Compile Include="Models\EmergencyGuideline.cs" />
+    <Compile Include="Models\EmergencyContact.cs" />
+    <Compile Include="Models\GrowthRecord.cs" />
+    <Compile Include="Models\HarvestAnalyticsViewModel.cs" />
+    <Compile Include="Models\HarvestOutcome.cs" />
+    <Compile Include="Models\HarvestOutcomeViewModel.cs" />
+    <Compile Include="Models\PlantingTaskViewModel.cs" />
+    <Compile Include="Models\Plot.cs" />
+    <Compile Include="Models\PlotCrop.cs" />
+    <Compile Include="Models\PreparationTask.cs" />
+    <Compile Include="Models\Tag.cs" />
+    <Compile Include="Models\Veterinarian.cs" />
+    <Compile Include="Models\VetViewModel.cs" />
     <Compile Include="Models\EquipmentRepairViewModel.cs" />
     <Compile Include="Models\InventoryRestock.cs" />
     <Compile Include="Models\ReproductionBirthViewModel.cs" />
+    <Compile Include="Models\ReproductionDetailsViewModel.cs" />
     <Compile Include="Models\SimpleBirthRecordViewModel.cs" />
     <Compile Include="Models\HealthCheckLivestock.cs" />
     <Compile Include="Models\HealthCheckSchedule.cs" />
@@ -242,6 +270,8 @@
     <Compile Include="Models\WeightRecord.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Services\BlobService.cs" />
+    <Compile Include="Services\MockCropRequirementService.cs" />
+    <Compile Include="Services\TrefleApiService.cs" />
   </ItemGroup>
   <ItemGroup>
     <Content Include=".gitignore" />
@@ -271,9 +301,11 @@
     <Content Include="Scripts\bootstrap.esm.min.js" />
     <Content Include="Scripts\bootstrap.js" />
     <Content Include="Scripts\bootstrap.min.js" />
+    <None Include="Properties\PublishProfiles\FarmTrackPro - FTP.pubxml" />
     <None Include="Properties\PublishProfiles\FarmTrackPro - Web Deploy.pubxml" />
     <None Include="Properties\PublishProfiles\FarmTrackPro - Web Deploy1.pubxml" />
     <None Include="Properties\PublishProfiles\FarmTrackPro - Web Deploy2.pubxml" />
+    <None Include="Properties\PublishProfiles\FarmTrackPro - Web Deploy3.pubxml" />
     <None Include="Scripts\jquery-3.7.0.intellisense.js" />
     <Content Include="Scripts\jquery-3.7.0.js" />
     <Content Include="Scripts\jquery-3.7.0.min.js" />
@@ -285,6 +317,7 @@
     <Content Include="Scripts\jquery.validate.unobtrusive.js" />
     <Content Include="Scripts\jquery.validate.unobtrusive.min.js" />
     <Content Include="Scripts\modernizr-2.8.3.js" />
+    <Content Include="Views\PlotCrops\SetupPlantingTasks.cshtml" />
     <Content Include="Web.config" />
     <Content Include="Web.Debug.config">
       <DependentUpon>Web.config</DependentUpon>
@@ -377,9 +410,38 @@
     <Content Include="Views\Inventory\RestockDetails.cshtml" />
     <Content Include="Views\Inventory\RestockList.cshtml" />
     <Content Include="Views\Inventory\RestockCreate.cshtml" />
+    <Content Include="Views\Veterinarian\Index.cshtml" />
+    <Content Include="Views\Veterinarian\Create.cshtml" />
+    <Content Include="Views\Veterinarian\Details.cshtml" />
+    <Content Include="Views\Veterinarian\Delete.cshtml" />
+    <Content Include="Views\HealthCheckSchedule\MarkAsCompleted.cshtml" />
+    <Content Include="Views\Plots\Create.cshtml" />
+    <Content Include="Views\Plots\Delete.cshtml" />
+    <Content Include="Views\Plots\Details.cshtml" />
+    <Content Include="Views\Plots\Edit.cshtml" />
+    <Content Include="Views\Plots\Index.cshtml" />
+    <Content Include="Views\Crops\Create.cshtml" />
+    <Content Include="Views\Crops\Delete.cshtml" />
+    <Content Include="Views\Crops\Details.cshtml" />
+    <Content Include="Views\Crops\Edit.cshtml" />
+    <Content Include="Views\Crops\Index.cshtml" />
+    <Content Include="Views\Plots\AssignCrop.cshtml" />
+    <Content Include="Views\PlotCrops\Dashboard.cshtml" />
+    <Content Include="Views\PlotCrops\_TaskList.cshtml" />
+    <Content Include="Views\PlotCrops\PlotCropsList.cshtml" />
+    <Content Include="Views\PlotCrops\_ActivityList.cshtml" />
+    <Content Include="Views\PlotCrops\_ActivityStats.cshtml" />
+    <Content Include="Views\PlotCrops\_ActivityForm.cshtml" />
+    <Content Include="Views\PlotCrops\_SeverityTrends.cshtml" />
+    <Content Include="Views\PlotCrops\_GrowthRecords.cshtml" />
+    <Content Include="Views\PlotCrops\LogHarvestOutcome.cshtml" />
+    <Content Include="Views\PlotCrops\_HarvestAnalytics.cshtml" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="App_Data\" />
+    <Folder Include="Extensions\" />
+    <Folder Include="Uploads\Activities\" />
+    <Folder Include="Views\Emergency\" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="Content\bootstrap.rtl.min.css.map" />
@@ -409,8 +471,8 @@
     <Content Include="Scripts\jquery-3.7.0.min.map" />
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="Migrations\202505090533288_AddLow.resx">
-      <DependentUpon>202505090533288_AddLow.cs</DependentUpon>
+    <EmbeddedResource Include="Migrations\202507292325046_InitialCreate.resx">
+      <DependentUpon>202507292325046_InitialCreate.cs</DependentUpon>
     </EmbeddedResource>
   </ItemGroup>
   <PropertyGroup>

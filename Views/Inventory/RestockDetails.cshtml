@@ -2,23 +2,451 @@
 @{
     ViewBag.Title = "Restock Details";
 }
-<h2>Restock Details</h2>
 
-<div>
-    <p><strong>Item:</strong> @Model.Inventory.ItemName</p>
-    <p><strong>Quantity:</strong> @Model.Quantity</p>
-    <p><strong>Requested On:</strong> @Model.RequestedOn.ToShortDateString()</p>
-    <p><strong>Status:</strong> @(Model.IsCompleted ? "Completed" : Model.Failed ? "Failed" : "Pending")</p>
+<style>
+    /* Custom Color Scheme */
+    :root {
+        --color-earth: #8B7355; /* Primary */
+        --color-soil: #654321; /* Secondary */
+        --color-foliage: #4CAF50; /* Tertiary */
+        --color-wheat: #F5DEB3; /* Accent */
+        --color-danger: #FF6B6B; /* Error */
+        --color-white: #FFFFFF; /* Neutral */
+        --color-bib: #b17474; /* Neutral */
+        --color-light-earth: rgba(139, 115, 85, 0.1);
+        --color-shadow: rgba(0, 0, 0, 0.15);
+        --color-success: #28a745;
+        --color-warning: #ffc107;
+    }
+
+    /* Page Header */
+    .page-header {
+        background: linear-gradient(135deg, var(--color-wheat), #f0e6c7);
+        padding: 25px 30px;
+        border-radius: 12px;
+        margin-bottom: 30px;
+        box-shadow: 0 6px 20px var(--color-shadow);
+        border: 1px solid rgba(139, 115, 85, 0.2);
+    }
+
+    .page-header h2 {
+        color: var(--color-soil);
+        font-weight: 700;
+        margin-bottom: 0;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .page-header h2 i {
+        color: var(--color-earth);
+        font-size: 1.2em;
+    }
+
+    /* Details Container */
+    .details-container {
+        background: var(--color-white);
+        border: 1px solid var(--color-wheat);
+        border-radius: 12px;
+        padding: 30px;
+        box-shadow: 0 8px 25px var(--color-shadow);
+        position: relative;
+        overflow: hidden;
+        margin-bottom: 25px;
+    }
+
+    .details-container::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: linear-gradient(90deg, var(--color-earth), var(--color-foliage), var(--color-earth));
+    }
+
+    /* Detail Item */
+    .detail-item {
+        display: flex;
+        align-items: center;
+        padding: 15px 20px;
+        margin-bottom: 15px;
+        background: linear-gradient(135deg, rgba(245, 222, 179, 0.1), rgba(245, 222, 179, 0.05));
+        border: 1px solid var(--color-wheat);
+        border-radius: 10px;
+        transition: all 0.3s ease;
+        position: relative;
+    }
+
+    .detail-item:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(139, 115, 85, 0.2);
+    }
+
+    .detail-item:last-child {
+        margin-bottom: 0;
+    }
+
+    .detail-icon {
+        background: linear-gradient(135deg, var(--color-earth), var(--color-soil));
+        color: var(--color-white);
+        width: 45px;
+        height: 45px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 20px;
+        font-size: 1.2em;
+        box-shadow: 0 3px 10px rgba(139, 115, 85, 0.3);
+    }
+
+    .detail-content {
+        flex: 1;
+    }
+
+    .detail-label {
+        color: var(--color-soil);
+        font-weight: 600;
+        font-size: 0.9em;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 5px;
+        display: block;
+    }
+
+    .detail-value {
+        color: var(--color-earth);
+        font-size: 1.1em;
+        font-weight: 500;
+    }
+
+    /* Status Badges */
+    .status-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 16px;
+        border-radius: 20px;
+        font-weight: 600;
+        font-size: 0.9em;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .status-pending {
+        background: linear-gradient(135deg, var(--color-warning), #ffca28);
+        color: var(--color-soil);
+        box-shadow: 0 2px 8px rgba(255, 193, 7, 0.3);
+    }
+
+    .status-completed {
+        background: linear-gradient(135deg, var(--color-foliage), #66bb6a);
+        color: var(--color-white);
+        box-shadow: 0 2px 8px rgba(76, 175, 80, 0.3);
+    }
+
+    .status-failed {
+        background: linear-gradient(135deg, var(--color-danger), #ef5350);
+        color: var(--color-white);
+        box-shadow: 0 2px 8px rgba(255, 107, 107, 0.3);
+    }
+
+    /* Action Buttons Container */
+    .action-section {
+        background: var(--color-white);
+        border: 1px solid var(--color-wheat);
+        border-radius: 12px;
+        padding: 25px 30px;
+        box-shadow: 0 6px 20px var(--color-shadow);
+        margin-top: 25px;
+    }
+
+    .action-title {
+        color: var(--color-soil);
+        font-weight: 600;
+        font-size: 1.1em;
+        margin-bottom: 20px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .action-buttons {
+        display: flex;
+        gap: 15px;
+        flex-wrap: wrap;
+    }
+
+    /* Buttons */
+    .btn {
+        border-radius: 8px;
+        padding: 12px 24px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        border: none;
+        font-size: 0.95rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        text-decoration: none;
+    }
+
+    .btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+    }
+
+    .btn-success {
+        background: linear-gradient(135deg, var(--color-foliage), #66bb6a);
+        color: var(--color-white);
+    }
+
+    .btn-success:hover {
+        background: linear-gradient(135deg, #388e3c, var(--color-foliage));
+    }
+
+    .btn-danger {
+        background: linear-gradient(135deg, var(--color-danger), #ef5350);
+        color: var(--color-white);
+    }
+
+    .btn-danger:hover {
+        background: linear-gradient(135deg, var(--color-bib), var(--color-danger));
+    }
+
+    .btn-secondary {
+        background: linear-gradient(135deg, #6c757d, #5a6268);
+        color: var(--color-white);
+    }
+
+    .btn-secondary:hover {
+        background: linear-gradient(135deg, #545b62, #495057);
+    }
+
+    /* Form Styling */
+    .action-form {
+        display: inline-block;
+    }
+
+    /* Navigation */
+    .navigation {
+        margin-bottom: 20px;
+    }
+
+    .nav-link {
+        color: var(--color-earth);
+        text-decoration: none;
+        font-weight: 500;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 12px;
+        border-radius: 6px;
+        transition: all 0.3s ease;
+    }
+
+    .nav-link:hover {
+        background: var(--color-light-earth);
+        color: var(--color-soil);
+        text-decoration: none;
+    }
+
+    /* Responsive Design */
+    @@media (max-width: 768px) {
+        .details-container, .action-section {
+            padding: 20px;
+            margin: 10px;
+        }
+
+        .detail-item {
+            flex-direction: column;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .detail-icon {
+            margin-right: 0;
+            margin-bottom: 15px;
+        }
+
+        .action-buttons {
+            flex-direction: column;
+        }
+
+        .page-header {
+            padding: 20px;
+        }
+    }
+
+    /* Animations */
+    @@keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    @@keyframes pulse {
+        0%, 100% {
+            transform: scale(1);
+        }
+        50% {
+            transform: scale(1.05);
+        }
+    }
+
+    .details-container {
+        animation: fadeInUp 0.6s ease-out;
+    }
+
+    .detail-item {
+        animation: fadeInUp 0.4s ease-out;
+        animation-fill-mode: both;
+    }
+
+    .detail-item:nth-child(1) { animation-delay: 0.1s; }
+    .detail-item:nth-child(2) { animation-delay: 0.2s; }
+    .detail-item:nth-child(3) { animation-delay: 0.3s; }
+    .detail-item:nth-child(4) { animation-delay: 0.4s; }
+
+    .status-pending {
+        animation: pulse 2s infinite;
+    }
+
+    /* Alert for No Actions */
+    .no-actions-alert {
+        background: linear-gradient(135deg, rgba(76, 175, 80, 0.1), rgba(139, 115, 85, 0.05));
+        border: 1px solid rgba(76, 175, 80, 0.3);
+        border-radius: 10px;
+        padding: 20px;
+        text-align: center;
+        color: var(--color-soil);
+        font-weight: 500;
+    }
+
+    .no-actions-alert i {
+        color: var(--color-foliage);
+        font-size: 1.5em;
+        margin-bottom: 10px;
+        display: block;
+    }
+</style>
+
+<!-- Navigation -->
+<div class="navigation">
+    <a href="@Url.Action("RestockList", "Inventory")" class="nav-link">
+        <i class="fas fa-arrow-left"></i>
+        Back to Restock List
+    </a>
 </div>
 
+<!-- Page Header -->
+<div class="page-header">
+    <h2>
+        <i class="fas fa-clipboard-list"></i>
+        Restock Details
+    </h2>
+</div>
+
+<!-- Details Container -->
+<div class="details-container">
+    <div class="detail-item">
+        <div class="detail-icon">
+            <i class="fas fa-box"></i>
+        </div>
+        <div class="detail-content">
+            <span class="detail-label">Item Name</span>
+            <span class="detail-value">@Model.Inventory.ItemName</span>
+        </div>
+    </div>
+
+    <div class="detail-item">
+        <div class="detail-icon">
+            <i class="fas fa-hashtag"></i>
+        </div>
+        <div class="detail-content">
+            <span class="detail-label">Quantity Requested</span>
+            <span class="detail-value">@Model.Quantity units</span>
+        </div>
+    </div>
+
+    <div class="detail-item">
+        <div class="detail-icon">
+            <i class="fas fa-calendar-alt"></i>
+        </div>
+        <div class="detail-content">
+            <span class="detail-label">Requested On</span>
+            <span class="detail-value">@Model.RequestedOn.ToShortDateString()</span>
+        </div>
+    </div>
+
+    <div class="detail-item">
+        <div class="detail-icon">
+            <i class="fas fa-info-circle"></i>
+        </div>
+        <div class="detail-content">
+            <span class="detail-label">Current Status</span>
+            <span class="detail-value">
+                @{
+                    var statusClass = Model.IsCompleted ? "status-completed" :
+                                     Model.Failed ? "status-failed" : "status-pending";
+                    var statusIcon = Model.IsCompleted ? "fas fa-check-circle" :
+                                    Model.Failed ? "fas fa-times-circle" : "fas fa-clock";
+                    var statusText = Model.IsCompleted ? "Completed" :
+                                    Model.Failed ? "Failed" : "Pending";
+                }
+                <span class="status-badge @statusClass">
+                    <i class="@statusIcon"></i>
+                    @statusText
+                </span>
+            </span>
+        </div>
+    </div>
+</div>
+
+<!-- Action Section -->
 @if (!Model.IsCompleted && !Model.Failed)
 {
-    <form method="post" action="@Url.Action("MarkRestockComplete", new { id = Model.InventoryRestockId })">
-        @Html.AntiForgeryToken()
-        <button type="submit" class="btn btn-success">Mark as Complete</button>
-    </form>
-    <form method="post" action="@Url.Action("FailRestock", new { id = Model.InventoryRestockId })">
-        @Html.AntiForgeryToken()
-        <button type="submit" class="btn btn-danger">Fail</button>
-    </form>
+    <div class="action-section">
+        <div class="action-title">
+            <i class="fas fa-tasks"></i>
+            Available Actions
+        </div>
+        <div class="action-buttons">
+            <form method="post" action="@Url.Action("MarkRestockComplete", new { id = Model.InventoryRestockId })" class="action-form">
+                @Html.AntiForgeryToken()
+                <button type="submit" class="btn btn-success">
+                    <i class="fas fa-check"></i>
+                    Mark as Complete
+                </button>
+            </form>
+            <form method="post" action="@Url.Action("FailRestock", new { id = Model.InventoryRestockId })" class="action-form">
+                @Html.AntiForgeryToken()
+                <button type="submit" class="btn btn-danger">
+                    <i class="fas fa-times"></i>
+                    Mark as Failed
+                </button>
+            </form>
+        </div>
+    </div>
 }
+else
+{
+    <div class="action-section">
+        <div class="no-actions-alert">
+            <i class="fas fa-info-circle"></i>
+            <p>This restock request has been @(Model.IsCompleted ? "completed" : "marked as failed") and no further actions are available.</p>
+        </div>
+    </div>
+}
+
+<!-- Font Awesome for Icons -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">

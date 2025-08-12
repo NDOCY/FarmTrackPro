@@ -16,10 +16,10 @@ namespace FarmTrack.Controllers
         public ActionResult AdminDashboard()
         {
             // Check if the role is not set or if it's neither Admin nor Owner
-            if (Session["Role"] == null || (Session["Role"].ToString() != "Admin" && Session["Role"].ToString() != "Owner"))
-            {
-                return RedirectToAction("Login", "Account");
-            }
+            //if (Session["Role"] == null || (Session["Role"].ToString() != "Admin" && Session["Role"].ToString() != "Owner"))
+            //{
+              //  return RedirectToAction("Login", "Account");
+            //}
 
             // Get the current user's ID from the session
             var currentUserId = Convert.ToInt32(Session["UserId"]);

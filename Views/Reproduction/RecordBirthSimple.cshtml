@@ -13,6 +13,8 @@
         --color-wheat: #F5DEB3; /* Accent */
         --color-danger: #FF6B6B; /* Error */
         --color-white: #FFFFFF; /* Neutral */
+        --color-light-wheat: rgba(245, 222, 179, 0.1);
+        --color-medium-wheat: rgba(245, 222, 179, 0.3);
     }
 
     /* Page Header */
@@ -41,7 +43,7 @@
 
     /* Details Card */
     .details-card {
-        background-color: rgba(245, 222, 179, 0.1);
+        background-color: var(--color-light-wheat);
         border: 1px solid var(--color-wheat);
         border-radius: 8px;
         padding: 20px;
@@ -79,30 +81,151 @@
     }
 
     .form-group {
-        margin-bottom: 15px;
+        margin-bottom: 20px;
     }
 
         .form-group label {
             color: var(--color-soil);
             font-weight: 500;
+            margin-bottom: 8px;
+            display: block;
         }
 
     .form-control {
         border: 1px solid var(--color-wheat);
         border-radius: 4px;
-        padding: 8px;
+        padding: 10px 12px;
+        font-size: 14px;
+        transition: all 0.3s ease;
     }
 
         .form-control:focus {
             border-color: var(--color-earth);
-            box-shadow: 0 0 5px rgba(139, 115, 85, 0.5);
+            box-shadow: 0 0 0 0.2rem rgba(139, 115, 85, 0.25);
+            outline: none;
+        }
+
+    .input-group-text {
+        background-color: var(--color-wheat);
+        color: var(--color-soil);
+        border: 1px solid var(--color-wheat);
+        font-weight: 500;
+    }
+
+    /* Enhanced Weight Container Styling */
+    #weightContainer {
+        background-color: var(--color-light-wheat);
+        border: 2px dashed var(--color-wheat);
+        border-radius: 8px;
+        padding: 20px;
+        margin-top: 20px;
+        opacity: 0;
+        transform: translateY(-10px);
+        transition: all 0.4s ease;
+        display: none;
+    }
+
+        #weightContainer.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        #weightContainer h5 {
+            color: var(--color-soil);
+            font-weight: 600;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid var(--color-wheat);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+            #weightContainer h5 i {
+                color: var(--color-earth);
+            }
+
+    /* Weight Input Grid */
+    #weightInputs {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 15px;
+        margin-top: 15px;
+    }
+
+    .weight-input-group {
+        background-color: var(--color-white);
+        border: 1px solid var(--color-wheat);
+        border-radius: 6px;
+        padding: 15px;
+        transition: all 0.3s ease;
+        position: relative;
+    }
+
+        .weight-input-group:hover {
+            border-color: var(--color-earth);
+            box-shadow: 0 2px 8px rgba(139, 115, 85, 0.1);
+        }
+
+        .weight-input-group label {
+            color: var(--color-soil);
+            font-weight: 500;
+            font-size: 14px;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+            .weight-input-group label i {
+                color: var(--color-earth);
+                font-size: 12px;
+            }
+
+        .weight-input-group input {
+            width: 100%;
+            border: 1px solid var(--color-wheat);
+            border-radius: 4px;
+            padding: 8px 12px;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+
+            .weight-input-group input:focus {
+                border-color: var(--color-earth);
+                box-shadow: 0 0 0 0.15rem rgba(139, 115, 85, 0.2);
+                outline: none;
+            }
+
+        .weight-input-group .unit-label {
+            position: absolute;
+            right: 25px;
+            top: 40px;
+            color: var(--color-earth);
+            font-size: 12px;
+            font-weight: 500;
+            background-color: var(--color-white);
+            padding: 0 4px;
+        }
+
+    /* Number input enhancement */
+    .offspring-count-container {
+        position: relative;
+    }
+
+        .offspring-count-container .helper-text {
+            font-size: 12px;
+            color: var(--color-earth);
+            margin-top: 5px;
+            font-style: italic;
         }
 
     /* Button Styling */
     .btn {
         border-radius: 6px;
-        padding: 8px 16px;
+        padding: 10px 20px;
         font-weight: 500;
+        transition: all 0.3s ease;
     }
 
     .btn-primary {
@@ -114,6 +237,7 @@
         .btn-primary:hover {
             background-color: var(--color-soil);
             border-color: var(--color-soil);
+            transform: translateY(-1px);
         }
 
     .btn-secondary {
@@ -130,17 +254,34 @@
     /* Action Buttons Container */
     .action-buttons {
         display: flex;
-        gap: 10px;
+        gap: 12px;
+        margin-top: 25px;
     }
 
-    #weightContainer {
+    /* Animation for weight inputs */
+    .weight-input-group {
+        animation: slideInUp 0.3s ease forwards;
         opacity: 0;
-        transition: opacity 0.4s ease;
+        transform: translateY(20px);
     }
 
-        #weightContainer.show {
+    @@keyframes slideInUp {
+        to {
             opacity: 1;
+            transform: translateY(0);
         }
+    }
+
+    /* Responsive adjustments */
+    @@media (max-width: 768px) {
+        #weightInputs {
+            grid-template-columns: 1fr;
+        }
+
+        .action-buttons {
+            flex-direction: column;
+        }
+    }
 </style>
 
 <!-- Page Header -->
@@ -181,17 +322,35 @@
 
             <div class="form-group">
                 <label for="numberOfOffspring">Number of Offspring</label>
-                <div class="input-group">
+                <div class="input-group offspring-count-container">
                     <div class="input-group-prepend">
                         <span class="input-group-text"><i class="fas fa-baby"></i></span>
+                    </div>
+                    @Html.TextBox("numberOfOffspring", null, new
+                    {
+                        type = "number",
+                        min = 1,
+                        max = 20,
+                        required = "required",
+                        onchange = "generateWeightInputs()",
+                        @class = "form-control",
+                        placeholder = "Enter number of offspring (1-20)"
+                    })
+                </div>
+                <div class="helper-text">
+                    <i class="fas fa-info-circle"></i> Weight fields will appear below based on the number entered
+                </div>
 
-                        @*input type="number" name="numberOfOffspring" class="form-control" required min="1" placeholder="Enter number of offspring" />
-                        *@@Html.TextBox("numberOfOffspring", null, new { type = "number", min = 1, required = "required", onchange = "generateWeightInputs()" })
-                    </div>
-                    <div id="weightContainer" class="mt-3" style="display: none;">
-                        <h5><i class="fas fa-weight"></i> Offspring Weights</h5>
-                        <div id="weightInputs"></div>
-                    </div>
+                <!-- Enhanced Weight Container -->
+                <div id="weightContainer">
+                    <h5>
+                        <i class="fas fa-weight-hanging"></i>
+                        Individual Offspring Weights
+                    </h5>
+                    <p style="font-size: 13px; color: var(--color-earth); margin-bottom: 15px;">
+                        Enter the weight for each offspring born. This helps track individual health and development.
+                    </p>
+                    <div id="weightInputs"></div>
                 </div>
             </div>
 
@@ -207,10 +366,10 @@
 
             <div class="form-group">
                 <label for="birthNotes">Birth Notes (Optional)</label>
-                <textarea name="birthNotes" class="form-control" rows="3" placeholder="Enter any notes about the birth"></textarea>
+                <textarea name="birthNotes" class="form-control" rows="3" placeholder="Enter any notes about the birth (complications, observations, etc.)"></textarea>
             </div>
 
-            <div class="action-buttons mt-4">
+            <div class="action-buttons">
                 <a href="@Url.Action("Index", "Reproduction")" class="btn btn-secondary">
                     <i class="fas fa-arrow-left"></i> Cancel
                 </a>
@@ -221,22 +380,6 @@
         }
     </div>
 </div>
-@*
-@using (Html.BeginForm())
-{
-    @Html.AntiForgeryToken()
-    @Html.Hidden("id", Model.Id)
-
-    <label>Number of Offspring:</label>
-    @Html.TextBox("numberOfOffspring", null, new { type = "number", min = 1, required = "required", onchange = "generateWeightInputs()" })
-
-    <div id="weightContainer" class="mt-3" style="display: none;">
-        <h5><i class="fas fa-weight"></i> Offspring Weights</h5>
-        <div id="weightInputs"></div>
-    </div>
-
-    <button type="submit">Record Birth</button>
-}*@
 
 @section Scripts {
     <script>
@@ -245,39 +388,69 @@
             const container = document.getElementById("weightInputs");
             const section = document.getElementById("weightContainer");
 
+            // Clear existing inputs
             container.innerHTML = "";
 
             if (isNaN(num) || num < 1) {
                 section.classList.remove("show");
-                setTimeout(() => section.style.display = "none", 300);
+                setTimeout(() => section.style.display = "none", 400);
                 return;
             }
 
+            // Show the container first
+            section.style.display = "block";
+            setTimeout(() => section.classList.add("show"), 10);
+
+            // Generate weight inputs with enhanced styling
             for (let i = 0; i < num; i++) {
                 const group = document.createElement("div");
-                group.className = "form-group";
+                group.className = "weight-input-group";
+                group.style.animationDelay = (i * 0.1) + "s";
 
                 const label = document.createElement("label");
-                label.textContent = "Weight for Offspring " + (i + 1);
+                label.innerHTML = `<i class="fas fa-baby"></i> Offspring ${i + 1} Weight`;
 
                 const input = document.createElement("input");
                 input.name = "Weights[" + i + "]";
                 input.type = "number";
                 input.step = "0.01";
+                input.min = "0.1";
                 input.required = true;
-                input.className = "form-control";
+                input.placeholder = "0.00";
+
+                const unitLabel = document.createElement("span");
+                unitLabel.className = "unit-label";
+                unitLabel.textContent = "kg";
 
                 group.appendChild(label);
                 group.appendChild(input);
+                group.appendChild(unitLabel);
                 container.appendChild(group);
             }
-
-            section.style.display = "block";
-            setTimeout(() => section.classList.add("show"), 10);
         }
+
+        // Add some interactive feedback
+        document.addEventListener('DOMContentLoaded', function () {
+            const numberOfOffspringInput = document.querySelector("[name='numberOfOffspring']");
+
+            numberOfOffspringInput.addEventListener('input', function () {
+                const value = parseInt(this.value);
+                const helperText = document.querySelector('.helper-text');
+
+                if (value > 0 && value <= 20) {
+                    helperText.style.color = 'var(--color-foliage)';
+                    helperText.innerHTML = '<i class="fas fa-check-circle"></i> Weight fields will be generated for ' + value + ' offspring';
+                } else if (value > 20) {
+                    helperText.style.color = 'var(--color-danger)';
+                    helperText.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Maximum 20 offspring allowed';
+                } else {
+                    helperText.style.color = 'var(--color-earth)';
+                    helperText.innerHTML = '<i class="fas fa-info-circle"></i> Weight fields will appear below based on the number entered';
+                }
+            });
+        });
     </script>
 }
-
 
 <!-- Font Awesome for Icons -->
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">

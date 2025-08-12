@@ -1,4 +1,5 @@
-﻿using System;
+﻿using FarmPro.Models;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
@@ -19,6 +20,14 @@ namespace FarmTrack.Models
 
         public DateTime DueDate { get; set; }
 
+        // Add TaskPhase for crop lifecycle stages
+        public string TaskPhase { get; set; } // "Preparation", "Planting", "Growing", "Harvest"
+
+        // Add PlotCrop foreign key
+        public int? PlotCropId { get; set; } // Nullable for tasks not tied to PlotCrop
+
+        [ForeignKey("PlotCropId")]
+        public virtual PlotCrop PlotCrop { get; set; }
         public int? AssignedTo { get; set; }
 
         [Required]

@@ -1,0 +1,434 @@
+﻿@model FarmTrack.Models.Crop
+
+@{
+    ViewBag.Title = "Create Crop";
+}
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        <i class="fas fa-check-circle me-2"></i> @TempData["SuccessMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+<style>
+    /* Custom Color Scheme */
+    :root {
+        --color-earth: #8B7355; /* Primary */
+        --color-soil: #654321; /* Secondary */
+        --color-foliage: #4CAF50; /* Tertiary */
+        --color-wheat: #F5DEB3; /* Accent */
+        --color-danger: #FF6B6B; /* Error */
+        --color-white: #FFFFFF; /* Neutral */
+        --color-light-earth: #e5d9cc; /* Light version of earth */
+        --color-light-foliage: #e8f5e9; /* Light version of foliage */
+    }
+
+    body {
+        background-color: #f9f7f4;
+    }
+
+    /* Dashboard Header */
+    .dashboard-header {
+        background: linear-gradient(135deg, var(--color-earth) 0%, var(--color-soil) 100%);
+        border-radius: 12px;
+        padding: 30px;
+        margin-bottom: 30px;
+        position: relative;
+        overflow: hidden;
+        box-shadow: 0 10px 20px rgba(101, 67, 33, 0.2);
+    }
+
+        .dashboard-header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 250px;
+            height: 100%;
+            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23F5DEB3" opacity="0.1"><path d="M12 2L13.09 8.26L22 9L13.09 9.74L12 16L10.91 9.74L2 9L10.91 8.26L12 2Z"/></svg>');
+            background-repeat: no-repeat;
+            background-position: right center;
+            background-size: 180px;
+            opacity: 0.2;
+        }
+
+        .dashboard-header h1 {
+            color: var(--color-white);
+            font-weight: 700;
+            margin-bottom: 10px;
+            font-size: 2.2rem;
+        }
+
+        .dashboard-header p {
+            color: var(--color-wheat);
+            font-size: 1.2rem;
+            max-width: 600px;
+        }
+
+    /* Form Container */
+    .form-container {
+        background-color: var(--color-white);
+        border-radius: 12px;
+        padding: 40px;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+        max-width: 800px;
+        margin: 0 auto;
+        position: relative;
+        overflow: hidden;
+    }
+
+        .form-container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, var(--color-earth), var(--color-foliage));
+        }
+
+        .form-container h2 {
+            color: var(--color-soil);
+            font-weight: 700;
+            margin-bottom: 30px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 1.8rem;
+        }
+
+    /* Form Groups */
+    .form-group {
+        margin-bottom: 25px;
+        position: relative;
+    }
+
+        .form-group label {
+            color: var(--color-soil);
+            font-weight: 600;
+            margin-bottom: 8px;
+            display: block;
+            font-size: 1rem;
+        }
+
+    /* Form Controls */
+    .form-control {
+        border: 2px solid #e0e0e0;
+        border-radius: 8px;
+        padding: 12px 16px;
+        font-size: 1rem;
+        transition: all 0.3s ease;
+        background-color: #fafafa;
+        width: 100%;
+    }
+
+        .form-control:focus {
+            border-color: var(--color-earth);
+            box-shadow: 0 0 0 3px rgba(139, 115, 85, 0.1);
+            background-color: var(--color-white);
+            outline: none;
+        }
+
+        .form-control:hover {
+            border-color: var(--color-wheat);
+            background-color: var(--color-white);
+        }
+
+    /* Validation Messages */
+    .text-danger {
+        color: var(--color-danger);
+        font-size: 0.875rem;
+        margin-top: 5px;
+        display: block;
+        font-weight: 500;
+    }
+
+    .validation-summary-errors {
+        background-color: #fff5f5;
+        border: 1px solid var(--color-danger);
+        border-radius: 8px;
+        padding: 15px;
+        margin-bottom: 25px;
+        color: var(--color-danger);
+    }
+
+        .validation-summary-errors ul {
+            margin: 0;
+            padding-left: 20px;
+        }
+
+    /* Action Buttons */
+    .action-button {
+        background: linear-gradient(135deg, var(--color-foliage) 0%, #45a049 100%);
+        color: white;
+        border: none;
+        border-radius: 8px;
+        padding: 14px 28px;
+        font-weight: 600;
+        font-size: 1rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3);
+        transition: all 0.3s ease;
+        text-decoration: none;
+        cursor: pointer;
+        min-width: 140px;
+        justify-content: center;
+    }
+
+        .action-button:hover {
+            background: linear-gradient(135deg, #45a049 0%, var(--color-foliage) 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(76, 175, 80, 0.4);
+            color: white;
+            text-decoration: none;
+        }
+
+        .action-button:active {
+            transform: translateY(0);
+        }
+
+    .secondary-button {
+        background: transparent;
+        color: var(--color-soil);
+        border: 2px solid var(--color-earth);
+        border-radius: 8px;
+        padding: 12px 26px;
+        font-weight: 600;
+        font-size: 1rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        transition: all 0.3s ease;
+        text-decoration: none;
+        min-width: 120px;
+        justify-content: center;
+    }
+
+        .secondary-button:hover {
+            background-color: var(--color-earth);
+            color: var(--color-white);
+            text-decoration: none;
+            transform: translateY(-1px);
+        }
+
+    /* Button Container */
+    .button-container {
+        display: flex;
+        gap: 15px;
+        margin-top: 30px;
+        justify-content: flex-start;
+        align-items: center;
+    }
+
+    /* Input Icons */
+    .input-group {
+        position: relative;
+    }
+
+        .input-group .form-control {
+            padding-left: 45px;
+        }
+
+        .input-group::before {
+            content: '';
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-family: 'Font Awesome 6 Free';
+            font-weight: 900;
+            color: var(--color-earth);
+            z-index: 2;
+        }
+
+    .input-group.name::before {
+        content: '\f1b9'; /* seedling icon */
+    }
+
+    .input-group.variety::before {
+        content: '\f06c'; /* leaf icon */
+    }
+
+    /* Responsive Design */
+    @@media (max-width: 768px) {
+        .form-container {
+            padding: 25px 20px;
+            margin: 15px;
+        }
+
+        .dashboard-header {
+            padding: 20px;
+        }
+
+        .dashboard-header h1 {
+            font-size: 1.8rem;
+        }
+
+        .button-container {
+            flex-direction: column;
+            align-items: stretch;
+        }
+
+        .action-button,
+        .secondary-button {
+            width: 100%;
+        }
+    }
+
+    /* Success Animation */
+    @@keyframes successPulse {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.05); }
+        100% { transform: scale(1); }
+    }
+
+    .form-container:hover {
+        box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+    }
+
+    /* Form Field Focus Animation */
+    .form-group {
+        position: relative;
+    }
+
+    .form-control:focus + .focus-line {
+        transform: scaleX(1);
+    }
+
+    .focus-line {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: 2px;
+        background: linear-gradient(90deg, var(--color-earth), var(--color-foliage));
+        transform: scaleX(0);
+        transition: transform 0.3s ease;
+    }
+
+    /* Alert Styling */
+    .alert {
+        border: none;
+        border-radius: 10px;
+        padding: 15px 20px;
+        margin-bottom: 25px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    }
+
+    .alert-success {
+        background: linear-gradient(135deg, var(--color-light-foliage), #f1f8e9);
+        color: var(--color-foliage);
+        border-left: 4px solid var(--color-foliage);
+    }
+</style>
+
+<!-- Dashboard Header -->
+<div class="dashboard-header">
+    <h1><i class="fas fa-seedling me-2"></i>New Crop Registration</h1>
+    <p>Add a new crop variety to your farm's cultivation records</p>
+</div>
+
+<!-- Form Container -->
+<div class="form-container">
+    <h2><i class="fas fa-plus-circle"></i>Create Crop</h2>
+
+    @using (Html.BeginForm())
+    {
+        @Html.AntiForgeryToken()
+
+        @Html.ValidationSummary(true, "", new { @class = "text-danger validation-summary-errors" })
+
+        <div class="form-group">
+            @Html.LabelFor(model => model.Name, "Crop Name", new { @class = "control-label" })
+            <div class="input-group name">
+                @Html.EditorFor(model => model.Name, new { htmlAttributes = new { @class = "form-control", placeholder = "Enter crop name (e.g., Tomato, Wheat, Corn)" } })
+                <div class="focus-line"></div>
+            </div>
+            @Html.ValidationMessageFor(model => model.Name, "", new { @class = "text-danger" })
+        </div>
+
+        <div class="form-group">
+            @Html.LabelFor(model => model.Variety, "Crop Variety", new { @class = "control-label" })
+            <div class="input-group variety">
+                @Html.EditorFor(model => model.Variety, new { htmlAttributes = new { @class = "form-control", placeholder = "Enter variety (e.g., Cherry Tomato, Winter Wheat)" } })
+                <div class="focus-line"></div>
+            </div>
+            @Html.ValidationMessageFor(model => model.Variety, "", new { @class = "text-danger" })
+        </div>
+
+        <div class="button-container">
+            <button type="submit" class="action-button">
+                <i class="fas fa-save"></i> Create Crop
+            </button>
+
+            @Html.ActionLink("Back to List", "Index", null, new { @class = "secondary-button" })
+        </div>
+    }
+</div>
+
+<!-- Font Awesome for Icons -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
+<!-- Bootstrap JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        // Add focus animations to form fields
+        const formControls = document.querySelectorAll('.form-control');
+
+        formControls.forEach(control => {
+            control.addEventListener('focus', function() {
+                this.parentElement.classList.add('focused');
+            });
+
+            control.addEventListener('blur', function() {
+                this.parentElement.classList.remove('focused');
+            });
+        });
+
+        // Form validation feedback
+        const form = document.querySelector('form');
+        if (form) {
+            form.addEventListener('submit', function(e) {
+                const nameField = document.querySelector('input[name="Name"]');
+                const varietyField = document.querySelector('input[name="Variety"]');
+
+                if (!nameField.value.trim() || !varietyField.value.trim()) {
+                    e.preventDefault();
+
+                    // Add shake animation to empty fields
+                    if (!nameField.value.trim()) {
+                        nameField.style.animation = 'shake 0.5s';
+                        setTimeout(() => nameField.style.animation = '', 500);
+                    }
+                    if (!varietyField.value.trim()) {
+                        varietyField.style.animation = 'shake 0.5s';
+                        setTimeout(() => varietyField.style.animation = '', 500);
+                    }
+                } else {
+                    // Success animation
+                    const submitBtn = this.querySelector('.action-button');
+                    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating...';
+                    submitBtn.disabled = true;
+                }
+            });
+        }
+    });
+</script>
+
+<style>
+    @@keyframes shake {
+        0%, 100% { transform: translateX(0); }
+        25% { transform: translateX(-5px); }
+        75% { transform: translateX(5px); }
+    }
+
+    .focused .focus-line {
+        transform: scaleX(1);
+    }
+</style>

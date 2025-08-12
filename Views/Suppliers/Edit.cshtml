@@ -1,69 +1,725 @@
 ﻿@model FarmTrack.Models.Supplier
-
 @{
-    ViewBag.Title = "Edit";
+    ViewBag.Title = "Edit Supplier";
 }
 
-<h2>Edit</h2>
+<style>
+    /* Custom Color Scheme */
+    :root {
+        --color-earth: #8B7355; /* Primary */
+        --color-soil: #654321; /* Secondary */
+        --color-foliage: #4CAF50; /* Tertiary */
+        --color-wheat: #F5DEB3; /* Accent */
+        --color-danger: #FF6B6B; /* Error */
+        --color-white: #FFFFFF; /* Neutral */
+        --color-light-gray: #f8f9fa; /* Light background */
+        --color-info: #17a2b8; /* Info */
+        --color-success: #28a745; /* Success */
+    }
 
-@using (Html.BeginForm())
-{
-    @Html.AntiForgeryToken()
-    
-    <div class="form-horizontal">
-        <h4>Supplier</h4>
-        <hr />
-        @Html.ValidationSummary(true, "", new { @class = "text-danger" })
-        @Html.HiddenFor(model => model.SupplierId)
+    /* Page Layout */
+    .page-container {
+        max-width: 900px;
+        margin: 0 auto;
+        padding: 20px;
+    }
 
-        <div class="form-group">
-            @Html.LabelFor(model => model.Name, htmlAttributes: new { @class = "control-label col-md-2" })
-            <div class="col-md-10">
-                @Html.EditorFor(model => model.Name, new { htmlAttributes = new { @class = "form-control" } })
-                @Html.ValidationMessageFor(model => model.Name, "", new { @class = "text-danger" })
-            </div>
-        </div>
+    /* Breadcrumb Navigation */
+    .breadcrumb-nav {
+        margin-bottom: 25px;
+    }
 
-        <div class="form-group">
-            @Html.LabelFor(model => model.ContactPerson, htmlAttributes: new { @class = "control-label col-md-2" })
-            <div class="col-md-10">
-                @Html.EditorFor(model => model.ContactPerson, new { htmlAttributes = new { @class = "form-control" } })
-                @Html.ValidationMessageFor(model => model.ContactPerson, "", new { @class = "text-danger" })
-            </div>
-        </div>
+    .breadcrumb {
+        background: none;
+        padding: 0;
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        color: var(--color-soil);
+        font-size: 1rem;
+    }
 
-        <div class="form-group">
-            @Html.LabelFor(model => model.PhoneNumber, htmlAttributes: new { @class = "control-label col-md-2" })
-            <div class="col-md-10">
-                @Html.EditorFor(model => model.PhoneNumber, new { htmlAttributes = new { @class = "form-control" } })
-                @Html.ValidationMessageFor(model => model.PhoneNumber, "", new { @class = "text-danger" })
-            </div>
-        </div>
+    .breadcrumb a {
+        color: var(--color-earth);
+        text-decoration: none;
+        font-weight: 500;
+        transition: all 0.3s ease;
+    }
 
-        <div class="form-group">
-            @Html.LabelFor(model => model.Email, htmlAttributes: new { @class = "control-label col-md-2" })
-            <div class="col-md-10">
-                @Html.EditorFor(model => model.Email, new { htmlAttributes = new { @class = "form-control" } })
-                @Html.ValidationMessageFor(model => model.Email, "", new { @class = "text-danger" })
-            </div>
-        </div>
+    .breadcrumb a:hover {
+        color: var(--color-soil);
+        text-decoration: underline;
+    }
 
-        <div class="form-group">
-            @Html.LabelFor(model => model.Address, htmlAttributes: new { @class = "control-label col-md-2" })
-            <div class="col-md-10">
-                @Html.EditorFor(model => model.Address, new { htmlAttributes = new { @class = "form-control" } })
-                @Html.ValidationMessageFor(model => model.Address, "", new { @class = "text-danger" })
-            </div>
-        </div>
+    .breadcrumb-separator {
+        color: var(--color-soil);
+        opacity: 0.6;
+    }
 
-        <div class="form-group">
-            <div class="col-md-offset-2 col-md-10">
-                <input type="submit" value="Save" class="btn btn-default" />
-            </div>
+    /* Page Header */
+    .page-header {
+        background: linear-gradient(135deg, var(--color-wheat), #f0e5c7);
+        padding: 30px;
+        border-radius: 15px;
+        margin-bottom: 30px;
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+        border: 1px solid rgba(139, 115, 85, 0.2);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .page-header::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: linear-gradient(90deg, var(--color-earth), var(--color-foliage));
+    }
+
+    .page-header h2 {
+        color: var(--color-soil);
+        font-weight: 700;
+        margin-bottom: 10px;
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        font-size: 2.2rem;
+    }
+
+    .page-header .subtitle {
+        color: var(--color-earth);
+        font-size: 1.1rem;
+        font-weight: 500;
+        margin: 0;
+        opacity: 0.8;
+    }
+
+    /* Form Container */
+    .form-container {
+        background-color: var(--color-white);
+        border: 1px solid var(--color-wheat);
+        border-radius: 15px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        overflow: hidden;
+        position: relative;
+    }
+
+    .form-container::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: linear-gradient(90deg, var(--color-earth), var(--color-foliage));
+    }
+
+    .form-header {
+        background: linear-gradient(135deg, rgba(245, 222, 179, 0.3), rgba(245, 222, 179, 0.1));
+        padding: 25px 30px;
+        border-bottom: 2px solid var(--color-wheat);
+    }
+
+    .form-header h4 {
+        color: var(--color-soil);
+        font-weight: 700;
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        font-size: 1.5rem;
+    }
+
+    .form-body {
+        padding: 35px;
+    }
+
+    /* Form Styling */
+    .form-group {
+        margin-bottom: 30px;
+        position: relative;
+    }
+
+    .form-group label {
+        color: var(--color-soil);
+        font-weight: 600;
+        display: block;
+        margin-bottom: 10px;
+        font-size: 1rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .form-group label i {
+        color: var(--color-earth);
+        width: 16px;
+        font-size: 1.1rem;
+    }
+
+    /* Input Group Styling */
+    .input-group {
+        position: relative;
+        display: flex;
+        align-items: stretch;
+        width: 100%;
+        border-radius: 10px;
+        overflow: hidden;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+        transition: all 0.3s ease;
+    }
+
+    .input-group:focus-within {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(139, 115, 85, 0.2);
+    }
+
+    .input-group-prepend {
+        display: flex;
+    }
+
+    .input-group-text {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 15px;
+        background: linear-gradient(135deg, var(--color-earth), var(--color-soil));
+        color: var(--color-white);
+        border: none;
+        min-width: 50px;
+        font-size: 1.1rem;
+    }
+
+    .form-control {
+        border: 2px solid var(--color-wheat);
+        padding: 15px 20px;
+        font-size: 1rem;
+        transition: all 0.3s ease;
+        background: var(--color-white);
+        color: var(--color-soil);
+        flex: 1;
+        border-left: none;
+    }
+
+    .form-control:focus {
+        outline: none;
+        border-color: var(--color-earth);
+        background: rgba(245, 222, 179, 0.05);
+    }
+
+    .form-control::placeholder {
+        color: rgba(101, 67, 33, 0.5);
+        font-style: italic;
+    }
+
+    /* Validation Styling */
+    .field-validation-error,
+    .text-danger {
+        color: var(--color-danger);
+        font-size: 0.9rem;
+        margin-top: 8px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-weight: 500;
+    }
+
+    .field-validation-error::before,
+    .text-danger::before {
+        content: '\f071';
+        font-family: 'Font Awesome 6 Free';
+        font-weight: 900;
+    }
+
+    .validation-summary-errors {
+        color: var(--color-danger);
+        background: linear-gradient(135deg, rgba(255, 107, 107, 0.1), rgba(255, 107, 107, 0.05));
+        border: 2px solid rgba(255, 107, 107, 0.3);
+        border-radius: 10px;
+        padding: 20px;
+        margin-bottom: 25px;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .validation-summary-errors::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: var(--color-danger);
+    }
+
+    .validation-summary-errors ul {
+        margin: 0;
+        padding-left: 20px;
+        list-style: none;
+    }
+
+    .validation-summary-errors li {
+        position: relative;
+        padding-left: 25px;
+        margin-bottom: 8px;
+        font-weight: 500;
+    }
+
+    .validation-summary-errors li::before {
+        content: '\f00d';
+        font-family: 'Font Awesome 6 Free';
+        font-weight: 900;
+        position: absolute;
+        left: 0;
+        color: var(--color-danger);
+    }
+
+    /* Button Styling */
+    .btn {
+        border-radius: 10px;
+        padding: 15px 30px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        font-size: 1rem;
+        border: none;
+        position: relative;
+        overflow: hidden;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .btn::before {
+        content: '';
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: 0;
+        height: 0;
+        background: rgba(255, 255, 255, 0.2);
+        border-radius: 50%;
+        transform: translate(-50%, -50%);
+        transition: width 0.6s, height 0.6s;
+    }
+
+    .btn:hover::before {
+        width: 300px;
+        height: 300px;
+    }
+
+    .btn-primary {
+        background: linear-gradient(135deg, var(--color-foliage), #45a049);
+        color: var(--color-white);
+        box-shadow: 0 6px 20px rgba(76, 175, 80, 0.3);
+    }
+
+    .btn-primary:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 10px 30px rgba(76, 175, 80, 0.4);
+        text-decoration: none;
+        color: var(--color-white);
+    }
+
+    .btn-secondary {
+        background: linear-gradient(135deg, #6c757d, #5a6268);
+        color: var(--color-white);
+        box-shadow: 0 6px 20px rgba(108, 117, 125, 0.3);
+    }
+
+    .btn-secondary:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 10px 30px rgba(108, 117, 125, 0.4);
+        text-decoration: none;
+        color: var(--color-white);
+    }
+
+    /* Action Buttons Container */
+    .action-buttons {
+        display: flex;
+        gap: 20px;
+        justify-content: center;
+        margin-top: 40px;
+        padding-top: 30px;
+        border-top: 2px solid var(--color-wheat);
+    }
+
+    /* Progress Indicator */
+    .form-progress {
+        background: linear-gradient(135deg, rgba(245, 222, 179, 0.2), rgba(245, 222, 179, 0.1));
+        padding: 20px;
+        border-radius: 10px;
+        margin-bottom: 30px;
+        text-align: center;
+    }
+
+    .progress-text {
+        color: var(--color-soil);
+        font-weight: 600;
+        margin-bottom: 10px;
+    }
+
+    .progress-bar-container {
+        background: rgba(245, 222, 179, 0.3);
+        height: 8px;
+        border-radius: 4px;
+        overflow: hidden;
+    }
+
+    .progress-bar {
+        height: 100%;
+        background: linear-gradient(90deg, var(--color-earth), var(--color-foliage));
+        width: 100%;
+        border-radius: 4px;
+        animation: progressAnimation 1.5s ease-out;
+    }
+
+    @@keyframes progressAnimation {
+        from { width: 0%; }
+        to { width: 100%; }
+    }
+
+    /* Form Field Animation */
+    .form-group {
+        animation: slideInLeft 0.6s ease-out;
+        animation-fill-mode: both;
+    }
+
+    .form-group:nth-child(1) { animation-delay: 0.1s; }
+    .form-group:nth-child(2) { animation-delay: 0.2s; }
+    .form-group:nth-child(3) { animation-delay: 0.3s; }
+    .form-group:nth-child(4) { animation-delay: 0.4s; }
+    .form-group:nth-child(5) { animation-delay: 0.5s; }
+    .form-group:nth-child(6) { animation-delay: 0.6s; }
+
+    @@keyframes slideInLeft {
+        from {
+            opacity: 0;
+            transform: translateX(-30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateX(0);
+        }
+    }
+
+    /* Floating Label Effect */
+    .floating-label {
+        position: relative;
+    }
+
+    .floating-label .form-control:focus + .floating-label-text,
+    .floating-label .form-control:not(:placeholder-shown) + .floating-label-text {
+        transform: translateY(-25px) scale(0.8);
+        color: var(--color-earth);
+    }
+
+    .floating-label-text {
+        position: absolute;
+        top: 15px;
+        left: 20px;
+        color: rgba(101, 67, 33, 0.5);
+        pointer-events: none;
+        transition: all 0.3s ease;
+        background: var(--color-white);
+        padding: 0 5px;
+    }
+
+    /* Responsive Design */
+    @@media (max-width: 768px) {
+        .page-container {
+            padding: 15px;
+        }
+
+        .form-body {
+            padding: 25px 20px;
+        }
+
+        .action-buttons {
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .btn {
+            width: 100%;
+            max-width: 300px;
+        }
+
+        .page-header h2 {
+            font-size: 1.8rem;
+        }
+    }
+
+    /* Success Animation */
+    .form-container.success {
+        animation: successPulse 0.6s ease-out;
+    }
+
+    @@keyframes successPulse {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.02); }
+        100% { transform: scale(1); }
+    }
+
+    /* Loading State */
+    .btn.loading {
+        pointer-events: none;
+        opacity: 0.7;
+    }
+
+    .btn.loading::after {
+        content: '';
+        position: absolute;
+        width: 20px;
+        height: 20px;
+        border: 2px solid rgba(255, 255, 255, 0.3);
+        border-radius: 50%;
+        border-top-color: var(--color-white);
+        animation: spin 0.8s ease infinite;
+    }
+
+    @@keyframes spin {
+        to { transform: rotate(360deg); }
+    }
+</style>
+
+<div class="page-container">
+    <!-- Breadcrumb Navigation -->
+    <div class="breadcrumb-nav">
+        <div class="breadcrumb">
+            @Html.ActionLink("Suppliers", "Index")
+            <span class="breadcrumb-separator"><i class="fas fa-chevron-right"></i></span>
+            <span>Edit Supplier</span>
         </div>
     </div>
-}
 
-<div>
-    @Html.ActionLink("Back to List", "Index")
+    <!-- Page Header -->
+    <div class="page-header">
+        <h2>
+            <i class="fas fa-edit"></i>
+            Edit Supplier
+        </h2>
+        <p class="subtitle">Update supplier information and contact details</p>
+    </div>
+
+    <!-- Progress Indicator -->
+    <div class="form-progress">
+        <div class="progress-text">Editing: @Html.DisplayFor(model => model.Name)</div>
+        <div class="progress-bar-container">
+            <div class="progress-bar"></div>
+        </div>
+    </div>
+
+    <!-- Form Container -->
+    <div class="form-container">
+        <div class="form-header">
+            <h4>
+                <i class="fas fa-truck"></i>
+                Supplier Information
+            </h4>
+        </div>
+
+        <div class="form-body">
+            @using (Html.BeginForm())
+            {
+                @Html.AntiForgeryToken()
+                @Html.ValidationSummary(true, "", new { @class = "validation-summary-errors" })
+                @Html.HiddenFor(model => model.SupplierId)
+
+                <div class="form-group">
+                    <label for="Name">
+                        <i class="fas fa-building"></i>
+                        @Html.DisplayNameFor(model => model.Name)
+                    </label>
+                    <div class="input-group">
+                        <div class="input-group-prepend">
+                            <span class="input-group-text">
+                                <i class="fas fa-building"></i>
+                            </span>
+                        </div>
+                        @Html.EditorFor(model => model.Name, new
+                        {
+                            htmlAttributes = new
+                            {
+                                @class = "form-control",
+                                placeholder = "Enter company name",
+                                required = "required"
+                            }
+                        })
+                    </div>
+                    @Html.ValidationMessageFor(model => model.Name, "", new { @class = "field-validation-error" })
+                </div>
+
+                <div class="form-group">
+                    <label for="ContactPerson">
+                        <i class="fas fa-user"></i>
+                        @Html.DisplayNameFor(model => model.ContactPerson)
+                    </label>
+                    <div class="input-group">
+                        <div class="input-group-prepend">
+                            <span class="input-group-text">
+                                <i class="fas fa-user"></i>
+                            </span>
+                        </div>
+                        @Html.EditorFor(model => model.ContactPerson, new
+                        {
+                            htmlAttributes = new
+                            {
+                                @class = "form-control",
+                                placeholder = "Enter contact person name",
+                                required = "required"
+                            }
+                        })
+                    </div>
+                    @Html.ValidationMessageFor(model => model.ContactPerson, "", new { @class = "field-validation-error" })
+                </div>
+
+                <div class="form-group">
+                    <label for="PhoneNumber">
+                        <i class="fas fa-phone"></i>
+                        @Html.DisplayNameFor(model => model.PhoneNumber)
+                    </label>
+                    <div class="input-group">
+                        <div class="input-group-prepend">
+                            <span class="input-group-text">
+                                <i class="fas fa-phone"></i>
+                            </span>
+                        </div>
+                        @Html.EditorFor(model => model.PhoneNumber, new
+                        {
+                            htmlAttributes = new
+                            {
+                                @class = "form-control",
+                                placeholder = "Enter phone number",
+                                type = "tel",
+                                required = "required"
+                            }
+                        })
+                    </div>
+                    @Html.ValidationMessageFor(model => model.PhoneNumber, "", new { @class = "field-validation-error" })
+                </div>
+
+                <div class="form-group">
+                    <label for="Email">
+                        <i class="fas fa-envelope"></i>
+                        @Html.DisplayNameFor(model => model.Email)
+                    </label>
+                    <div class="input-group">
+                        <div class="input-group-prepend">
+                            <span class="input-group-text">
+                                <i class="fas fa-envelope"></i>
+                            </span>
+                        </div>
+                        @Html.EditorFor(model => model.Email, new
+                        {
+                            htmlAttributes = new
+                            {
+                                @class = "form-control",
+                                placeholder = "Enter email address",
+                                type = "email",
+                                required = "required"
+                            }
+                        })
+                    </div>
+                    @Html.ValidationMessageFor(model => model.Email, "", new { @class = "field-validation-error" })
+                </div>
+
+                <div class="form-group">
+                    <label for="Address">
+                        <i class="fas fa-map-marker-alt"></i>
+                        @Html.DisplayNameFor(model => model.Address)
+                    </label>
+                    <div class="input-group">
+                        <div class="input-group-prepend">
+                            <span class="input-group-text">
+                                <i class="fas fa-map-marker-alt"></i>
+                            </span>
+                        </div>
+                        @Html.EditorFor(model => model.Address, new
+                        {
+                            htmlAttributes = new
+                            {
+                                @class = "form-control",
+                                placeholder = "Enter full address",
+                                required = "required"
+                            }
+                        })
+                    </div>
+                    @Html.ValidationMessageFor(model => model.Address, "", new { @class = "field-validation-error" })
+                </div>
+
+                <div class="action-buttons">
+                    @Html.ActionLink("Cancel", "Index", null, new { @class = "btn btn-secondary" })
+                    <button type="submit" class="btn btn-primary" id="saveBtn">
+                        <i class="fas fa-save"></i>
+                        Update Supplier
+                    </button>
+                </div>
+            }
+        </div>
+    </div>
 </div>
+
+<!-- Font Awesome for Icons -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Form submission with loading state
+        const form = document.querySelector('form');
+        const saveBtn = document.getElementById('saveBtn');
+
+        form.addEventListener('submit', function() {
+            saveBtn.classList.add('loading');
+            saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Updating...';
+        });
+
+        // Enhanced form validation feedback
+        const inputs = document.querySelectorAll('.form-control');
+        inputs.forEach(input => {
+            input.addEventListener('blur', function() {
+                if (this.checkValidity()) {
+                    this.style.borderColor = 'var(--color-foliage)';
+                    this.parentElement.classList.add('valid');
+                } else {
+                    this.style.borderColor = 'var(--color-danger)';
+                    this.parentElement.classList.add('invalid');
+                }
+            });
+
+            input.addEventListener('focus', function() {
+                this.style.borderColor = 'var(--color-earth)';
+                this.parentElement.classList.remove('valid', 'invalid');
+            });
+        });
+
+        // Auto-format phone number
+        const phoneInput = document.querySelector('input[name="PhoneNumber"]');
+        if (phoneInput) {
+            phoneInput.addEventListener('input', function(e) {
+                let value = e.target.value.replace(/\D/g, '');
+                if (value.length >= 10) {
+                    value = value.replace(/(\d{3})(\d{3})(\d{4})/, '($1) $2-$3');
+                }
+                e.target.value = value;
+            });
+        }
+
+        // Success animation on form container
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('success') === 'true') {
+            document.querySelector('.form-container').classList.add('success');
+        }
+    });
+</script>
+
+@Scripts.Render("~/bundles/jqueryval")
