@@ -36,6 +36,14 @@ namespace FarmTrack.Models
 
         public string ID { get; set; }
 
+        public bool IsOnlineAsDriver { get; set; }
+        public decimal? CurrentLatitude { get; set; }
+        public decimal? CurrentLongitude { get; set; }
+        public DateTime? LastOnlineTime { get; set; }
+        public string VehicleType { get; set; }
+        public string VehicleNumber { get; set; }
+        public bool IsActive { get; set; } = true;
+
         public string CV { get; set; }
 
         public virtual ICollection<FarmTask> Tasks { get; set; } = new List<FarmTask>();

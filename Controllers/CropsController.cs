@@ -159,9 +159,9 @@ namespace FarmPro.Controllers
 
             return RedirectToAction("Details", new { id = crop.Id });
         }
-        private readonly TrefleApiService _trefleApiService = new TrefleApiService();
+        //private readonly TrefleApiService _trefleApiService = new TrefleApiService();
 
-        [HttpPost]
+        /*[HttpPost]
         public ActionResult FetchFromApi(int id)
         {
             var crop = db.Crops.Find(id);
@@ -186,8 +186,78 @@ namespace FarmPro.Controllers
             db.SaveChanges();
 
             return Json(new { success = true }, JsonRequestBehavior.AllowGet);
-        }
+        }*/
 
+        /*[HttpPost]
+        [ValidateAntiForgeryToken]
+        public ActionResult FetchFromApi(int id)
+        {
+            try
+            {
+                var crop = db.Crops.Find(id);
+                if (crop == null)
+                    return Json(new { success = false, message = "Crop not found." }, JsonRequestBehavior.AllowGet);
+
+                // ✅ Check if requirements already exist
+                var existingRequirements = db.CropRequirement.FirstOrDefault(r => r.CropId == id);
+                if (existingRequirements != null)
+                {
+                    return Json(new { success = false, message = "Requirements already exist for this crop." }, JsonRequestBehavior.AllowGet);
+                }
+
+                // 🧪 Fetch mock data
+                var mockData = MockCropRequirementService.GetRequirementsByCropName(crop.Name);
+                if (mockData == null)
+                    return Json(new { success = false, message = "No data found for this crop." }, JsonRequestBehavior.AllowGet);
+
+                // ✅ Assign crop ID and add
+                mockData.CropId = crop.Id;
+                db.CropRequirement.Add(mockData);
+                db.SaveChanges();
+
+                return Json(new { success = true, message = "Data fetched successfully!" }, JsonRequestBehavior.AllowGet);
+            }
+            catch (Exception ex)
+            {
+                // Log the exception (ex) here
+                return Json(new { success = false, message = "An error occurred: " + ex.Message }, JsonRequestBehavior.AllowGet);
+            }
+        }*/
+
+        [HttpPost]
+        public ActionResult FetchFromApi(int id)
+        {
+            try
+            {
+                var crop = db.Crops.Find(id);
+                if (crop == null)
+                    return Json(new { success = false, message = "Crop not found." });
+
+                // ✅ Check if requirements already exist
+                var existingRequirements = db.CropRequirement.FirstOrDefault(r => r.CropId == id);
+                if (existingRequirements != null)
+                {
+                    return Json(new { success = false, message = "Requirements already exist for this crop." });
+                }
+
+                // 🧪 Fetch mock data
+                var mockData = MockCropRequirementService.GetRequirementsByCropName(crop.Name);
+                if (mockData == null)
+                    return Json(new { success = false, message = "No data found for this crop." });
+
+                // ✅ Assign crop ID and add
+                mockData.CropId = crop.Id;
+                db.CropRequirement.Add(mockData);
+                db.SaveChanges();
+
+                return Json(new { success = true, message = "Data fetched successfully!" });
+            }
+            catch (Exception ex)
+            {
+                // Log the exception (ex) here
+                return Json(new { success = false, message = "An error occurred: " + ex.Message });
+            }
+        }
 
     }
 }

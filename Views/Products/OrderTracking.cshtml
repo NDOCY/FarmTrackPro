@@ -1,0 +1,164 @@
+﻿@model FarmTrack.Models.Sale
+
+@{
+    ViewBag.Title = "Order Tracking";
+}
+
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-10">
+            <!-- Header -->
+            <div class="text-center mb-4">
+                <h1><i class="fas fa-map-marker-alt"></i> Track Your Order</h1>
+                <p class="lead">Order #@Model.SaleId - @Model.TrackingNumber</p>
+            </div>
+
+            <!-- Order Summary -->
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h4><i class="fas fa-info-circle"></i> Order Information</h4>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p><strong>Customer:</strong> @Model.CustomerName</p>
+                            <p><strong>Order Date:</strong> @Model.SaleDate.ToString("f")</p>
+                            <p><strong>Total Amount:</strong> R@(Model.TotalAmount.ToString("F2"))</p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>Status:</strong> <span class="badge bg-info">@Model.Status</span></p>
+                            <p><strong>Estimated Delivery:</strong> @Model.EstimatedDelivery?.ToString("ddd, MMM dd")</p>
+                            <p><strong>Payment Method:</strong> @Model.PaymentMethod</p>
+                        </div>
+                    </div>
+                    <div class="mt-2">
+                        <p><strong>Delivery Address:</strong> @Model.DeliveryAddress</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tracking Timeline -->
+            <div class="card">
+                <div class="card-header bg-success text-white">
+                    <h4><i class="fas fa-shipping-fast"></i> Delivery Progress</h4>
+                </div>
+                <div class="card-body">
+                    <div class="tracking-timeline">
+                        @{
+                            var statuses = new[]
+                            {
+                                new { Status = "Pending", Icon = "fa-clock", Text = "Order Received", Description = "We've received your order" },
+                                new { Status = "Confirmed", Icon = "fa-check", Text = "Order Confirmed", Description = "Payment verified and order confirmed" },
+                                new { Status = "Preparing", Icon = "fa-box", Text = "Preparing Order", Description = "Items are being prepared for shipment" },
+                                new { Status = "Shipped", Icon = "fa-shipping-fast", Text = "Shipped", Description = "Order has been dispatched" },
+                                new { Status = "Delivered", Icon = "fa-home", Text = "Delivered", Description = "Order delivered successfully" }
+                            };
+
+                            var currentStatusIndex = Array.FindIndex(statuses, s => s.Status == Model.Status);
+                        }
+
+                        @for (int i = 0; i < statuses.Length; i++)
+                        {
+                            var status = statuses[i];
+                            var isCompleted = i <= currentStatusIndex;
+                            var isCurrent = i == currentStatusIndex;
+
+                            <div class="tracking-step @(isCompleted ? "completed" : "") @(isCurrent ? "current" : "")">
+                                <div class="tracking-icon">
+                                    <i class="fas @status.Icon"></i>
+                                </div>
+                                <div class="tracking-content">
+                                    <h5>@status.Text</h5>
+                                    <p class="mb-0">@status.Description</p>
+                                    @if (isCurrent)
+                                    {
+                                        <small class="text-info"><i class="fas fa-spinner fa-spin"></i> In progress</small>
+                                    }
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="text-center mt-4">
+                <a href="@Url.Action("Store")" class="btn btn-primary">
+                    <i class="fas fa-store"></i> Continue Shopping
+                </a>
+                <a href="@Url.Action("Index", "Home")" class="btn btn-outline-secondary">
+                    <i class="fas fa-home"></i> Back to Home
+                </a>
+                <button onclick="window.print()" class="btn btn-outline-info">
+                    <i class="fas fa-print"></i> Print Receipt
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .tracking-timeline {
+        position: relative;
+        padding-left: 30px;
+    }
+
+    .tracking-step {
+        position: relative;
+        padding: 20px 0;
+        border-left: 3px solid #dee2e6;
+        margin-left: 20px;
+    }
+
+        .tracking-step.completed {
+            border-left-color: #28a745;
+        }
+
+        .tracking-step.current {
+            border-left-color: #17a2b8;
+        }
+
+    .tracking-icon {
+        position: absolute;
+        left: -40px;
+        top: 20px;
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 24px;
+        background: #dee2e6;
+        color: #6c757d;
+    }
+
+    .tracking-step.completed .tracking-icon {
+        background: #28a745;
+        color: white;
+    }
+
+    .tracking-step.current .tracking-icon {
+        background: #17a2b8;
+        color: white;
+        animation: pulse 2s infinite;
+    }
+
+    .tracking-content {
+        margin-left: 40px;
+    }
+
+    @@keyframes pulse {
+        0% {
+            transform: scale(1);
+        }
+
+        50% {
+            transform: scale(1.1);
+        }
+
+        100% {
+            transform: scale(1);
+        }
+    }
+</style>

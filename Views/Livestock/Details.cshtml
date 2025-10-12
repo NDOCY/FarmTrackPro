@@ -171,7 +171,7 @@
 
     <div class="mt-3">
         <a href="@Url.Action("Timeline", new { livestockId = Model.LivestockId, order = ascending ? "desc" : "asc" })"
-            class="btn btn-outline-info">
+           class="btn btn-outline-info">
             <i class="fas fa-notes-medical"></i> View History
         </a>
     </div>
@@ -186,6 +186,14 @@
             </a>
         </div>
     }
+
+    @if (Session["Role"] != null && (Session["Role"].ToString() == "Admin" || Session["Role"].ToString() == "Owner"))
+    {
+        <a href="@Url.Action("SendToProducts", "Livestock", new { id = Model.LivestockId })" class="btn btn-success">
+            <i class="fas fa-box-open"></i> Send to Products
+        </a>
+    }
+
 
 
     <!-- Action Buttons -->

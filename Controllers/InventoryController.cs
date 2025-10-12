@@ -13,6 +13,7 @@ using System.Configuration;
 using System.Threading.Tasks;
 using System.Net.Mail;
 using System.Net;
+using FarmPro.Models;
 
 namespace FarmTrack.Controllers
 {
@@ -34,11 +35,10 @@ namespace FarmTrack.Controllers
             return View(new Inventory()); // 💥 Fix: provide an initialized model
         }
 
-
         // POST: Inventory/Create
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<ActionResult> Create(Inventory model)
+        public ActionResult Create(Inventory model)
         {
             if (ModelState.IsValid)
             {
@@ -50,17 +50,9 @@ namespace FarmTrack.Controllers
                     db.Inventories.Add(model);
                     db.SaveChanges(); // Save first to get Inventory.Id
 
-                    // === QR Code Generation ===
-                    string detailsUrl = Url.Action("Details", "Inventory", new { id = model.InventoryId }, Request.Url.Scheme);
-                    var qrBitmap = GenerateQrBitmap(detailsUrl);
+                    // ✅ Instead of generating/uploading a QR, just set placeholder
+                    model.QrCodePath = "qr-placeholder";
 
-                    // Upload QR code to Azure Blob Storage
-                    var blobService = new BlobService(ConfigurationManager.AppSettings["AzureBlobConnection"]);
-                    string fileName = $"inventory-qr-{model.InventoryId}.png";
-                    string qrUrl = await blobService.UploadQrCodeAsync(qrBitmap, fileName);
-
-                    // Save QR path
-                    model.QrCodePath = qrUrl;
                     db.Entry(model).State = EntityState.Modified;
                     db.SaveChanges();
 
@@ -68,7 +60,7 @@ namespace FarmTrack.Controllers
                     int userId = Convert.ToInt32(Session["UserId"]);
                     db.LogActivity(userId, $"Created a new item: {model.ItemName}");
 
-                    TempData["Message"] = "Inventory item created with QR code.";
+                    TempData["Message"] = "Inventory item created.";
                     return RedirectToAction("InventoryList");
                 }
                 else
@@ -80,6 +72,7 @@ namespace FarmTrack.Controllers
 
             return View(model);
         }
+
 
         public Bitmap GenerateQrBitmap(string tag)
         {
@@ -592,6 +585,48 @@ namespace FarmTrack.Controllers
 
             TempData["Message"] = "Restock marked as failed.";
             return RedirectToAction("RestockDetails", new { id });
+        }
+
+        [HttpGet]
+        public ActionResult SendToProducts(int id)
+        {
+            var inventory = db.Inventories.Find(id);
+            if (inventory == null) return HttpNotFound();
+
+            var model = new SendInventoryToProductsViewModel
+            {
+                InventoryId = inventory.InventoryId,
+                ItemName = inventory.ItemName,
+                AvailableQuantity = inventory.Quantity
+            };
+
+            return View(model);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public ActionResult SendToProducts(SendInventoryToProductsViewModel model)
+        {
+            if (!ModelState.IsValid) return View(model);
+
+            var inventory = db.Inventories.Find(model.InventoryId);
+            if (inventory == null) return HttpNotFound();
+
+            var product = new Product
+            {
+                Name = inventory.ItemName,
+                ProductType = "Inventory",                 // ✅ required field
+                Category = inventory.Category ?? "General", // ✅ keep inventory category if available
+                Quantity = model.QuantityToSend,
+                CreatedAt = DateTime.Now,
+                InventoryId = inventory.InventoryId        // ✅ link back to source
+            };
+
+            db.Products.Add(product);
+            db.SaveChanges();
+
+            TempData["Success"] = "Inventory successfully sent to Products.";
+            return RedirectToAction("Details", "Inventory", new { id = model.InventoryId });
         }
 
 

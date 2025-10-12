@@ -10,6 +10,7 @@ using FarmTrack.Services;
 using System.Configuration;
 using System.Threading.Tasks;
 using System.Drawing;
+using FarmPro.Models;
 
 namespace FarmTrack.Controllers
 {
@@ -52,9 +53,8 @@ namespace FarmTrack.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<ActionResult> Create(Livestock livestock, string InitialEventType, DateTime? InitialEventDate)
+        public ActionResult Create(Livestock livestock, string InitialEventType, DateTime? InitialEventDate)
         {
-
             if (!ModelState.IsValid) return View(livestock);
 
             livestock.UserId = Convert.ToInt32(Session["UserId"]);
@@ -63,15 +63,9 @@ namespace FarmTrack.Controllers
             db.Livestocks.Add(livestock);
             db.SaveChanges();
 
-            // QR Code stuff
-            string tag = Url.Action("Details", "Livestock", new { id = livestock.LivestockId }, Request.Url.Scheme);
-            var qrBitmap = GenerateQrBitmap(tag);
+            // ✅ Instead of generating/uploading QR to Azure, just set a placeholder
+            livestock.QrCodePath = "qr-placeholder";
 
-            var blobService = new BlobService(ConfigurationManager.AppSettings["AzureBlobConnection"]);
-            string fileName = $"qr-{tag}.png";
-            string qrUrl = await blobService.UploadQrCodeAsync(qrBitmap, fileName);
-
-            livestock.QrCodePath = qrUrl;
             db.Entry(livestock).State = EntityState.Modified;
             db.SaveChanges();
 
@@ -97,7 +91,6 @@ namespace FarmTrack.Controllers
                 Notes = $"Initial event: {InitialEventType}",
                 RecordedBy = Session["FullName"]?.ToString(),
                 Weight = livestock.InitialWeight ?? 0
-
             };
             db.HealthRecords.Add(record);
 
@@ -110,9 +103,10 @@ namespace FarmTrack.Controllers
             }
 
             db.SaveChanges();
-            TempData["Message"] = "Livestock added with initial weight, health record, and QR code.";
+            TempData["Message"] = "Livestock added with initial weight, health record, and placeholder QR.";
             return RedirectToAction("Index");
         }
+
 
 
         public Bitmap GenerateQrBitmap(string tag)
@@ -325,6 +319,57 @@ namespace FarmTrack.Controllers
         }
 
 
+        [HttpGet]
+        public ActionResult SendToProducts(int id)
+        {
+            var livestock = db.Livestocks.Find(id);
+            if (livestock == null) return HttpNotFound();
+
+            if (livestock.Status != "In-House")
+            {
+                TempData["Error"] = "This livestock is not available to be sent to Products.";
+                return RedirectToAction("Details", new { id = livestock.LivestockId });
+            }
+
+            var model = new SendLivestockToProductsViewModel
+            {
+                LivestockId = livestock.LivestockId,
+                Type = livestock.Type,
+                Breed = livestock.Breed,
+                TagNumber = livestock.TagNumber,
+                //Status = livestock.Status
+            };
+
+            return View(model);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public ActionResult SendToProducts(SendLivestockToProductsViewModel model)
+        {
+            if (!ModelState.IsValid) return View(model);
+
+            var livestock = db.Livestocks.Find(model.LivestockId);
+            if (livestock == null) return HttpNotFound();
+
+            var product = new Product
+            {
+                Name = $"{livestock.Type} - {livestock.Breed} ({livestock.TagNumber})",
+                ProductType = "Livestock",   // <-- Required field!
+                Category = livestock.Breed,  // optional: use breed as category
+                Unit = "head",               // livestock unit
+                Quantity = 1,
+                PricePerUnit = null,         // optional, set later
+                LivestockId = livestock.LivestockId,
+                CreatedAt = DateTime.Now
+            };
+
+            db.Products.Add(product);
+            db.SaveChanges();
+
+            TempData["Success"] = "Livestock successfully sent to Products.";
+            return RedirectToAction("Details", "Livestock", new { id = model.LivestockId });
+        }
 
 
     }

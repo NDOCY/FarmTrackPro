@@ -1,59 +1,128 @@
 ﻿@model IEnumerable<FarmTrack.Models.Activity>
 
-
-<div class="activity-feed">
-    @foreach (var activity in Model)
-    {
-        <div class="activity-item mb-3 p-2 border-bottom">
-            <div class="d-flex justify-content-between">
-                <strong>@activity.ActivityType</strong>
-                <small class="text-muted">@activity.ActivityDate.ToString("g")</small>
-            </div>
-            <div>@activity.Description</div>
-            @if (!string.IsNullOrEmpty(activity.Notes))
-            {
-                <div class="text-muted small">@activity.Notes</div>
-            }
-            @if (activity.AmountUsed.HasValue)
-            {
-                <div>Amount: @activity.AmountUsed @activity.Unit</div>
-            }
-            @if (!string.IsNullOrEmpty(activity.Severity))
-            {
-                <div>Severity: <span class="badge bg-@(activity.Severity == "Critical" ? "danger" : "warning")">@activity.Severity</span></div>
-            }
-            @if (activity.Tags != null && activity.Tags.Any())
-            {
-                <div class="mt-1">
-                    @foreach (var tag in activity.Tags)
-                    {
-                        <span class="badge" style="background-color: @tag.Color">@tag.Name</span>
-                    }
+    <div class="activity-feed">
+        @foreach (var activity in Model.OrderByDescending(a => a.ActivityDate))
+        {
+            <div class="activity-item">
+                <div class="activity-header">
+                    <div class="activity-type">
+                        <i class="fas @GetActivityIcon(activity.ActivityType)"></i>
+                        <strong>@activity.ActivityType</strong>
+                        @if (!string.IsNullOrEmpty(activity.Severity))
+                        {
+                            <span class="severity-badge severity-@activity.Severity.ToLower()">
+                                @activity.Severity
+                            </span>
+                        }
+                    </div>
+                    <div class="activity-date">
+                        <i class="fas fa-clock"></i>
+                        <small>@activity.ActivityDate.ToString("MMM d, yyyy h:mm tt")</small>
+                    </div>
                 </div>
-            }
-            @if (!string.IsNullOrEmpty(activity.ImagePath))
-            {
-                <div class="mt-2">
-                    <img src="@activity.ImagePath" class="img-thumbnail" style="max-height: 150px;"
-                         data-toggle="modal" data-target="#imageModal-@activity.Id">
 
-                    <!-- Image Modal -->
-                    <div class="modal fade" id="imageModal-@activity.Id" tabindex="-1" role="dialog">
-                        <div class="modal-dialog modal-lg" role="document">
-                            <div class="modal-content">
-                                <div class="modal-body text-center">
-                                    <img src="@activity.ImagePath" class="img-fluid">
+                <div class="activity-description">
+                    @activity.Description
+                </div>
+
+                @if (!string.IsNullOrEmpty(activity.Notes))
+                {
+                    <div class="activity-notes">
+                        <i class="fas fa-sticky-note"></i>
+                        @activity.Notes
+                    </div>
+                }
+
+                @if (activity.AmountUsed.HasValue)
+                {
+                    <div class="activity-amount">
+                        <i class="fas fa-weight"></i>
+                        <strong>Amount:</strong> @activity.AmountUsed @activity.Unit
+                    </div>
+                }
+
+                @if (activity.Tags != null && activity.Tags.Any())
+                {
+                    <div class="activity-tags">
+                        @foreach (var tag in activity.Tags)
+                        {
+                            <span class="activity-tag" style="background-color: @tag.Color">
+                                @tag.Name
+                            </span>
+                        }
+                    </div>
+                }
+
+                @if (!string.IsNullOrEmpty(activity.ImagePath))
+                {
+                    <div class="activity-image">
+                        <img src="@activity.ImagePath" class="activity-thumbnail"
+                             data-toggle="modal" data-target="#imageModal-@activity.Id"
+                             alt="Activity image">
+
+                        <!-- Image Modal -->
+                        <div class="modal fade" id="imageModal-@activity.Id" tabindex="-1" role="dialog"
+                             aria-labelledby="imageModalLabel-@activity.Id" aria-hidden="true">
+                            <div class="modal-dialog modal-lg" role="document">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title" id="imageModalLabel-@activity.Id">
+                                            @activity.ActivityType - @activity.ActivityDate.ToString("MMM d, yyyy")
+                                        </h5>
+                                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                            <span aria-hidden="true">&times;</span>
+                                        </button>
+                                    </div>
+                                    <div class="modal-body text-center">
+                                        <img src="@activity.ImagePath" class="img-fluid rounded" alt="Activity image">
+                                        @if (!string.IsNullOrEmpty(activity.Description))
+                                        {
+                                            <p class="mt-3 text-muted">@activity.Description</p>
+                                        }
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
-                </div>
-            }
-        </div>
-    }
+                }
+            </div>
+        }
 
-    @if (!Model.Any())
-    {
-        <div class="text-muted">No activities recorded yet</div>
+        @if (!Model.Any())
+        {
+            <div class="no-activities-message">
+                <i class="fas fa-clipboard-list"></i>
+                <h6>No activities recorded yet</h6>
+                <p class="text-muted mb-0">Start by adding your first activity above.</p>
+            </div>
+        }
+    </div>
+
+    @functions {
+        string GetActivityIcon(string activityType)
+        {
+            switch (activityType?.ToLower())
+            {
+                case "fertilization":
+                    return "fa-flask";
+                case "pest":
+                    return "fa-bug";
+                case "disease":
+                    return "fa-virus";
+                case "watering":
+                    return "fa-tint";
+                case "planting":
+                    return "fa-seedling";
+                case "harvest":
+                    return "fa-cut";
+                case "growthrecording":
+                    return "fa-chart-line";
+                case "weeding":
+                    return "fa-leaf";
+                case "pruning":
+                    return "fa-cut";
+                default:
+                    return "fa-clipboard-list";
+            }
+        }
     }
-</div>

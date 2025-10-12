@@ -195,19 +195,23 @@
                         </a>
                     </li>
 
+                    @if (Session["Role"]?.ToString() == "Admin" || Session["Role"]?.ToString() == "Owner")
+                    {
+                        <li class="nav-item">
+                            <a href="@Url.Action("SalesList", "Products")" class="nav-link">
+                                <i class="fas fa-chart-line"></i> Sales Management
+                            </a>
+                        </li>
+                    }
+
                     <li class="nav-item">
-                        <a class="nav-link" href="@Url.Action("Index", "Message")">
-                            <i class="fas fa-envelope me-1"></i> Messages
-                            <span id="messageBadge" class="badge bg-warning text-dark ms-1"></span>
+                        <a href="@Url.Action("MyOrders", "Products")" class="nav-link">
+                            <i class="fas fa-shopping-bag"></i> My Orders
+                            <!-- Order count will be loaded via AJAX -->
+                            <span class="badge bg-primary" id="orderCountBadge" style="display: none;">0</span>
                         </a>
                     </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="@Url.Action("Index", "Task")">
-                            <i class="fas fa-tasks me-1"></i> Tasks
-                            <span id="taskBadge" class="badge bg-danger text-white ms-1"></span>
-                            <span id="statusUpdateBadge" class="badge"></span>
-                        </a>
-                    </li>
+
                     <li class="nav-item dropdown" id="notificationDropdown">
                         <a class="nav-link dropdown-toggle" href="#" id="notifToggle" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                             Notifications <span class="badge bg-danger" id="notifCount"></span>
@@ -259,11 +263,43 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
 
     <!-- JavaScript -->
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAWqsGY78oiNSWzOAxP2TO40PZb94S4fLw&callback=initMap&libraries=geometry,places" async defer></script>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
     <!-- In your _Layout.cshtml -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <script>
+        // Function to load order count via AJAX
+        function loadOrderCount() {
+            $.ajax({
+                url: '@Url.Action("GetOrderCount", "Products")',
+                type: 'GET',
+                success: function (data) {
+                    if (data.count > 0) {
+                        $('#orderCountBadge').text(data.count).show();
+                    } else {
+                        $('#orderCountBadge').hide();
+                    }
+                },
+                error: function () {
+                    console.log('Error loading order count');
+                }
+            });
+        }
+
+
+        // Load counts when page is ready
+        $(document).ready(function () {
+            loadOrderCount();
+
+            // Refresh counts every 2 minutes
+            setInterval(function () {
+                loadOrderCount();
+            }, 120000);
+        });
+    </script>
     <!--<script>
         const defaultNotificationState = {
             unreadMessages: 0,

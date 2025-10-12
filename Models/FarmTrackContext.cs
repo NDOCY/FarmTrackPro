@@ -4,15 +4,39 @@ using FarmTrack.Models;
 using System;
 using System.Collections.Generic;
 using System.Data.Entity;
+using System.Data.Entity.Migrations;
+using FarmPro.Migrations;
 using System.Data.Entity.ModelConfiguration.Conventions;
 
 namespace FarmTrack.Models
 {
     public class FarmTrackContext : DbContext
     {
-        public FarmTrackContext() : base("FarmTrackDB")
+        public FarmTrackContext() : base("Connection")
         {
             this.Configuration.LazyLoadingEnabled = false;
+
+            // Quick fix for production - allows automatic model changes
+            // WARNING: This can cause data loss if not careful
+            //Database.SetInitializer(new DropCreateDatabaseIfModelChanges<FarmTrackContext>());
+
+            // Better approach for production (but requires migration setup):
+            // Database.SetInitializer(new MigrateDatabaseToLatestVersion<FarmTrackContext, FarmTrack.Migrations.Configuration>());
+            // ⚠️ WARNING: This will DELETE ALL DATA and recreate the database!
+            // Only use this if you don't care about existing data
+            //Database.SetInitializer(new DropCreateDatabaseAlways<FarmTrackContext>());
+            // ✅ PRODUCTION SOLUTION: Don't let EF manage database creation
+            // This prevents timeout errors from database creation attempts
+            //Database.SetInitializer<FarmTrackContext>(null);
+
+            Database.SetInitializer(new MigrateDatabaseToLatestVersion<FarmTrackContext, Configuration>());
+
+            // ✅ Increase timeout for complex queries
+            this.Database.CommandTimeout = 180; // 3 minutes
+
+            // ✅ Disable automatic migrations (safer for production)
+            //this.Configuration.AutoDetectChangesEnabled = true;
+            //this.Configuration.ValidateOnSaveEnabled = true;
         }
 
         public DbSet<User> Users { get; set; }
@@ -48,6 +72,12 @@ namespace FarmTrack.Models
         public DbSet<Tag> Tags { get; set; }
         public DbSet<GrowthRecord> GrowthRecords { get; set; }
         public DbSet<HarvestOutcome> HarvestOutcomes { get; set; }
+        public DbSet<Product> Products { get; set; }
+        public DbSet<Sale> Sales { get; set; }
+        public DbSet<OrderStatusUpdate> OrderStatusUpdates { get; set; }
+        public DbSet<DeliveryAssignment> DeliveryAssignments { get; set; }
+        public DbSet<DeliveryLocation> DeliveryLocations { get; set; }
+        public DbSet<ProductReview> ProductReviews { get; set; }
 
 
 

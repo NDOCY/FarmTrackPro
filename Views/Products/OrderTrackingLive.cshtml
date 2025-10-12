@@ -1,0 +1,285 @@
+﻿@model FarmTrack.Models.Sale
+
+@{
+    ViewBag.Title = "Live Order Tracking";
+}
+
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-10">
+            <!-- Header with Auto-Refresh -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h1><i class="fas fa-shipping-fast"></i> Live Order Tracking</h1>
+                    <p class="lead mb-0">Order #@Model.SaleId - @Model.TrackingNumber</p>
+                </div>
+                <div class="text-end">
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="autoRefresh" checked>
+                        <label class="form-check-label" for="autoRefresh">Auto-Refresh</label>
+                    </div>
+                    <small class="text-muted" id="lastUpdate">Last updated: Just now</small>
+                </div>
+            </div>
+
+            <!-- Current Status Card -->
+            <div class="card mb-4" id="statusCard">
+                <div class="card-header bg-info text-white d-flex justify-content-between">
+                    <h4 class="mb-0"><i class="fas fa-map-marker-alt"></i> Current Status</h4>
+                    <span class="badge bg-light text-dark fs-6" id="liveBadge">
+                        <i class="fas fa-circle text-success blink"></i> LIVE
+                    </span>
+                </div>
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-md-8">
+                            <h3 id="currentStatus">@Model.Status</h3>
+                            <p class="mb-0" id="statusDescription">Loading latest update...</p>
+                        </div>
+                        <div class="col-md-4 text-end">
+                            <div class="bg-light p-3 rounded">
+                                <small class="text-muted">Estimated Delivery</small>
+                                <h5 id="estimatedDelivery">@Model.EstimatedDelivery?.ToString("ddd, MMM dd 'at' HH:mm")</h5>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Live Tracking Timeline -->
+            <div class="card">
+                <div class="card-header bg-success text-white">
+                    <h4 class="mb-0"><i class="fas fa-road"></i> Delivery Journey</h4>
+                </div>
+                <div class="card-body">
+                    <div id="trackingTimeline">
+                        <!-- Timeline will be loaded via AJAX -->
+                        <div class="text-center py-4">
+                            <div class="spinner-border text-success" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                            <p class="mt-2">Loading tracking information...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Order Details -->
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-list"></i> Order Details</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p><strong>Customer:</strong> @Model.CustomerName</p>
+                            <p><strong>Delivery Address:</strong> @Model.DeliveryAddress</p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>Contact:</strong> @Model.CustomerPhone / @Model.CustomerEmail</p>
+                            <p><strong>Total Amount:</strong> R@(Model.TotalAmount.ToString("F2"))</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="text-center mt-4">
+                <button onclick="refreshStatus()" class="btn btn-outline-primary">
+                    <i class="fas fa-sync-alt"></i> Refresh Now
+                </button>
+                <a href="@Url.Action("Store")" class="btn btn-primary">
+                    <i class="fas fa-store"></i> Continue Shopping
+                </a>
+                <button onclick="window.print()" class="btn btn-outline-info">
+                    <i class="fas fa-print"></i> Print Receipt
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+    let refreshInterval;
+    const saleId = @Model.SaleId;
+
+    // Load initial data
+    $(document).ready(function() {
+        loadTrackingData();
+        startAutoRefresh();
+
+        $('#autoRefresh').change(function() {
+            if (this.checked) {
+                startAutoRefresh();
+            } else {
+                stopAutoRefresh();
+            }
+        });
+    });
+
+    function loadTrackingData() {
+        $.getJSON('@Url.Action("GetOrderStatus", "Products")', { saleId: saleId })
+            .done(function(data) {
+                updateUI(data);
+                $('#lastUpdate').text('Last updated: ' + new Date().toLocaleTimeString());
+            })
+            .fail(function() {
+                $('#currentStatus').html('<span class="text-danger">Error loading status</span>');
+            });
+    }
+
+    function updateUI(data) {
+        // Update current status
+        $('#currentStatus').text(data.currentStatus);
+
+        // Find latest update for description
+        const latestUpdate = data.updates[0];
+        if (latestUpdate) {
+            $('#statusDescription').html(`<strong>${latestUpdate.status}</strong><br>${latestUpdate.notes || 'No additional notes'}`);
+        }
+
+        // Update estimated delivery
+        if (data.estimatedDelivery) {
+            $('#estimatedDelivery').text(data.estimatedDelivery);
+        }
+
+        // Build timeline
+        let timelineHtml = '';
+        data.updates.forEach((update, index) => {
+            const isCurrent = update.isCurrent;
+            timelineHtml += `
+                <div class="tracking-step ${isCurrent ? 'current' : 'completed'}">
+                    <div class="tracking-icon">
+                        <i class="fas fa-${getStatusIcon(update.status)}"></i>
+                    </div>
+                    <div class="tracking-content">
+                        <h5>${update.status}</h5>
+                        <p class="mb-1">${update.notes || ''}</p>
+                        <small class="text-muted">${update.time}</small>
+                        ${isCurrent ? '<br><small class="text-info"><i class="fas fa-spinner fa-spin"></i> Active</small>' : ''}
+                    </div>
+                </div>
+            `;
+        });
+
+        $('#trackingTimeline').html(timelineHtml);
+    }
+
+    function getStatusIcon(status) {
+        const icons = {
+            'Pending': 'clock',
+            'Confirmed': 'check-circle',
+            'Preparing': 'box',
+            'Shipped': 'shipping-fast',
+            'Out for Delivery': 'truck',
+            'Delivered': 'home'
+        };
+        return icons[status] || 'info-circle';
+    }
+
+    function refreshStatus() {
+        loadTrackingData();
+    }
+
+    function startAutoRefresh() {
+        refreshInterval = setInterval(refreshStatus, 10000); // Refresh every 10 seconds
+        $('#liveBadge').show();
+    }
+
+    function stopAutoRefresh() {
+        clearInterval(refreshInterval);
+        $('#liveBadge').hide();
+    }
+
+    // Blink animation for live indicator
+    setInterval(function() {
+        $('.blink').fadeTo(500, 0.3).fadeTo(500, 1);
+    }, 1000);
+    </script>
+
+    <style>
+        .blink {
+            animation: blink 2s infinite;
+        }
+
+        @@keyframes blink {
+            0% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.3;
+            }
+
+            100% {
+                opacity: 1;
+            }
+        }
+
+        /* Keep your existing tracking timeline styles */
+        .tracking-timeline {
+            position: relative;
+            padding-left: 30px;
+        }
+
+        .tracking-step {
+            position: relative;
+            padding: 20px 0;
+            border-left: 3px solid #dee2e6;
+            margin-left: 20px;
+        }
+
+            .tracking-step.completed {
+                border-left-color: #28a745;
+            }
+
+            .tracking-step.current {
+                border-left-color: #17a2b8;
+            }
+
+        .tracking-icon {
+            position: absolute;
+            left: -40px;
+            top: 20px;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            background: #dee2e6;
+            color: #6c757d;
+        }
+
+        .tracking-step.completed .tracking-icon {
+            background: #28a745;
+            color: white;
+        }
+
+        .tracking-step.current .tracking-icon {
+            background: #17a2b8;
+            color: white;
+            animation: pulse 2s infinite;
+        }
+
+        .tracking-content {
+            margin-left: 40px;
+        }
+
+        @@keyframes pulse {
+            0% {
+                transform: scale(1);
+            }
+
+            50% {
+                transform: scale(1.1);
+            }
+
+            100% {
+                transform: scale(1);
+            }
+        }
+    </style>
+}

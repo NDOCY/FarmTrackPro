@@ -1,0 +1,403 @@
+﻿@model FarmTrack.Models.MyOrdersViewModel
+
+@{
+    ViewBag.Title = "My Orders";
+}
+
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-12">
+            <!-- Page Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h1><i class="fas fa-shopping-bag"></i> My Orders</h1>
+                    <p class="lead mb-0">View and track your recent purchases</p>
+                </div>
+                <a href="@Url.Action("Store")" class="btn btn-primary">
+                    <i class="fas fa-store"></i> Continue Shopping
+                </a>
+            </div>
+
+            <!-- Status Filter -->
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h5 class="card-title"><i class="fas fa-filter"></i> Filter Orders</h5>
+                    <div class="btn-group" role="group">
+                        <a href="@Url.Action("MyOrders", new { statusFilter = "All" })"
+                           class="btn @(Model.FilterStatus == "All" || string.IsNullOrEmpty(Model.FilterStatus) ? "btn-primary" : "btn-outline-primary")">
+                            All Orders
+                        </a>
+                        <a href="@Url.Action("MyOrders", new { statusFilter = "Pending" })"
+                           class="btn @(Model.FilterStatus == "Pending" ? "btn-warning" : "btn-outline-warning")">
+                            Pending
+                        </a>
+                        <a href="@Url.Action("MyOrders", new { statusFilter = "Confirmed" })"
+                           class="btn @(Model.FilterStatus == "Confirmed" ? "btn-info" : "btn-outline-info")">
+                            Confirmed
+                        </a>
+                        <a href="@Url.Action("MyOrders", new { statusFilter = "Shipped" })"
+                           class="btn @(Model.FilterStatus == "Shipped" ? "btn-primary" : "btn-outline-primary")">
+                            Shipped
+                        </a>
+                        <a href="@Url.Action("MyOrders", new { statusFilter = "Delivered" })"
+                           class="btn @(Model.FilterStatus == "Delivered" ? "btn-success" : "btn-outline-success")">
+                            Delivered
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Orders List -->
+            @if (!Model.Orders.Any())
+            {
+                <div class="text-center py-5">
+                    <i class="fas fa-box-open fa-3x text-muted mb-3"></i>
+                    <h3>No orders found</h3>
+                    <p class="text-muted">You haven't placed any orders yet.</p>
+                    <a href="@Url.Action("Store")" class="btn btn-primary btn-lg">
+                        <i class="fas fa-store"></i> Start Shopping
+                    </a>
+                </div>
+            }
+            else
+            {
+                foreach (var order in Model.Orders)
+                {
+                    <div class="card mb-4 order-card">
+                        <div class="card-header bg-light">
+                            <div class="row align-items-center">
+                                <div class="col-md-6">
+                                    <h5 class="mb-0">
+                                        <i class="fas fa-receipt"></i> Order #@order.SaleId
+                                        <span class="badge bg-@GetStatusBadgeColor(order.Status) ms-2">@order.Status</span>
+                                    </h5>
+                                    <small class="text-muted">Placed on @order.SaleDate.ToString("f")</small>
+                                </div>
+                                <div class="col-md-6 text-md-end">
+                                    <div class="d-flex flex-column flex-md-row justify-content-md-end gap-2">
+                                        <span class="fw-bold">Total: R@order.TotalAmount.ToString("F2")</span>
+                                        <!-- TRACKING BUTTONS -->
+                                        <div class="btn-group" role="group">
+                                            <a href="@Url.Action("OrderTracking", new { id = order.SaleId })"
+                                               class="btn btn-sm btn-outline-primary" title="View Order Details">
+                                                <i class="fas fa-eye"></i> Details
+                                            </a>
+                                            <a href="@Url.Action("OrderTrackingLive", new { id = order.SaleId })"
+                                               class="btn btn-sm btn-outline-success" title="Live Order Tracking">
+                                                <i class="fas fa-shipping-fast"></i> Live Track
+                                            </a>
+                                            <!-- ADD THIS NEW BUTTON -->
+                                            <a href="@Url.Action("LiveTrackingMap", new { id = order.SaleId })"
+                                               class="btn btn-sm btn-outline-warning" title="Live Delivery Map" target="_blank">
+                                                <i class="fas fa-map-marked-alt"></i> Live Map
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="card-body">
+                            <!-- Order Summary -->
+                            <div class="row mb-3">
+                                <div class="col-md-3">
+                                    <small class="text-muted">ITEMS</small>
+                                    <div>@order.ItemCount item(s)</div>
+                                </div>
+                                <div class="col-md-3">
+                                    <small class="text-muted">TRACKING NUMBER</small>
+                                    <div><code>@order.TrackingNumber</code></div>
+                                </div>
+                                <div class="col-md-3">
+                                    <small class="text-muted">ESTIMATED DELIVERY</small>
+                                    <div>
+                                        @if (order.EstimatedDelivery.HasValue)
+                                        {
+                                            <span class="@(order.EstimatedDelivery.Value < DateTime.Now && order.Status != "Delivered" ? "text-danger" : "")">
+                                                @order.EstimatedDelivery.Value.ToString("ddd, MMM dd")
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">TBD</span>
+                                        }
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <small class="text-muted">CUSTOMER</small>
+                                    <div>@order.CustomerName</div>
+                                </div>
+                            </div>
+
+                            <!-- Quick Action Buttons - Added this new section -->
+                            <div class="row mb-3">
+                                <div class="col-12">
+                                    <div class="d-flex gap-2 flex-wrap">
+                                        <!-- Order Details Button -->
+                                        <a href="@Url.Action("OrderTracking", new { id = order.SaleId })"
+                                           class="btn btn-outline-primary btn-sm">
+                                            <i class="fas fa-info-circle"></i> Order Details
+                                        </a>
+
+                                        <!-- Live Tracking Button -->
+                                        <a href="@Url.Action("OrderTrackingLive", new { id = order.SaleId })"
+                                           class="btn btn-outline-success btn-sm">
+                                            <i class="fas fa-map-marker-alt"></i> Live Tracking
+                                        </a>
+
+                                        <a href="@Url.Action("LiveTrackingMap", new { id = order.SaleId })"
+                                           class="btn btn-sm btn-warning" target="_blank">
+                                            <i class="fas fa-map-marked-alt"></i> Live Map
+                                        </a>
+
+                                        <!-- Print Receipt Button (for delivered orders) -->
+                                        @if (order.Status == "Delivered")
+                                        {
+                                            <button class="btn btn-outline-info btn-sm" onclick="printReceipt(@order.SaleId)">
+                                                <i class="fas fa-print"></i> Print Receipt
+                                            </button>
+                                            <a href="@Url.Action("Reorder", new { id = order.SaleId })"
+                                               class="btn btn-outline-warning btn-sm">
+                                                <i class="fas fa-redo"></i> Reorder
+                                            </a>
+                                        }
+
+                                        <!-- Contact Support -->
+                                        <a href="mailto:support@farmtrack.com?subject=Order @order.SaleId"
+                                           class="btn btn-outline-secondary btn-sm">
+                                            <i class="fas fa-headset"></i> Support
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Order Items (Collapsible) -->
+                            <div class="accordion" id="accordion@(order.SaleId)">
+                                <div class="accordion-item">
+                                    <h2 class="accordion-header" id="heading@(order.SaleId)">
+                                        <button class="accordion-button collapsed" type="button"
+                                                data-bs-toggle="collapse" data-bs-target="#collapse@(order.SaleId)"
+                                                aria-expanded="false" aria-controls="collapse@(order.SaleId)">
+                                            <i class="fas fa-boxes me-2"></i> View Order Items (@order.Items.Count items)
+                                        </button>
+                                    </h2>
+                                    <div id="collapse@(order.SaleId)" class="accordion-collapse collapse"
+                                         aria-labelledby="heading@(order.SaleId)" data-bs-parent="#accordion@(order.SaleId)">
+                                        <div class="accordion-body">
+                                            <div class="table-responsive">
+                                                <table class="table table-sm">
+                                                    <thead>
+                                                        <tr>
+                                                            <th>Product</th>
+                                                            <th>Quantity</th>
+                                                            <th>Price</th>
+                                                            <th>Total</th>
+                                                            <th>Action</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        @foreach (var item in order.Items)
+                                                        {
+                                                            <tr>
+                                                                <td>@item.ProductName</td>
+                                                                <td>@item.Quantity</td>
+                                                                <td>R@item.Price.ToString("F2")</td>
+                                                                <td>R@item.Total.ToString("F2")</td>
+                                                                <td>
+                                                                    <!-- Item-level tracking buttons -->
+                                                                    <div class="btn-group btn-group-sm">
+                                                                        <a href="@Url.Action("OrderTracking", new { id = order.SaleId })"
+                                                                           class="btn btn-outline-primary" title="View this order">
+                                                                            <i class="fas fa-eye"></i>
+                                                                        </a>
+                                                                        <a href="@Url.Action("OrderTrackingLive", new { id = order.SaleId })"
+                                                                           class="btn btn-outline-success" title="Track this order">
+                                                                            <i class="fas fa-map-marker-alt"></i>
+                                                                        </a>
+                                                                    </div>
+                                                                </td>
+                                                            </tr>
+                                                        }
+                                                    </tbody>
+                                                    <tfoot>
+                                                        <tr class="table-active">
+                                                            <td colspan="3" class="text-end"><strong>Grand Total:</strong></td>
+                                                            <td><strong>R@order.TotalAmount.ToString("F2")</strong></td>
+                                                            <td></td>
+                                                        </tr>
+                                                    </tfoot>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Progress Bar -->
+                            <div class="mt-3">
+                                <div class="d-flex justify-content-between mb-1">
+                                    <small>Order Progress</small>
+                                    <small>@GetProgressPercentage(order.Status)%</small>
+                                </div>
+                                <div class="progress" style="height: 8px;">
+                                    <div class="progress-bar bg-@GetStatusBadgeColor(order.Status)"
+                                         role="progressbar"
+                                         style="width: @GetProgressPercentage(order.Status)%"
+                                         aria-valuenow="@GetProgressPercentage(order.Status)"
+                                         aria-valuemin="0" aria-valuemax="100">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="card-footer">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <small class="text-muted">
+                                    <i class="fas fa-info-circle"></i>
+                                    Last updated: @DateTime.Now.ToString("g")
+                                </small>
+                                <div>
+                                    <!-- Final set of tracking buttons in footer -->
+                                    <div class="btn-group">
+                                        <a href="@Url.Action("OrderTracking", new { id = order.SaleId })"
+                                           class="btn btn-sm btn-primary">
+                                            <i class="fas fa-info-circle"></i> Order Details
+                                        </a>
+                                        <a href="@Url.Action("OrderTrackingLive", new { id = order.SaleId })"
+                                           class="btn btn-sm btn-success">
+                                            <i class="fas fa-shipping-fast"></i> Live Tracking
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                }
+            }
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Auto-refresh page every 2 minutes for live updates
+        setTimeout(function() {
+            window.location.reload();
+        }, 120000);
+
+        // Add hover effects to order cards
+        $(document).ready(function() {
+            $('.order-card').hover(
+                function() {
+                    $(this).addClass('shadow-lg').css('transform', 'translateY(-2px)');
+                },
+                function() {
+                    $(this).removeClass('shadow-lg').css('transform', 'translateY(0)');
+                }
+            );
+        });
+
+        // Print receipt function
+        function printReceipt(orderId) {
+            window.open('@Url.Action("PrintReceipt", "Products")' + '?id=' + orderId, '_blank');
+        }
+
+        // Quick status update function
+        function updateOrderStatus(orderId, status) {
+            if (confirm('Are you sure you want to update the order status?')) {
+                $.post('@Url.Action("UpdateOrderStatus", "Products")', {
+                    saleId: orderId,
+                    status: status
+                }, function(response) {
+                    if (response.success) {
+                        location.reload();
+                    } else {
+                        alert('Error updating status');
+                    }
+                });
+            }
+        }
+    </script>
+
+    <style>
+        .order-card {
+            transition: all 0.3s ease;
+            border: 1px solid #dee2e6;
+        }
+
+            .order-card:hover {
+                border-color: #0d6efd;
+                box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            }
+
+        .progress {
+            background-color: #e9ecef;
+            border-radius: 4px;
+        }
+
+        .progress-bar {
+            border-radius: 4px;
+            transition: width 0.6s ease;
+        }
+
+        .btn-group-sm > .btn {
+            padding: 0.25rem 0.5rem;
+            font-size: 0.875rem;
+        }
+
+        /* Responsive button stacking */
+        @@media (max-width: 768px) {
+            .btn-group {
+                flex-direction: column;
+                width: 100%;
+            }
+
+                .btn-group .btn {
+                    margin-bottom: 0.25rem;
+                    border-radius: 0.375rem !important;
+                }
+        }
+    </style>
+}
+
+@functions {
+    // Helper function to get badge color based on status
+    public string GetStatusBadgeColor(string status)
+    {
+        switch (status)
+        {
+            case "Pending":
+                return "warning";
+            case "Confirmed":
+                return "info";
+            case "Shipped":
+                return "primary";
+            case "Delivered":
+                return "success";
+            case "Cancelled":
+                return "danger";
+            default:
+                return "secondary";
+        }
+    }
+
+    // Helper function to get progress percentage
+    public int GetProgressPercentage(string status)
+    {
+        switch (status)
+        {
+            case "Pending":
+                return 20;
+            case "Confirmed":
+                return 40;
+            case "Shipped":
+                return 70;
+            case "Delivered":
+                return 100;
+            case "Cancelled":
+                return 0;
+            default:
+                return 10;
+        }
+    }
+}

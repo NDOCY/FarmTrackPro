@@ -7,7 +7,7 @@ namespace FarmTrack.Helpers
     public static class TrefleApiHelper
     {
         private static readonly HttpClient client = new HttpClient();
-        private const string apiToken = "32z0Oo8HBYgaoy7FTBrl3c2nTjIOc3CdFEqPmkKd8NI";
+        private const string apiToken = "67FVGHvb786gaoy7FTBrl3c2nTjINBHLBHBJLJOc3CdFEfdrrfcFCFCGC75dcfRX6544Dgdcf76Dcd8";
         private const string baseUrl = "https://trefle.io/api/v1";
 
         public static async Task<string> SearchCropAsync(string cropName)

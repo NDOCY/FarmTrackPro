@@ -1,0 +1,25 @@
+﻿@model FarmTrack.Models.SendInventoryToProductsViewModel
+
+<h2>Send Inventory to Products</h2>
+
+<p>
+    <strong>Item:</strong> @Model.ItemName <br />
+    <strong>Available Quantity:</strong> @Model.AvailableQuantity
+</p>
+
+@using (Html.BeginForm())
+{
+    @Html.AntiForgeryToken()
+    @Html.HiddenFor(m => m.InventoryId)
+
+    <div class="form-group">
+        @Html.LabelFor(m => m.QuantityToSend)
+        @Html.TextBoxFor(m => m.QuantityToSend, new { @class = "form-control", type = "number", min = "1", max = Model.AvailableQuantity })
+        @Html.ValidationMessageFor(m => m.QuantityToSend)
+    </div>
+
+    <button type="submit" class="btn btn-success">
+        <i class="fas fa-box-open"></i> Send to Products
+    </button>
+    <a href="@Url.Action("Details", "Inventory", new { id = Model.InventoryId })" class="btn btn-secondary">Cancel</a>
+}

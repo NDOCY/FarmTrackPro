@@ -1,0 +1,72 @@
+﻿@model List<FarmTrack.Models.CartItem>
+
+<h2>Your Shopping Cart</h2>
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success">@TempData["Success"]</div>
+}
+
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger">@TempData["Error"]</div>
+}
+
+@if (!Model.Any())
+{
+    <div class="alert alert-info">
+        <p>Your cart is empty.</p>
+        <a href="@Url.Action("Store")" class="btn btn-primary">Continue Shopping</a>
+    </div>
+}
+else
+{
+    <table class="table table-bordered table-striped">
+        <thead class="table-dark">
+            <tr>
+                <th>Product</th>
+                <th>Unit</th>
+                <th>Price</th>
+                <th>Quantity</th>
+                <th>Total</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in Model)
+            {
+                <tr>
+                    <td>@item.Name</td>
+                    <td>@item.Unit</td>
+                    <td>R@(item.PricePerUnit.ToString("F2"))</td>
+                    <td>@item.Quantity</td>
+                    <td>R@(item.Total.ToString("F2"))</td>
+                    <td>
+                        <a href="@Url.Action("RemoveFromCart", new { productId = item.ProductId })"
+                           class="btn btn-danger btn-sm" title="Remove item">
+                            <i class="fas fa-trash"></i> Remove
+                        </a>
+                    </td>
+                </tr>
+            }
+        </tbody>
+        <tfoot>
+            <tr class="table-active">
+                <td colspan="4" class="text-end"><strong>Grand Total</strong></td>
+                <td colspan="2"><strong>R@(Model.Sum(i => i.Total).ToString("F2"))</strong></td>
+            </tr>
+        </tfoot>
+    </table>
+
+    <div class="d-flex gap-2">
+        <a href="@Url.Action("Store")" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left"></i> Continue Shopping
+        </a>
+        <a href="@Url.Action("ClearCart")" class="btn btn-warning">
+            <i class="fas fa-broom"></i> Clear Cart
+        </a>
+        <a href="@Url.Action("Checkout")" class="btn btn-success btn-lg">
+            <i class="fas fa-credit-card"></i> Checkout
+        </a>
+    </div>
+}

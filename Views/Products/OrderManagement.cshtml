@@ -1,0 +1,503 @@
+﻿@model FarmTrack.Models.Sale
+
+@{
+    ViewBag.Title = "Order Management #" + Model.SaleId;
+}
+
+<div class="container-fluid mt-4">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1><i class="fas fa-cog"></i> Order Management #@Model.SaleId</h1>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="@Url.Action("SalesList")">Sales List</a></li>
+                    <li class="breadcrumb-item active">Order Management</li>
+                </ol>
+            </nav>
+        </div>
+        <div>
+            <a href="@Url.Action("SalesList")" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Back to Sales
+            </a>
+        </div>
+    </div>
+
+    <!-- Order Details -->
+    <div class="row">
+        <div class="col-md-8">
+            <!-- Order Information -->
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="fas fa-info-circle"></i> Order Information</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p><strong>Order Date:</strong> @Model.SaleDate.ToString("f")</p>
+                            <p><strong>Customer:</strong> @Model.CustomerName</p>
+                            <p><strong>Email:</strong> @Model.CustomerEmail</p>
+                            <p><strong>Phone:</strong> @Model.CustomerPhone</p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>Total Amount:</strong> R@Model.TotalAmount.ToString("N2")</p>
+                            <p><strong>Payment Method:</strong> @Model.PaymentMethod</p>
+                            <p><strong>Payment Status:</strong> <span class="badge bg-@(Model.PaymentStatus == "Completed" ? "success" : "warning")">@Model.PaymentStatus</span></p>
+                            <p><strong>Tracking Number:</strong> <code>@Model.TrackingNumber</code></p>
+                        </div>
+                    </div>
+                    <div class="mt-3">
+                        <p><strong>Delivery Address:</strong> @Model.DeliveryAddress</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Order Items -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-boxes"></i> Order Items</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Product</th>
+                                    <th>Quantity</th>
+                                    <th>Price</th>
+                                    <th>Total</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var item in Model.Items)
+                                {
+                                    <tr>
+                                        <td>@item.Product?.Name</td>
+                                        <td>@item.Quantity</td>
+                                        <td>R@item.Price.ToString("N2")</td>
+                                        <td>R@((item.Quantity * item.Price).ToString("N2"))</td>
+                                    </tr>
+                                }
+                            </tbody>
+                            <tfoot>
+                                <tr class="table-active">
+                                    <td colspan="3" class="text-end"><strong>Grand Total:</strong></td>
+                                    <td><strong>R@Model.TotalAmount.ToString("N2")</strong></td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Status History -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-history"></i> Status History</h5>
+                </div>
+                <div class="card-body">
+                    <div class="timeline">
+                        @foreach (var update in Model.OrderStatusUpdates.OrderByDescending(u => u.UpdateTime))
+                        {
+                            <div class="timeline-item">
+                                <div class="timeline-marker"></div>
+                                <div class="timeline-content">
+                                    <h6 class="mb-1">@update.Status</h6>
+                                    <p class="text-muted mb-1">@update.UpdateTime.ToString("f")</p>
+                                    @if (!string.IsNullOrEmpty(update.Notes))
+                                    {
+                                        <p class="mb-0">@update.Notes</p>
+                                    }
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Management Actions -->
+        <div class="col-md-4">
+            <!-- Driver Assignment -->
+            <div class="card mb-4">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0"><i class="fas fa-user-tie"></i> Driver Assignment</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label class="form-label"><strong>Current Driver:</strong></label>
+                        <div>
+                            @if (Model.AssignedDriverId.HasValue)
+                            {
+                                <span class="badge bg-success">@Model.DeliveryDriver</span>
+                                <br>
+                                <small class="text-muted">Vehicle: @Model.VehicleType • @Model.VehicleNumber</small>
+                                <br>
+                                <small class="text-muted">Phone: @Model.DriverPhone</small>
+                                <br>
+                                <small class="text-muted">
+                                    Status:
+                                    <span class="badge bg-@(Model.IsActiveDelivery ? "success" : "secondary")">
+                                        @(Model.IsActiveDelivery ? "ACTIVE DELIVERY" : "ASSIGNED")
+                                    </span>
+                                </small>
+                            }
+                            else
+                            {
+                                <span class="badge bg-warning">Unassigned</span>
+                            }
+                        </div>
+                    </div>
+
+                    <form id="assignDriverForm">
+                        @Html.Hidden("saleId", Model.SaleId)
+                        <div class="mb-3">
+                            <label class="form-label">Assign to Driver:</label>
+                            <select name="driverUserId" class="form-select" id="driverSelect" required>
+                                <option value="">-- Select Driver --</option>
+                                @if (ViewBag.AvailableDrivers != null)
+                                {
+                                    foreach (FarmTrack.Models.User driver in ViewBag.AvailableDrivers)
+                                    {
+                                        <option value="@driver.UserId"
+                                                data-phone="@driver.PhoneNumber"
+                                                data-vehicle="@driver.VehicleType"
+                                                data-plate="@driver.VehicleNumber">
+                                            @driver.FullName
+                                            @if (!string.IsNullOrEmpty(driver.VehicleType))
+                                            {
+                                                <text> - @driver.VehicleType</text>
+                                            }
+                                            @if (driver.IsOnlineAsDriver)
+                                            {
+                                                <text> (🟢 Online)</text>
+                                            }
+                                        </option>
+                                    }
+                                }
+                                else
+                                {
+                                    <option value="" disabled>No drivers available</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Driver Phone:</label>
+                            <input type="text" name="driverPhone" class="form-control" id="driverPhoneDisplay" readonly placeholder="Select a driver to see phone number">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Vehicle Info:</label>
+                            <input type="text" class="form-control" id="vehicleInfoDisplay" readonly placeholder="Select a driver to see vehicle info">
+                        </div>
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-success">
+                                <i class="fas fa-user-plus"></i> Assign Driver
+                            </button>
+                            @if (Model.AssignedDriverId.HasValue)
+                            {
+                                <button type="button" class="btn btn-danger" onclick="unassignDriver()">
+                                    <i class="fas fa-user-times"></i> Unassign Driver
+                                </button>
+                                <a href="@Url.Action("LiveTrackingMap", new { id = Model.SaleId })"
+                                   class="btn btn-info" target="_blank">
+                                    <i class="fas fa-map-marked-alt"></i> View Live Tracking
+                                </a>
+                            }
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Status Management -->
+            <div class="card mb-4">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0"><i class="fas fa-edit"></i> Status Management</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label class="form-label"><strong>Current Status:</strong></label>
+                        <div>
+                            <span class="badge bg-@GetStatusBadgeColor(Model.Status) fs-6">@Model.Status</span>
+                        </div>
+                    </div>
+
+                    <form id="statusForm">
+                        @Html.Hidden("saleId", Model.SaleId)
+                        <div class="mb-3">
+                            <label class="form-label">Update Status:</label>
+                            <select name="status" class="form-select" required>
+                                <option value="Pending" @(Model.Status == "Pending" ? "selected" : "")>Pending</option>
+                                <option value="Confirmed" @(Model.Status == "Confirmed" ? "selected" : "")>Confirmed</option>
+                                <option value="Assigned to Driver" @(Model.Status == "Assigned to Driver" ? "selected" : "")>Assigned to Driver</option>
+                                <option value="Out for Delivery" @(Model.Status == "Out for Delivery" ? "selected" : "")>Out for Delivery</option>
+                                <option value="Delivered" @(Model.Status == "Delivered" ? "selected" : "")>Delivered</option>
+                                <option value="Cancelled" @(Model.Status == "Cancelled" ? "selected" : "")>Cancelled</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Notes:</label>
+                            <textarea name="notes" class="form-control" rows="3" placeholder="Add update notes..."></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100">
+                            <i class="fas fa-save"></i> Update Status
+                        </button>
+                    </form>
+
+                    <!-- Quick Status Buttons -->
+                    <div class="mt-3">
+                        <label class="form-label">Quick Actions:</label>
+                        <div class="d-grid gap-2">
+                            <button type="button" class="btn btn-sm btn-outline-info" onclick="quickUpdateStatus('Confirmed')">
+                                <i class="fas fa-check"></i> Confirm Order
+                            </button>
+                            <button type="button" class="btn btn-sm btn-outline-primary" onclick="quickUpdateStatus('Out for Delivery')">
+                                <i class="fas fa-shipping-fast"></i> Start Delivery
+                            </button>
+                            <button type="button" class="btn btn-sm btn-outline-success" onclick="quickUpdateStatus('Delivered')">
+                                <i class="fas fa-flag-checkered"></i> Mark Delivered
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-bolt"></i> Quick Actions</h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a href="mailto:@Model.CustomerEmail?subject=Order @Model.SaleId Update"
+                           class="btn btn-outline-primary">
+                            <i class="fas fa-envelope"></i> Email Customer
+                        </a>
+                        <a href="@Url.Action("LiveTrackingMap", new { id = Model.SaleId })"
+                           class="btn btn-outline-success" target="_blank">
+                            <i class="fas fa-shipping-fast"></i> View Live Tracking
+                        </a>
+                        <button class="btn btn-outline-info" onclick="window.print()">
+                            <i class="fas fa-print"></i> Print Order Details
+                        </button>
+                        @if (Model.PaymentStatus != "Completed")
+                        {
+                            <button class="btn btn-outline-warning" onclick="markAsPaid(@Model.SaleId)">
+                                <i class="fas fa-check-circle"></i> Mark as Paid
+                            </button>
+                        }
+                        <a href="@Url.Action("DeliveryDashboard")" class="btn btn-outline-dark">
+                            <i class="fas fa-truck"></i> Delivery Dashboard
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Update driver info when selection changes
+        $('#driverSelect').change(function() {
+            const selectedOption = $(this).find('option:selected');
+            const phone = selectedOption.data('phone') || 'Not provided';
+            const vehicle = selectedOption.data('vehicle') || 'Not specified';
+            const plate = selectedOption.data('plate') || '';
+
+            $('#driverPhoneDisplay').val(phone);
+            $('#vehicleInfoDisplay').val(vehicle && plate ? `${vehicle} • ${plate}` : 'Not specified');
+        });
+
+        // Assign driver form submission
+        $('#assignDriverForm').submit(function(e) {
+            e.preventDefault();
+
+            const driverId = $('#driverSelect').val();
+            if (!driverId) {
+                alert('Please select a driver first.');
+                return;
+            }
+
+            const formData = $(this).serialize();
+
+            $.post('@Url.Action("AssignDriverToDelivery", "Products")', formData)
+                .done(function(response) {
+                    if (response.success) {
+                        alert(response.message);
+                        location.reload();
+                    } else {
+                        alert('Error: ' + response.message);
+                    }
+                })
+                .fail(function() {
+                    alert('Error assigning driver. Please try again.');
+                });
+        });
+
+        // Unassign driver
+        function unassignDriver() {
+            if (!confirm('Are you sure you want to unassign the driver from this delivery?')) return;
+
+            $.post('@Url.Action("UnassignDriver", "Products")', { saleId: @Model.SaleId })
+                .done(function(response) {
+                    if (response.success) {
+                        alert(response.message);
+                        location.reload();
+                    } else {
+                        alert('Error: ' + response.message);
+                    }
+                });
+        }
+
+        // Status form submission
+        $('#statusForm').submit(function(e) {
+            e.preventDefault();
+
+            var formData = $(this).serialize();
+
+            $.post('@Url.Action("UpdateOrderStatus", "Products")', formData, function(response) {
+                if (response.success) {
+                    location.reload();
+                } else {
+                    alert('Error: ' + response.message);
+                }
+            });
+        });
+
+        // Quick status update
+        function quickUpdateStatus(status) {
+            if (confirm(`Update order status to "${status}"?`)) {
+                $.post('@Url.Action("UpdateOrderStatus", "Products")', {
+                    saleId: @Model.SaleId,
+                    status: status,
+                    notes: 'Quick status update by admin'
+                }, function(response) {
+                    if (response.success) {
+                        location.reload();
+                    } else {
+                        alert('Error: ' + response.message);
+                    }
+                });
+            }
+        }
+
+        // Mark as paid function
+        function markAsPaid(orderId) {
+            if (confirm('Mark this order as paid?')) {
+                $.post('@Url.Action("UpdatePaymentStatus", "Products")', {
+                    saleId: orderId,
+                    paymentStatus: 'Completed'
+                }, function(response) {
+                    if (response.success) {
+                        location.reload();
+                    } else {
+                        alert('Error: ' + response.message);
+                    }
+                });
+            }
+        }
+
+        // Auto-refresh page every 30 seconds to show driver status
+        setInterval(function() {
+            $.get('@Url.Action("GetOrderStatus", "Products")', { saleId: @Model.SaleId })
+                .done(function(data) {
+                    if (data.currentStatus === 'Delivered') {
+                        location.reload();
+                    }
+                });
+        }, 30000);
+
+        // Initialize driver dropdown if there's a current driver
+        $(document).ready(function() {
+            // If there's a current driver, select them in the dropdown
+            @if (Model.AssignedDriverId.HasValue)
+            {
+                <text>
+                $('#driverSelect').val('@Model.AssignedDriverId');
+                $('#driverSelect').trigger('change');
+                </text>
+            }
+
+            // Add some styling to make it look better
+            $('.card').addClass('shadow-sm');
+        });
+    </script>
+
+    <style>
+        .timeline {
+            position: relative;
+            padding-left: 30px;
+        }
+
+        .timeline-item {
+            position: relative;
+            margin-bottom: 20px;
+        }
+
+        .timeline-marker {
+            position: absolute;
+            left: -30px;
+            top: 5px;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background-color: #007bff;
+            border: 2px solid white;
+            box-shadow: 0 0 0 3px #007bff;
+        }
+
+        .timeline-content {
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 5px;
+            border-left: 3px solid #007bff;
+        }
+
+        .card {
+            transition: transform 0.2s ease-in-out;
+        }
+
+            .card:hover {
+                transform: translateY(-2px);
+            }
+
+        .btn-group-sm .btn {
+            padding: 0.25rem 0.5rem;
+            font-size: 0.875rem;
+        }
+
+        /* Responsive design */
+        @@media (max-width: 768px) {
+            .d-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .btn-group {
+                flex-direction: column;
+            }
+        }
+    </style>
+}
+
+@functions {
+    public string GetStatusBadgeColor(string status)
+    {
+        switch (status)
+        {
+            case "Pending":
+                return "warning";
+            case "Confirmed":
+                return "info";
+            case "Assigned to Driver":
+                return "primary";
+            case "Out for Delivery":
+                return "success";
+            case "Delivered":
+                return "secondary";
+            case "Cancelled":
+                return "danger";
+            default:
+                return "secondary";
+        }
+    }
+}

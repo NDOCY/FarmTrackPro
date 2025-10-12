@@ -68,6 +68,9 @@
       <HintPath>packages\Microsoft.Bcl.AsyncInterfaces.6.0.0\lib\net461\Microsoft.Bcl.AsyncInterfaces.dll</HintPath>
     </Reference>
     <Reference Include="Microsoft.CSharp" />
+    <Reference Include="Newtonsoft.Json, Version=13.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
+      <HintPath>packages\Newtonsoft.Json.13.0.4\lib\net45\Newtonsoft.Json.dll</HintPath>
+    </Reference>
     <Reference Include="PresentationCore" />
     <Reference Include="PresentationFramework" />
     <Reference Include="QRCoder, Version=1.6.0.0, Culture=neutral, PublicKeyToken=c4ed5b9ae8358a28, processorArchitecture=MSIL">
@@ -163,9 +166,6 @@
       <Private>True</Private>
       <HintPath>packages\Microsoft.AspNet.WebPages.3.2.9\lib\net45\System.Web.WebPages.Razor.dll</HintPath>
     </Reference>
-    <Reference Include="Newtonsoft.Json">
-      <HintPath>packages\Newtonsoft.Json.13.0.3\lib\net45\Newtonsoft.Json.dll</HintPath>
-    </Reference>
     <Reference Include="WebGrease">
       <Private>True</Private>
       <HintPath>packages\WebGrease.1.6.0\lib\WebGrease.dll</HintPath>
@@ -200,6 +200,7 @@
     <Compile Include="Controllers\NotificationController.cs" />
     <Compile Include="Controllers\PlotCropsController.cs" />
     <Compile Include="Controllers\PlotsController.cs" />
+    <Compile Include="Controllers\ProductsController.cs" />
     <Compile Include="Controllers\ReproductionController.cs" />
     <Compile Include="Controllers\SuppliersController.cs" />
     <Compile Include="Controllers\TaskController.cs" />
@@ -213,11 +214,17 @@
     <Compile Include="Migrations\202507292325046_InitialCreate.Designer.cs">
       <DependentUpon>202507292325046_InitialCreate.cs</DependentUpon>
     </Compile>
+    <Compile Include="Migrations\202509272308416_AddUserIdToSales.cs" />
+    <Compile Include="Migrations\202509272308416_AddUserIdToSales.Designer.cs">
+      <DependentUpon>202509272308416_AddUserIdToSales.cs</DependentUpon>
+    </Compile>
     <Compile Include="Migrations\Configuration.cs" />
     <Compile Include="Models\Activity.cs" />
     <Compile Include="Models\ActivityLog.cs" />
     <Compile Include="Models\ActivityViewModel.cs" />
     <Compile Include="Models\CareGuideline.cs" />
+    <Compile Include="Models\CartItem.cs" />
+    <Compile Include="Models\CheckoutViewModel.cs" />
     <Compile Include="Models\CompleteHealthCheckViewModel.cs" />
     <Compile Include="Models\Crop.cs" />
     <Compile Include="Models\CropActivity.cs" />
@@ -229,10 +236,20 @@
     <Compile Include="Models\HarvestAnalyticsViewModel.cs" />
     <Compile Include="Models\HarvestOutcome.cs" />
     <Compile Include="Models\HarvestOutcomeViewModel.cs" />
+    <Compile Include="Models\MyOrdersViewModel.cs" />
+    <Compile Include="Models\PaymentRequest.cs" />
     <Compile Include="Models\PlantingTaskViewModel.cs" />
     <Compile Include="Models\Plot.cs" />
     <Compile Include="Models\PlotCrop.cs" />
     <Compile Include="Models\PreparationTask.cs" />
+    <Compile Include="Models\Product.cs" />
+    <Compile Include="Models\Sale.cs" />
+    <Compile Include="Models\SalesListViewModel.cs" />
+    <Compile Include="Models\SendHarvestToProductsViewModel.cs" />
+    <Compile Include="Models\SendInventoryToProductsViewModel.cs" />
+    <Compile Include="Models\SendLivestockToProductsViewModel.cs" />
+    <Compile Include="Models\SendToProductsViewModel.cs" />
+    <Compile Include="Models\StoreViewModel.cs" />
     <Compile Include="Models\Tag.cs" />
     <Compile Include="Models\Veterinarian.cs" />
     <Compile Include="Models\VetViewModel.cs" />
@@ -306,6 +323,9 @@
     <None Include="Properties\PublishProfiles\FarmTrackPro - Web Deploy1.pubxml" />
     <None Include="Properties\PublishProfiles\FarmTrackPro - Web Deploy2.pubxml" />
     <None Include="Properties\PublishProfiles\FarmTrackPro - Web Deploy3.pubxml" />
+    <None Include="Properties\PublishProfiles\FarmTrackProPlus - FTP.pubxml" />
+    <None Include="Properties\PublishProfiles\FarmTrackProPlus - Web Deploy.pubxml" />
+    <None Include="Properties\PublishProfiles\FarmTrackProPlus - Web Deploy1.pubxml" />
     <None Include="Scripts\jquery-3.7.0.intellisense.js" />
     <Content Include="Scripts\jquery-3.7.0.js" />
     <Content Include="Scripts\jquery-3.7.0.min.js" />
@@ -436,6 +456,24 @@
     <Content Include="Views\PlotCrops\_GrowthRecords.cshtml" />
     <Content Include="Views\PlotCrops\LogHarvestOutcome.cshtml" />
     <Content Include="Views\PlotCrops\_HarvestAnalytics.cshtml" />
+    <Content Include="Views\Products\Create.cshtml" />
+    <Content Include="Views\Products\Delete.cshtml" />
+    <Content Include="Views\Products\Details.cshtml" />
+    <Content Include="Views\Products\Edit.cshtml" />
+    <Content Include="Views\Products\Index.cshtml" />
+    <Content Include="Views\PlotCrops\SendToProducts.cshtml" />
+    <Content Include="Views\Inventory\SendToProducts.cshtml" />
+    <Content Include="Views\Livestock\SendToProducts.cshtml" />
+    <Content Include="Views\Products\Store.cshtml" />
+    <Content Include="Views\Products\Cart.cshtml" />
+    <Content Include="Views\Products\Checkout.cshtml" />
+    <Content Include="Views\Products\OrderTracking.cshtml" />
+    <Content Include="Views\Products\OrderTrackingLive.cshtml" />
+    <Content Include="Views\Products\OrderManagement.cshtml" />
+    <Content Include="Views\Products\MyOrders.cshtml" />
+    <Content Include="Views\Products\SalesList.cshtml" />
+    <Content Include="Views\Products\DeliveryDashboard.cshtml" />
+    <Content Include="Views\Products\LiveTrackingMap.cshtml" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="App_Data\" />
@@ -473,6 +511,9 @@
   <ItemGroup>
     <EmbeddedResource Include="Migrations\202507292325046_InitialCreate.resx">
       <DependentUpon>202507292325046_InitialCreate.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Migrations\202509272308416_AddUserIdToSales.resx">
+      <DependentUpon>202509272308416_AddUserIdToSales.cs</DependentUpon>
     </EmbeddedResource>
   </ItemGroup>
   <PropertyGroup>

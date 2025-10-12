@@ -1,693 +1,13 @@
-﻿@*@model FarmTrack.Models.PlotCrop
-    @ushng FarmTrack.Models
-    @using FarmTrack.Helpers
-
-    @{
-        ViewBag.Title = $"{Model.Crop.Name} in Plot: {Model.Plot.Name}";
-    }
-
-    <div class="row">
-        <div class="col-md-4">
-            <!-- Crop Information Card -->
-            <div class="card mb-4">
-                <div class="card-header bg-primary text-white">
-                    <h4>Crop Information</h4>
-                </div>
-                <div class="card-body">
-                    <p><strong>Status:</strong> <span class="badge @GetStatusBadge(Model.Status)">@Model.Status</span></p>
-                    <p><strong>Planted On:</strong> @(Model.DatePlanted?.ToString("d") ?? "Not planted yet")</p>
-                    <p><strong>Expected Maturity:</strong> @(Model.ExpectedMaturityDate?.ToString("d") ?? "N/A")</p>
-                    <p><strong>Days to Maturity:</strong> @GetDaysToMaturity(Model)</p>
-                    <p><strong>Expected Yield:</strong> @Model.ExpectedYield kg/hectare</p>
-
-                    @if (Model.Status == "Preparation")
-                    {
-                        using (Html.BeginForm("StartPlanting", "PlotCrops", FormMethod.Post))
-                        {
-                            @Html.AntiForgeryToken()
-                            <input type="hidden" name="id" value="@Model.Id" />
-                            <button type="submit" class="btn btn-success mt-2">
-                                Start Planting Phase
-                            </button>
-                        }
-                    }
-
-                </div>
-            </div>
-
-            <!-- Activity Section -->
-            <div class="card mb-4">
-                <div class="card-header">
-                    <h4>Activity Log</h4>
-                </div>
-                <div class="card-body">
-                    <div id="activityList">
-                        @Html.Action("ActivityList", new { plotCropId = Model.Id })
-                    </div>
-
-                    <div class="mt-3">
-                        <button class="btn btn-sm btn-primary" data-toggle="modal" data-target="#activityModal">
-                            Add New Activity
-                        </button>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Severity Trends -->
-            @Html.Action("SeverityTrends", new { plotCropId = Model.Id })
-        </div>
-
-        <div class="col-md-8">
-            <div class="card">
-                <div class="card-header">
-                    <ul class="nav nav-tabs card-header-tabs">
-                        <li class="nav-item">
-                            <a class="nav-link active" data-toggle="tab" href="#tasks">Tasks</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" data-toggle="tab" href="#growth">Growth Tracking</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" data-toggle="tab" href="#harvest">Harvest</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" data-toggle="tab" href="#analytics">Analytics</a>
-                        </li>
-                    </ul>
-                </div>
-                <div class="card-body">
-                    <div class="tab-content">
-                        <div class="tab-pane active" id="tasks">
-                            @Html.Action("TaskList", "PlotCrops", new { plotCropId = Model.Id })
-
-                        </div>
-
-                        <div class="tab-pane" id="growth">
-                            @if (Model.Status != "Preparation")
-                            {
-                                @Html.Action("GrowthRecords", "PlotCrops", new { id = Model.Id })
-                            }
-                            else
-                            {
-                                <div class="alert alert-info">
-                                    Growth tracking will be available after planting begins.
-                                </div>
-                            }
-                        </div>
-
-                        <div class="tab-pane" id="harvest">
-                            @if (Model.Status == "Harvested")
-                            {
-                                @Html.Action("HarvestDetails", "PlotCrops", new { id = Model.Id })
-                            }
-                            else if (Model.ExpectedMaturityDate.HasValue && Model.ExpectedMaturityDate.Value <= DateTime.Now)
-                            {
-                                <div class="alert alert-warning">
-                                    <h5>Crop is ready for harvest!</h5>
-                                    @using (Html.BeginForm("StartHarvest", "PlotCrops", FormMethod.Post))
-                                    {
-                                        @Html.AntiForgeryToken()
-                                        <input type="hidden" name="id" value="@Model.Id" />
-                                        <button type="submit" class="btn btn-warning">
-                                            Begin Harvest Process
-                                        </button>
-                                    }
-                                </div>
-                            }
-                            else
-                            {
-                                <div class="alert alert-info">
-                                    @if (Model.ExpectedMaturityDate.HasValue)
-                                    {
-                                        <p>Estimated harvest date: @Model.ExpectedMaturityDate.Value.ToString("d")</p>
-                                        <p>@((Model.ExpectedMaturityDate.Value - DateTime.Now).Days) days remaining</p>
-                                    }
-                                    else
-                                    {
-                                        <p>Harvest information will be available once planting begins.</p>
-                                    }
-                                </div>
-                            }
-                        </div>
-
-                        <div class="tab-pane" id="analytics">
-                            @*@@*Html.Action("CropAnalytics", "PlotCrops", new { id = Model.Id })*@@*
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <!-- Activity Modal -->
-                                <div class="modal fade" id="activityModal" tabindex="-1" role="dialog" aria-labelledby="activityModalLabel">
-                                    <div class="modal-dialog modal-lg" role="document">
-                                        <div class="modal-content">
-                                            <div class="modal-body" id="activityModalBody">
-                                                @Html.Action("ActivityForm", "PlotCrops", new { plotCropId = Model.Id })
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <!-- Helper Functions -->
-                                @functions {
-                                    string GetStatusBadge(string status)
-                                    {
-                                        switch (status)
-                                        {
-                                            case "Preparation": return "bg-secondary";
-                                            case "Planting": return "bg-info";
-                                            case "Growing": return "bg-primary";
-                                            case "Harvested": return "bg-success";
-                                            default: return "bg-light text-dark";
-                                        }
-                                    }
-
-                                    string GetDaysToMaturity(PlotCrop plotCrop)
-                                    {
-                                        if (plotCrop.Status == "Harvested") return "Harvest completed";
-                                        if (!plotCrop.ExpectedMaturityDate.HasValue) return "N/A";
-
-                                        var days = (plotCrop.ExpectedMaturityDate.Value - DateTime.Now).Days;
-                                        return days > 0 ? $"{days} days" : "Ready for harvest";
-                                    }
-                                }
-
-                                @section Styles {
-                                    <style>
-                                        .activity-feed {
-                                            max-height: 300px;
-                                            overflow-y: auto;
-                                        }
-
-                                        .activity-item {
-                                            border-left: 3px solid #6c757d;
-                                        }
-
-                                        .badge {
-                                            font-size: 0.9em;
-                                            padding: 0.35em 0.65em;
-                                        }
-                                    </style>
-                                }
-
-                                @section Scripts {
-                                    <script>
-                                        $(function() {
-                                            // Refresh activity list every 30 seconds
-                                            setInterval(function() {
-                                                $('#activityList').load('@Url.Action("ActivityList", new { plotCropId = Model.Id })');
-                                                $('#activityStats').load('@Url.Action("ActivityStats", new { plotCropId = Model.Id })');
-                                            }, 30000);
-
-                                            // Handle activity modal form submission
-                                            $(document).on('submit', '#activityForm', function(e) {
-                                                e.preventDefault();
-                                                var formData = new FormData(this);
-
-                                                $.ajax({
-                                                    url: $(this).attr('action'),
-                                                    type: 'POST',
-                                                    data: formData,
-                                                    processData: false,
-                                                    contentType: false,
-                                                    success: function(response) {
-                                                        if (response.success) {
-                                                            $('#activityModal').modal('hide');
-                                                            $('#activityList').load('@Url.Action("ActivityList", new { plotCropId = Model.Id })');
-                                                            $('#activityStats').load('@Url.Action("ActivityStats", new { plotCropId = Model.Id })');
-                                                        } else {
-                                                            $('#activityModalBody').html(response);
-                                                        }
-                                                    }
-                                                });
-                                            });
-
-                                            // Initialize tab functionality
-                                            $('.nav-tabs a').click(function(e) {
-                                                e.preventDefault();
-                                                $(this).tab('show');
-                                            });
-                                        });
-                                    </script>
-                                }*@
-                            @*
-                                                            @model FarmTrack.Models.PlotCrop
-                                                            @using FarmTrack.Models
-                                                            @using FarmTrack.Helpers
-
-                                                            @{
-                                                                ViewBag.Title = $"{Model.Crop.Name} in Plot: {Model.Plot.Name}";
-                                                            }
-
-                                                            <div class="row">
-                                                                <div class="col-md-4">
-                                                                    <!-- Crop Information Card -->
-                                                                    <div class="card mb-4">
-                                                                        <div class="card-header bg-primary text-white">
-                                                                            <h4>Crop Information</h4>
-                                                                        </div>
-                                                                        <div class="card-body">
-                                                                            <p><strong>Status:</strong> <span class="badge @GetStatusBadge(Model.Status)">@Model.Status</span></p>
-                                                                            <p><strong>Planted On:</strong> @(Model.DatePlanted?.ToString("d") ?? "Not planted yet")</p>
-                                                                            <p><strong>Expected Maturity:</strong> @(Model.ExpectedMaturityDate?.ToString("d") ?? "N/A")</p>
-                                                                            <p><strong>Days to Maturity:</strong> @GetDaysToMaturity(Model)</p>
-                                                                            <p><strong>Expected Yield:</strong> @Model.ExpectedYield kg/hectare</p>
-
-                                                                            @if (Model.Status == "Preparation")
-                                                                            {
-                                                                                using (Html.BeginForm("StartPlanting", "PlotCrops", FormMethod.Post))
-                                                                                {
-                                                                                    @Html.AntiForgeryToken()
-                                                                                    <input type="hidden" name="id" value="@Model.Id" />
-                                                                                    <button type="submit" class="btn btn-success mt-2">
-                                                                                        Start Planting Phase
-                                                                                    </button>
-                                                                                }
-                                                                            }
-
-                                                                        </div>
-                                                                    </div>
-
-                                                                    <!-- Activity Section -->
-                                                                    <div class="card mb-4">
-                                                                        <div class="card-header">
-                                                                            <h4>Activity Log</h4>
-                                                                        </div>
-                                                                        <div class="card-body">
-                                                                            <div id="activityList">
-                                                                                @Html.Action("ActivityList", new { plotCropId = Model.Id })
-                                                                            </div>
-
-                                                                            <div class="mt-3">
-                                                                                <button class="btn btn-sm btn-primary" data-toggle="modal" data-target="#activityModal">
-                                                                                    Add New Activity
-                                                                                </button>
-                                                                            </div>
-                                                                        </div>
-                                                                    </div>
-
-                                                                    <!-- Severity Trends -->
-                                                                    @Html.Action("SeverityTrends", new { plotCropId = Model.Id })
-                                                                </div>
-
-                                                                <div class="col-md-8">
-                                                                    <div class="card">
-                                                                        <div class="card-header">
-                                                                            <ul class="nav nav-tabs card-header-tabs">
-                                                                                <li class="nav-item">
-                                                                                    <a class="nav-link active" data-toggle="tab" href="#tasks">Tasks</a>
-                                                                                </li>
-                                                                                <li class="nav-item">
-                                                                                    <a class="nav-link" data-toggle="tab" href="#growth">Growth Tracking</a>
-                                                                                </li>
-                                                                                <li class="nav-item">
-                                                                                    <a class="nav-link" data-toggle="tab" href="#harvest">Harvest</a>
-                                                                                </li>
-                                                                                <li class="nav-item">
-                                                                                    <a class="nav-link" data-toggle="tab" href="#analytics">Analytics</a>
-                                                                                </li>
-                                                                            </ul>
-                                                                        </div>
-                                                                        <div class="card-body">
-                                                                            <div class="tab-content">
-                                                                                <div class="tab-pane active" id="tasks">
-                                                                                    @Html.Action("TaskList", "PlotCrops", new { plotCropId = Model.Id })
-
-                                                                                </div>
-
-                                                                                <div class="tab-pane" id="growth">
-                                                                                    @if (Model.Status != "Preparation")
-                                                                                    {
-                                                                                        @Html.Action("GrowthRecords", "PlotCrops", new { id = Model.Id })
-                                                                                    }
-                                                                                    else
-                                                                                    {
-                                                                                        <div class="alert alert-info">
-                                                                                            Growth tracking will be available after planting begins.
-                                                                                        </div>
-                                                                                    }
-                                                                                </div>
-
-                                                                                <div class="tab-pane" id="harvest">
-                                                                                    @if (Model.Status == "Harvested")
-                                                                                    {
-                                                                                        @Html.Action("HarvestDetails", "PlotCrops", new { id = Model.Id })
-                                                                                    }
-                                                                                    else if (Model.ExpectedMaturityDate.HasValue && Model.ExpectedMaturityDate.Value <= DateTime.Now)
-                                                                                    {
-                                                                                        <div class="alert alert-warning">
-                                                                                            <h5>Crop is ready for harvest!</h5>
-                                                                                            @using (Html.BeginForm("StartHarvest", "PlotCrops", FormMethod.Post))
-                                                                                            {
-                                                                                                @Html.AntiForgeryToken()
-                                                                                                <input type="hidden" name="id" value="@Model.Id" />
-                                                                                                <button type="submit" class="btn btn-warning">
-                                                                                                    Begin Harvest Process
-                                                                                                </button>
-                                                                                            }
-                                                                                        </div>
-                                                                                    }
-                                                                                    else
-                                                                                    {
-                                                                                        <div class="alert alert-info">
-                                                                                            @if (Model.ExpectedMaturityDate.HasValue)
-                                                                                            {
-                                                                                                <p>Estimated harvest date: @Model.ExpectedMaturityDate.Value.ToString("d")</p>
-                                                                                                <p>@((Model.ExpectedMaturityDate.Value - DateTime.Now).Days) days remaining</p>
-                                                                                            }
-                                                                                            else
-                                                                                            {
-                                                                                                <p>Harvest information will be available once planting begins.</p>
-                                                                                            }
-                                                                                        </div>
-                                                                                    }
-                                                                                </div>
-
-                                                                                <div class="tab-pane" id="analytics">
-                                                                                    @Html.Action("CropAnalytics", "PlotCrops", new { id = Model.Id })
-                                                                                </div>
-                                                                            </div>
-                                                                        </div>
-                                                                    </div>
-                                                                </div>
-                                                            </div>
-
-                                                            <!-- Activity Modal -->
-                                                            <div class="modal fade" id="activityModal" tabindex="-1" role="dialog" aria-labelledby="activityModalLabel">
-                                                                <div class="modal-dialog modal-lg" role="document">
-                                                                    <div class="modal-content">
-                                                                        <div class="modal-body" id="activityModalBody">
-                                                                            @Html.Action("ActivityForm", "PlotCrops", new { plotCropId = Model.Id })
-                                                                        </div>
-                                                                    </div>
-                                                                </div>
-                                                            </div>
-                                                            <!-- Replace the modal button with this collapsible form in your dashboard -->
-
-                                                            <div class="card mb-4">
-                                                                <div class="card-header">
-                                                                    <h4>Activity Log</h4>
-                                                                    <button class="btn btn-sm btn-primary float-right" type="button" data-toggle="collapse" data-target="#addActivityForm">
-                                                                        <i class="fas fa-plus"></i> Add Activity
-                                                                    </button>
-                                                                </div>
-                                                                <div class="card-body">
-                                                                    <!-- Collapsible Form -->
-                                                                    <div class="collapse mb-4" id="addActivityForm">
-                                                                        <div class="card card-body bg-light">
-                                                                            @using (Html.BeginForm("AddActivity", "PlotCrops", FormMethod.Post, new { enctype = "multipart/form-data", id = "inlineActivityForm" }))
-                                                                            {
-                                                                                @Html.AntiForgeryToken()
-                                                                                <input type="hidden" name="PlotCropId" value="@Model.Id" />
-
-                                                                                <div class="row">
-                                                                                    <div class="col-md-6">
-                                                                                        <div class="form-group">
-                                                                                            <label>Activity Type</label>
-                                                                                            <select name="ActivityType" class="form-control" id="inlineActivityType" required>
-                                                                                                <option value="">-- Select Type --</option>
-                                                                                                <option value="Fertilization">Fertilization</option>
-                                                                                                <option value="Pest">Pest Control</option>
-                                                                                                <option value="Disease">Disease Treatment</option>
-                                                                                                <option value="Weeding">Weeding</option>
-                                                                                                <option value="GrowthRecording">Growth Recording</option>
-                                                                                                <option value="Irrigation">Irrigation</option>
-                                                                                                <option value="Pruning">Pruning</option>
-                                                                                                <option value="Other">Other</option>
-                                                                                            </select>
-                                                                                        </div>
-                                                                                    </div>
-                                                                                    <div class="col-md-6">
-                                                                                        <div class="form-group">
-                                                                                            <label>Date & Time</label>
-                                                                                            <input type="datetime-local" name="ActivityDate" class="form-control"
-                                                                                                   value="@DateTime.Now.ToString("yyyy-MM-ddTHH:mm")" required />
-                                                                                        </div>
-                                                                                    </div>
-                                                                                </div>
-
-                                                                                <div class="form-group">
-                                                                                    <label>Description</label>
-                                                                                    <input type="text" name="Description" class="form-control" required />
-                                                                                </div>
-
-                                                                                <!-- Fertilization Fields -->
-                                                                                <div id="inlineFertilizationFields" class="conditional-section" style="display:none;">
-                                                                                    <div class="border rounded p-3 mb-3 bg-white">
-                                                                                        <h6 class="text-success">Fertilization Details</h6>
-                                                                                        <div class="row">
-                                                                                            <div class="col-md-4">
-                                                                                                <label>Product Name</label>
-                                                                                                <input type="text" name="ProductName" class="form-control" />
-                                                                                            </div>
-                                                                                            <div class="col-md-4">
-                                                                                                <label>Amount Used</label>
-                                                                                                <input type="number" step="0.1" name="AmountUsed" class="form-control" />
-                                                                                            </div>
-                                                                                            <div class="col-md-4">
-                                                                                                <label>Unit</label>
-                                                                                                <input type="text" name="Unit" class="form-control" placeholder="kg, ml, etc." />
-                                                                                            </div>
-                                                                                        </div>
-                                                                                    </div>
-                                                                                </div>
-
-                                                                                <!-- Pest/Disease Fields -->
-                                                                                <div id="inlinePestDiseaseFields" class="conditional-section" style="display:none;">
-                                                                                    <div class="border rounded p-3 mb-3 bg-white">
-                                                                                        <h6 class="text-warning">Pest/Disease Details</h6>
-                                                                                        <div class="row">
-                                                                                            <div class="col-md-6">
-                                                                                                <label>Severity</label>
-                                                                                                <select name="Severity" class="form-control">
-                                                                                                    <option value="">-- Select Severity --</option>
-                                                                                                    <option value="Low">Low</option>
-                                                                                                    <option value="Medium">Medium</option>
-                                                                                                    <option value="High">High</option>
-                                                                                                    <option value="Critical">Critical</option>
-                                                                                                </select>
-                                                                                            </div>
-                                                                                            <div class="col-md-6">
-                                                                                                <label>Treatment Used</label>
-                                                                                                <input type="text" name="ProductName" class="form-control" />
-                                                                                            </div>
-                                                                                        </div>
-                                                                                    </div>
-                                                                                </div>
-
-                                                                                <!-- Growth Fields -->
-                                                                                <div id="inlineGrowthFields" class="conditional-section" style="display:none;">
-                                                                                    <div class="border rounded p-3 mb-3 bg-white">
-                                                                                        <h6 class="text-info">Growth Recording</h6>
-                                                                                        <div class="row">
-                                                                                            <div class="col-md-6">
-                                                                                                <label>Growth Stage</label>
-                                                                                                <select name="GrowthStage" class="form-control">
-                                                                                                    <option value="">-- Select Stage --</option>
-                                                                                                    <option value="Seedling">Seedling</option>
-                                                                                                    <option value="Vegetative">Vegetative</option>
-                                                                                                    <option value="Flowering">Flowering</option>
-                                                                                                    <option value="Fruiting">Fruiting</option>
-                                                                                                    <option value="Mature">Mature</option>
-                                                                                                </select>
-                                                                                            </div>
-                                                                                            <div class="col-md-6">
-                                                                                                <label>Measurement</label>
-                                                                                                <input type="number" step="0.1" name="MeasurementValue" class="form-control" placeholder="cm or kg" />
-                                                                                            </div>
-                                                                                        </div>
-                                                                                    </div>
-                                                                                </div>
-
-                                                                                <div class="row">
-                                                                                    <div class="col-md-6">
-                                                                                        <div class="form-group">
-                                                                                            <label>Photo</label>
-                                                                                            <input type="file" name="ImageFile" class="form-control-file" accept="image/*" />
-                                                                                        </div>
-                                                                                    </div>
-                                                                                    <div class="col-md-6">
-                                                                                        <div class="form-group">
-                                                                                            <label>Notes</label>
-                                                                                            <textarea name="Notes" class="form-control" rows="2"></textarea>
-                                                                                        </div>
-                                                                                    </div>
-                                                                                </div>
-
-                                                                                <div class="form-group">
-                                                                                    <button type="submit" class="btn btn-success">
-                                                                                        <i class="fas fa-save"></i> Save Activity
-                                                                                    </button>
-                                                                                    <button type="button" class="btn btn-secondary ml-2" data-toggle="collapse" data-target="#addActivityForm">
-                                                                                        Cancel
-                                                                                    </button>
-                                                                                </div>
-                                                                            }
-                                                                        </div>
-                                                                    </div>
-
-                                                                    <!-- Activity List -->
-                                                                    <div id="activityList">
-                                                                        @Html.Action("ActivityList", new { plotCropId = Model.Id })
-                                                                    </div>
-                                                                </div>
-                                                            </div>
-
-                                                            <script>
-                                $(document).ready(function() {
-                                    // Simple, straightforward event handling
-                                    $('#inlineActivityType').on('change', function() {
-                                        var type = $(this).val();
-
-                                        // Hide all conditional sections
-                                        $('.conditional-section').hide();
-
-                                        // Clear all conditional fields
-                                        $('.conditional-section input').val('');
-                                        $('.conditional-section select').val('');
-
-                                        // Show relevant section
-                                        switch(type) {
-                                            case 'Fertilization':
-                                                $('#inlineFertilizationFields').show();
-                                                break;
-                                            case 'Pest':
-                                            case 'Disease':
-                                                $('#inlinePestDiseaseFields').show();
-                                                break;
-                                            case 'GrowthRecording':
-                                                $('#inlineGrowthFields').show();
-                                                break;
-                                        }
-                                    });
-
-                                    // Form submission
-                                    $('#inlineActivityForm').on('submit', function(e) {
-                                        e.preventDefault();
-
-                                        var formData = new FormData(this);
-
-                                        $.ajax({
-                                            url: $(this).attr('action'),
-                                            type: 'POST',
-                                            data: formData,
-                                            processData: false,
-                                            contentType: false,
-                                            success: function(response) {
-                                                if (response.success) {
-                                                    // Reset form and hide it
-                                                    $('#inlineActivityForm')[0].reset();
-                                                    $('#addActivityForm').collapse('hide');
-
-                                                    // Refresh activity list
-                                                    $('#activityList').load('@Url.Action("ActivityList", "PlotCrops", new { plotCropId = Model.Id })');
-
-                                                    alert('Activity saved successfully!');
-                                                } else {
-                                                    alert('Error saving activity. Please check your inputs.');
-                                                }
-                                            },
-                                            error: function() {
-                                                alert('Error saving activity. Please try again.');
-                                            }
-                                        });
-                                    });
-                                });
-                                                            </script>
-
-                                                            <!-- Helper Functions -->
-                                                            @functions {
-                                                                string GetStatusBadge(string status)
-                                                                {
-                                                                    switch (status)
-                                                                    {
-                                                                        case "Preparation": return "bg-secondary";
-                                                                        case "Planting": return "bg-info";
-                                                                        case "Growing": return "bg-primary";
-                                                                        case "Harvested": return "bg-success";
-                                                                        default: return "bg-light text-dark";
-                                                                    }
-                                                                }
-
-                                                                string GetDaysToMaturity(PlotCrop plotCrop)
-                                                                {
-                                                                    if (plotCrop.Status == "Harvested") return "Harvest completed";
-                                                                    if (!plotCrop.ExpectedMaturityDate.HasValue) return "N/A";
-
-                                                                    var days = (plotCrop.ExpectedMaturityDate.Value - DateTime.Now).Days;
-                                                                    return days > 0 ? $"{days} days" : "Ready for harvest";
-                                                                }
-                                                            }
-
-                                                            @section Styles {
-                                                                <style>
-                                                                    .activity-feed {
-                                                                        max-height: 300px;
-                                                                        overflow-y: auto;
-                                                                    }
-
-                                                                    .activity-item {
-                                                                        border-left: 3px solid #6c757d;
-                                                                    }
-
-                                                                    .badge {
-                                                                        font-size: 0.9em;
-                                                                        padding: 0.35em 0.65em;
-                                                                    }
-                                                                </style>
-                                                            }
-
-                                                            @section Scripts {
-                                                                <script>
-                                        $(function() {
-                                            // Refresh activity list every 30 seconds
-                                            setInterval(function() {
-                                                $('#activityList').load('@Url.Action("ActivityList", new { plotCropId = Model.Id })');
-                                                $('#activityStats').load('@Url.Action("ActivityStats", new { plotCropId = Model.Id })');
-                                            }, 30000);
-
-                                            // Handle activity modal form submission
-                                            $(document).on('submit', '#activityForm', function(e) {
-                                                e.preventDefault();
-                                                var formData = new FormData(this);
-
-                                                $.ajax({
-                                                    url: $(this).attr('action'),
-                                                    type: 'POST',
-                                                    data: formData,
-                                                    processData: false,
-                                                    contentType: false,
-                                                    success: function(response) {
-                                                        if (response.success) {
-                                                            $('#activityModal').modal('hide');
-                                                            $('#activityList').load('@Url.Action("ActivityList", new { plotCropId = Model.Id })');
-                                                            $('#activityStats').load('@Url.Action("ActivityStats", new { plotCropId = Model.Id })');
-                                                        } else {
-                                                            $('#activityModalBody').html(response);
-                                                        }
-                                                    }
-                                                });
-                                            });
-
-                                            // Initialize tab functionality
-                                            $('.nav-tabs a').click(function(e) {
-                                                e.preventDefault();
-                                                $(this).tab('show');
-                                            });
-                                        });
-                                                                </script>
-                                                            }*@
-                            @model FarmTrack.Models.PlotCrop
-                            @using FarmTrack.Models
-                            @using FarmTrack.Helpers
-
-                            @{
-                                ViewBag.Title = $"{Model.Crop.Name} in Plot: {Model.Plot.Name}";
-                            }
-
-                            <style>
+﻿@*
+@model FarmTrack.Models.PlotCrop
+@using FarmTrack.Models
+@using FarmTrack.Helpers
+
+@{
+    ViewBag.Title = $"{Model.Crop.Name} in Plot: {Model.Plot.Name}";
+}*@
+
+<style>
     /* Custom Color Scheme */
     :root {
         --color-earth: #8B7355; /* Primary */
@@ -941,14 +261,14 @@
         border-left: 5px solid var(--color-orange);
     }
 
-        .alert h5 {
-            color: var(--color-soil);
-            font-weight: 700;
-            margin-bottom: 10px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
+    .alert h5 {
+        color: var(--color-soil);
+        font-weight: 700;
+        margin-bottom: 10px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
 
     /* Activity Section */
     #activityFormContainer {
@@ -988,9 +308,9 @@
             padding: 20px;
         }
 
-        .page-header h1 {
-            font-size: 1.5rem;
-        }
+            .page-header h1 {
+                font-size: 1.5rem;
+            }
 
         .card-body {
             padding: 20px;
@@ -1016,217 +336,1158 @@
     .fas, .fa {
         margin-right: 5px;
     }
-                            </style>
 
-                            <!-- Page Header -->
-                            <div class="page-header">
-                                <h1><i class="fas fa-seedling"></i>@Model.Crop.Name in Plot: @Model.Plot.Name</h1>
-                                <p>Monitor and manage crop cultivation activities and progress</p>
+    /* Add this to your existing CSS - Scrollable Activity List */
+    #activityList {
+        max-height: 400px;
+        overflow-y: auto;
+        border: 1px solid var(--color-wheat);
+        border-radius: 8px;
+        padding: 10px;
+        background-color: #fafafa;
+    }
+
+        #activityList::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        #activityList::-webkit-scrollbar-track {
+            background: var(--color-light-earth);
+            border-radius: 3px;
+        }
+
+        #activityList::-webkit-scrollbar-thumb {
+            background: var(--color-earth);
+            border-radius: 3px;
+        }
+
+            #activityList::-webkit-scrollbar-thumb:hover {
+                background: var(--color-soil);
+            }
+
+    /* Severity Trends Card Styling */
+    .severity-trends-card {
+        background-color: white;
+        border-radius: 12px;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+        border: none;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+        overflow: hidden;
+        margin-bottom: 25px;
+    }
+
+        .severity-trends-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.12);
+        }
+
+        .severity-trends-card .card-header {
+            background: linear-gradient(135deg, var(--color-earth), var(--color-soil));
+            color: var(--color-white);
+            padding: 20px;
+            border-bottom: none;
+            font-weight: 600;
+            font-size: 1.1rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+            .severity-trends-card .card-header h5 {
+                margin: 0;
+                font-size: 1.1rem;
+                font-weight: 600;
+                color: var(--color-white);
+            }
+
+        .severity-trends-card .card-body {
+            padding: 25px;
+        }
+
+    /* Task List Table Styling */
+    .task-table {
+        background-color: white;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+    }
+
+        .task-table thead {
+            background: linear-gradient(135deg, var(--color-earth), var(--color-soil));
+        }
+
+            .task-table thead th {
+                color: var(--color-white);
+                font-weight: 600;
+                padding: 15px 12px;
+                border: none;
+                font-size: 0.9rem;
+            }
+
+        .task-table tbody td {
+            padding: 12px;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+            vertical-align: middle;
+        }
+
+        .task-table tbody tr:hover {
+            background-color: var(--color-light-earth);
+        }
+
+        .task-table tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+    /* Task Action Buttons */
+    .task-action-btn {
+        padding: 6px 12px;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-decoration: none;
+        display: inline-block;
+        margin-right: 5px;
+        transition: all 0.3s ease;
+        border: 2px solid transparent;
+    }
+
+        .task-action-btn.btn-outline-primary {
+            color: var(--color-earth);
+            border-color: var(--color-earth);
+            background-color: transparent;
+        }
+
+            .task-action-btn.btn-outline-primary:hover {
+                background-color: var(--color-earth);
+                color: white;
+                text-decoration: none;
+            }
+
+        .task-action-btn.btn-outline-success {
+            color: var(--color-foliage);
+            border-color: var(--color-foliage);
+            background-color: transparent;
+        }
+
+            .task-action-btn.btn-outline-success:hover {
+                background-color: var(--color-foliage);
+                color: white;
+                text-decoration: none;
+            }
+
+    /* Growth Tracking Styling */
+    .growth-section {
+        background-color: white;
+        padding: 25px;
+        border-radius: 12px;
+    }
+
+        .growth-section h5 {
+            color: var(--color-soil);
+            font-weight: 700;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+    .growth-form {
+        background-color: var(--color-light-foliage);
+        padding: 20px;
+        border-radius: 10px;
+        border-left: 4px solid var(--color-foliage);
+        margin-bottom: 20px;
+    }
+
+    .growth-table {
+        background-color: white;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        border: 1px solid var(--color-wheat);
+    }
+
+        .growth-table thead {
+            background: linear-gradient(135deg, var(--color-foliage), #45a049);
+        }
+
+            .growth-table thead th {
+                color: var(--color-white);
+                font-weight: 600;
+                padding: 12px;
+                border: none;
+                font-size: 0.9rem;
+            }
+
+        .growth-table tbody td {
+            padding: 10px 12px;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+        }
+
+        .growth-table tbody tr:hover {
+            background-color: var(--color-light-foliage);
+        }
+
+    /* Activity Form Styling */
+    .activity-form {
+        background-color: white;
+        padding: 20px;
+        border-radius: 10px;
+    }
+
+        .activity-form .form-group {
+            margin-bottom: 20px;
+        }
+
+        .activity-form label {
+            color: var(--color-soil);
+            font-weight: 600;
+            margin-bottom: 8px;
+            display: block;
+            font-size: 0.9rem;
+        }
+
+        .activity-form .form-control,
+        .activity-form .form-control-file {
+            border: 2px solid var(--color-wheat);
+            border-radius: 8px;
+            padding: 12px 15px;
+            color: var(--color-soil);
+            background-color: white;
+            transition: all 0.3s ease;
+            font-size: 0.9rem;
+        }
+
+            .activity-form .form-control:focus {
+                border-color: var(--color-earth);
+                box-shadow: 0 0 0 3px rgba(139, 115, 85, 0.1);
+                outline: none;
+            }
+
+        .activity-form .form-text {
+            color: #6c757d;
+            font-size: 0.8rem;
+            margin-top: 5px;
+        }
+
+        .activity-form .form-row {
+            display: flex;
+            margin-right: -10px;
+            margin-left: -10px;
+        }
+
+            .activity-form .form-row .form-group {
+                padding-right: 10px;
+                padding-left: 10px;
+            }
+
+        .activity-form .col-md-6 {
+            flex: 0 0 50%;
+            max-width: 50%;
+        }
+
+    /* Activity Fields Styling */
+    .activity-fields {
+        background-color: var(--color-light-earth);
+        padding: 20px;
+        border-radius: 8px;
+        margin-top: 15px;
+        border: 1px solid var(--color-wheat);
+    }
+
+    /* Form Submit Button */
+    .activity-form .btn-primary {
+        background: linear-gradient(135deg, var(--color-foliage), #45a049);
+        color: white;
+        border: none;
+        border-radius: 50px;
+        padding: 12px 25px;
+        font-weight: 600;
+        font-size: 0.9rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 12px rgba(76, 175, 80, 0.3);
+    }
+
+        .activity-form .btn-primary:hover {
+            background: linear-gradient(135deg, #45a049, #3d8b40);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(76, 175, 80, 0.4);
+        }
+
+    /* Growth Form Submit Button */
+    .growth-form .btn-primary {
+        background: linear-gradient(135deg, var(--color-foliage), #45a049);
+        color: white;
+        border: none;
+        border-radius: 50px;
+        padding: 10px 20px;
+        font-weight: 600;
+        font-size: 0.85rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 12px rgba(76, 175, 80, 0.3);
+    }
+
+        .growth-form .btn-primary:hover {
+            background: linear-gradient(135deg, #45a049, #3d8b40);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(76, 175, 80, 0.4);
+        }
+
+    /* Alert Styling for No Data Messages */
+    .no-data-alert {
+        background: linear-gradient(135deg, var(--color-light-foliage), #f1f8e9);
+        color: var(--color-soil);
+        border-left: 5px solid var(--color-foliage);
+        border-radius: 10px;
+        padding: 15px 20px;
+        border: none;
+        margin: 15px 0;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+        .no-data-alert i {
+            color: var(--color-foliage);
+        }
+
+
+
+    /* ===== HARVEST ANALYTICS STYLING ===== */
+
+    /* Analytics Stat Cards */
+    .analytics-stat-card {
+        background: white;
+        border-radius: 12px;
+        padding: 20px;
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+        border: none;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+        height: 100%;
+    }
+
+        .analytics-stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.12);
+        }
+
+        .analytics-stat-card .stat-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            color: white;
+            flex-shrink: 0;
+        }
+
+    .expected-yield .stat-icon {
+        background: linear-gradient(135deg, var(--color-earth), var(--color-soil));
+    }
+
+    .actual-yield .stat-icon {
+        background: linear-gradient(135deg, var(--color-foliage), #45a049);
+    }
+
+    .losses .stat-icon {
+        background: linear-gradient(135deg, var(--color-danger), #e53e3e);
+    }
+
+    .harvest-days .stat-icon {
+        background: linear-gradient(135deg, var(--color-blue), #1976d2);
+    }
+
+    .analytics-stat-card .stat-content {
+        flex-grow: 1;
+    }
+
+    .analytics-stat-card .stat-label {
+        color: #6c757d;
+        font-size: 0.8rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin: 0;
+    }
+
+    .analytics-stat-card .stat-value {
+        color: var(--color-soil);
+        font-size: 1.8rem;
+        font-weight: 700;
+        margin: 5px 0 0 0;
+        line-height: 1;
+    }
+
+        .analytics-stat-card .stat-value .unit {
+            font-size: 1rem;
+            font-weight: 500;
+            color: #6c757d;
+        }
+
+    .analytics-stat-card .stat-percentage {
+        color: #6c757d;
+        font-size: 0.85rem;
+        margin: 2px 0 0 0;
+    }
+
+    /* Analytics Chart Cards */
+    .analytics-chart-card {
+        background-color: white;
+        border-radius: 12px;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+        border: none;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+        overflow: hidden;
+    }
+
+        .analytics-chart-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.12);
+        }
+
+        .analytics-chart-card .card-header {
+            background: linear-gradient(135deg, var(--color-earth), var(--color-soil));
+            color: var(--color-white);
+            padding: 20px;
+            border-bottom: none;
+            font-weight: 600;
+            font-size: 1.1rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+            .analytics-chart-card .card-header h5 {
+                margin: 0;
+                font-size: 1.1rem;
+                font-weight: 600;
+                color: var(--color-white);
+            }
+
+        .analytics-chart-card .card-body {
+            padding: 25px;
+            height: 350px;
+        }
+
+    /* Analytics Notes Card */
+    .analytics-notes-card {
+        background-color: white;
+        border-radius: 12px;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+        border: none;
+        margin-top: 20px;
+    }
+
+        .analytics-notes-card .card-header {
+            background: linear-gradient(135deg, var(--color-orange), #f57c00);
+            color: var(--color-white);
+            padding: 20px;
+            border-bottom: none;
+            font-weight: 600;
+            font-size: 1.1rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+            .analytics-notes-card .card-header h5 {
+                margin: 0;
+                font-size: 1.1rem;
+                font-weight: 600;
+                color: var(--color-white);
+            }
+
+    .loss-reason-content {
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+        padding: 20px;
+    }
+
+        .loss-reason-content i {
+            margin-top: 3px;
+            font-size: 1.1rem;
+        }
+
+        .loss-reason-content p {
+            color: var(--color-soil);
+            line-height: 1.6;
+        }
+
+    /* ===== ACTIVITY FEED STYLING ===== */
+
+    .activity-feed {
+        max-height: 400px;
+        overflow-y: auto;
+        padding: 5px;
+    }
+
+        .activity-feed::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .activity-feed::-webkit-scrollbar-track {
+            background: var(--color-light-earth);
+            border-radius: 3px;
+        }
+
+        .activity-feed::-webkit-scrollbar-thumb {
+            background: var(--color-earth);
+            border-radius: 3px;
+        }
+
+            .activity-feed::-webkit-scrollbar-thumb:hover {
+                background: var(--color-soil);
+            }
+
+    .activity-item {
+        background: white;
+        border: 1px solid var(--color-wheat);
+        border-radius: 10px;
+        padding: 15px;
+        margin-bottom: 15px;
+        transition: all 0.3s ease;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    }
+
+        .activity-item:hover {
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            transform: translateY(-1px);
+        }
+
+        .activity-item:last-child {
+            margin-bottom: 0;
+        }
+
+    .activity-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 10px;
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+
+    .activity-type {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        color: var(--color-soil);
+        font-weight: 600;
+    }
+
+        .activity-type i {
+            color: var(--color-earth);
+            width: 16px;
+        }
+
+    .severity-badge {
+        padding: 3px 8px;
+        border-radius: 12px;
+        font-size: 0.7rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .severity-low {
+        background-color: #d4edda;
+        color: #155724;
+    }
+
+    .severity-medium {
+        background-color: #fff3cd;
+        color: #856404;
+    }
+
+    .severity-high {
+        background-color: #f8d7da;
+        color: #721c24;
+    }
+
+    .severity-critical {
+        background-color: #f5c6cb;
+        color: #721c24;
+    }
+
+    .activity-date {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        color: #6c757d;
+        font-size: 0.85rem;
+    }
+
+        .activity-date i {
+            font-size: 0.8rem;
+        }
+
+    .activity-description {
+        color: var(--color-soil);
+        margin-bottom: 8px;
+        line-height: 1.5;
+    }
+
+    .activity-notes {
+        background-color: var(--color-light-foliage);
+        padding: 10px;
+        border-radius: 6px;
+        margin-bottom: 8px;
+        border-left: 3px solid var(--color-foliage);
+        color: #555;
+        font-size: 0.9rem;
+        display: flex;
+        align-items: flex-start;
+        gap: 8px;
+    }
+
+        .activity-notes i {
+            color: var(--color-foliage);
+            margin-top: 2px;
+        }
+
+    .activity-amount {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        color: var(--color-soil);
+        font-size: 0.9rem;
+        margin-bottom: 8px;
+    }
+
+        .activity-amount i {
+            color: var(--color-earth);
+            width: 16px;
+        }
+
+    .activity-tags {
+        margin-bottom: 8px;
+    }
+
+    .activity-tag {
+        display: inline-block;
+        padding: 4px 10px;
+        border-radius: 15px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: white;
+        margin-right: 5px;
+        margin-bottom: 3px;
+    }
+
+    .activity-image {
+        margin-top: 10px;
+    }
+
+    .activity-thumbnail {
+        max-height: 120px;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: opacity 0.3s ease;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+
+        .activity-thumbnail:hover {
+            opacity: 0.8;
+        }
+
+    .no-activities-message {
+        text-align: center;
+        padding: 40px 20px;
+        color: #6c757d;
+    }
+
+        .no-activities-message i {
+            font-size: 2rem;
+            color: var(--color-wheat);
+            margin-bottom: 15px;
+        }
+
+        .no-activities-message h6 {
+            color: var(--color-soil);
+            margin-bottom: 8px;
+        }
+
+    /* ===== ACTIVITY STATS STYLING ===== */
+
+    .activity-stats-card {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+        overflow: hidden;
+        margin-bottom: 20px;
+    }
+
+    .stats-header {
+        background: linear-gradient(135deg, var(--color-earth), var(--color-soil));
+        color: var(--color-white);
+        padding: 15px 20px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+        .stats-header h6 {
+            margin: 0;
+            font-weight: 600;
+            font-size: 1rem;
+            color: var(--color-white);
+        }
+
+    .stats-content {
+        padding: 20px;
+    }
+
+    .stat-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px 0;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    }
+
+        .stat-item:last-child {
+            border-bottom: none;
+            padding-bottom: 0;
+        }
+
+        .stat-item .stat-icon {
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.9rem;
+            color: white;
+            flex-shrink: 0;
+        }
+
+    .total-activities {
+        background: linear-gradient(135deg, var(--color-earth), var(--color-soil));
+    }
+
+    .pest-reports {
+        background: linear-gradient(135deg, var(--color-danger), #e53e3e);
+    }
+
+    .disease-reports {
+        background: linear-gradient(135deg, var(--color-orange), #f57c00);
+    }
+
+    .fertilization {
+        background: linear-gradient(135deg, var(--color-foliage), #45a049);
+    }
+
+    .stat-details {
+        flex-grow: 1;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .stat-label {
+        color: #6c757d;
+        font-size: 0.85rem;
+        font-weight: 600;
+        margin-bottom: 2px;
+    }
+
+    .stat-value {
+        color: var(--color-soil);
+        font-size: 1.1rem;
+        font-weight: 700;
+    }
+
+    .stat-sub {
+        color: #6c757d;
+        font-size: 0.8rem;
+        margin-top: 2px;
+        font-style: italic;
+    }
+
+    /* Modal Enhancements */
+    .modal-content {
+        border-radius: 12px;
+        border: none;
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+    }
+
+    .modal-header {
+        background: linear-gradient(135deg, var(--color-earth), var(--color-soil));
+        color: white;
+        border-radius: 12px 12px 0 0;
+        border-bottom: none;
+    }
+
+        .modal-header .modal-title {
+            font-weight: 600;
+        }
+
+        .modal-header .close {
+            color: white;
+            opacity: 0.8;
+            text-shadow: none;
+        }
+
+            .modal-header .close:hover {
+                opacity: 1;
+                color: white;
+            }
+
+    .modal-body {
+        padding: 30px;
+    }
+
+    /* Responsive Design for Analytics Cards */
+    @@media (max-width: 768px) {
+        .analytics-stat-card {
+            flex-direction: column;
+            text-align: center;
+            padding: 15px;
+        }
+
+            .analytics-stat-card .stat-icon {
+                margin-bottom: 10px;
+            }
+
+        .analytics-chart-card .card-body {
+            height: 300px;
+            padding: 15px;
+        }
+
+        .activity-header {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .activity-type {
+            margin-bottom: 5px;
+        }
+
+        .stat-item {
+            flex-direction: column;
+            text-align: center;
+            padding: 15px 0;
+        }
+
+            .stat-item .stat-icon {
+                margin-bottom: 8px;
+            }
+    }
+
+    /* Animation for activity items */
+    @@keyframes slideInUp {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .activity-item {
+        animation: slideInUp 0.3s ease-out;
+    }
+
+    /* Loading states */
+    .loading .activity-item {
+        opacity: 0.5;
+        pointer-events: none;
+    }
+
+    /* Success animation for new activities */
+    .activity-item.new-activity {
+        border: 2px solid var(--color-foliage);
+        background: linear-gradient(135deg, rgba(76, 175, 80, 0.1), rgba(76, 175, 80, 0.05));
+    }
+
+        .activity-item.new-activity::before {
+            content: '';
+            position: absolute;
+            top: -2px;
+            left: -2px;
+            right: -2px;
+            bottom: -2px;
+            background: linear-gradient(45deg, var(--color-foliage), var(--color-earth));
+            z-index: -1;
+            border-radius: 10px;
+            opacity: 0.3;
+            animation: pulse 2s infinite;
+        }
+
+    @@keyframes pulse {
+        0% {
+            opacity: 0.3;
+            transform: scale(1);
+        }
+
+        50% {
+            opacity: 0.5;
+            transform: scale(1.02);
+        }
+
+        100% {
+            opacity: 0.3;
+            transform: scale(1);
+        }
+    }
+
+    /* Enhanced scrollbar for better UX */
+    .activity-feed {
+        scrollbar-width: thin;
+        scrollbar-color: var(--color-earth) var(--color-light-earth);
+    }
+
+    /* Focus states for accessibility */
+    .activity-thumbnail:focus,
+    .task-action-btn:focus,
+    .action-button:focus {
+        outline: 3px solid rgba(139, 115, 85, 0.3);
+        outline-offset: 2px;
+    }
+
+    /* Print styles */
+    @@media print {
+        .analytics-stat-card,
+        .analytics-chart-card,
+        .activity-item {
+            box-shadow: none;
+            border: 1px solid #ddd;
+        }
+
+        .activity-feed {
+            max-height: none;
+            overflow: visible;
+        }
+
+        .modal {
+            display: none !important;
+        }
+    }
+</style>
+@*
+<!-- Page Header -->
+<div class="page-header">
+    <h1><i class="fas fa-seedling"></i>@Model.Crop.Name in Plot: @Model.Plot.Name</h1>
+    <p>Monitor and manage crop cultivation activities and progress</p>
+</div>
+
+<div class="row">
+    <div class="col-md-4">
+        <!-- Crop Information Card -->
+        <div class="card">
+            <div class="card-header">
+                <i class="fas fa-info-circle"></i>
+                <h4>Crop Information</h4>
+            </div>
+            <div class="card-body">
+                <div class="info-item">
+                    <span class="info-label"><i class="fas fa-flag"></i><strong>Status:</strong></span>
+                    <span class="badge @GetStatusBadge(Model.Status)">@Model.Status</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label"><i class="fas fa-calendar-plus"></i><strong>Planted On:</strong></span>
+                    <span class="info-value">@(Model.DatePlanted?.ToString("d") ?? "Not planted yet")</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label"><i class="fas fa-calendar-check"></i><strong>Expected Maturity:</strong></span>
+                    <span class="info-value">@(Model.ExpectedMaturityDate?.ToString("d") ?? "N/A")</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label"><i class="fas fa-clock"></i><strong>Days to Maturity:</strong></span>
+                    <span class="info-value">@GetDaysToMaturity(Model)</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label"><i class="fas fa-weight-hanging"></i><strong>Expected Yield:</strong></span>
+                    <span class="info-value">@Model.ExpectedYield kg/hectare</span>
+                </div>
+
+                @if (Model.Status == "Preparation")
+                {
+                    <div class="mt-4">
+                        @using (Html.BeginForm("StartPlanting", "PlotCrops", FormMethod.Post))
+                        {
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="id" value="@Model.Id" />
+                            <button type="submit" class="action-button w-100">
+                                <i class="fas fa-play-circle"></i>
+                                Start Planting Phase
+                            </button>
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+
+
+        <!-- Severity Trends -->
+        @Html.Action("SeverityTrends", new { plotCropId = Model.Id })
+    </div>
+
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header" style="background: white; color: var(--color-soil); padding: 0;">
+                <ul class="nav nav-tabs card-header-tabs w-100" style="margin: 0; border: none;">
+                    <li class="nav-item">
+                        <a class="nav-link active" data-toggle="tab" href="#tasks">
+                            <i class="fas fa-tasks"></i> Tasks
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" data-toggle="tab" href="#growth">
+                            <i class="fas fa-chart-line"></i> Growth Tracking
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" data-toggle="tab" href="#harvest">
+                            <i class="fas fa-cut"></i> Harvest
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" data-toggle="tab" href="#analytics">
+                            <i class="fas fa-analytics"></i> Analytics
+                        </a>
+                    </li>
+                </ul>
+            </div>
+            <div class="card-body" style="padding: 0;">
+                <div class="tab-content">
+                    <div class="tab-pane active" id="tasks">
+                     
+                        @Html.Action("TaskList", new { plotCropId = Model.Id, showAll = false })
+                    </div>
+                    <div class="tab-pane" id="growth">
+                        @if (Model.Status != "Preparation")
+                        {
+                            @Html.Action("GrowthRecords", "PlotCrops", new { id = Model.Id })
+                        }
+                        else
+                        {
+                            <div class="alert alert-info">
+                                <i class="fas fa-info-circle"></i>
+                                <strong>Growth Tracking Unavailable</strong>
+                                <p>Growth tracking will be available after planting begins.</p>
                             </div>
-
-                            <div class="row">
-                                <div class="col-md-4">
-                                    <!-- Crop Information Card -->
-                                    <div class="card">
-                                        <div class="card-header">
-                                            <i class="fas fa-info-circle"></i>
-                                            <h4>Crop Information</h4>
-                                        </div>
-                                        <div class="card-body">
-                                            <div class="info-item">
-                                                <span class="info-label"><i class="fas fa-flag"></i><strong>Status:</strong></span>
-                                                <span class="badge @GetStatusBadge(Model.Status)">@Model.Status</span>
-                                            </div>
-                                            <div class="info-item">
-                                                <span class="info-label"><i class="fas fa-calendar-plus"></i><strong>Planted On:</strong></span>
-                                                <span class="info-value">@(Model.DatePlanted?.ToString("d") ?? "Not planted yet")</span>
-                                            </div>
-                                            <div class="info-item">
-                                                <span class="info-label"><i class="fas fa-calendar-check"></i><strong>Expected Maturity:</strong></span>
-                                                <span class="info-value">@(Model.ExpectedMaturityDate?.ToString("d") ?? "N/A")</span>
-                                            </div>
-                                            <div class="info-item">
-                                                <span class="info-label"><i class="fas fa-clock"></i><strong>Days to Maturity:</strong></span>
-                                                <span class="info-value">@GetDaysToMaturity(Model)</span>
-                                            </div>
-                                            <div class="info-item">
-                                                <span class="info-label"><i class="fas fa-weight-hanging"></i><strong>Expected Yield:</strong></span>
-                                                <span class="info-value">@Model.ExpectedYield kg/hectare</span>
-                                            </div>
-
-                                            @if (Model.Status == "Preparation")
-                                            {
-                                                <div class="mt-4">
-                                                    @using (Html.BeginForm("StartPlanting", "PlotCrops", FormMethod.Post))
-                                                    {
-                                                        @Html.AntiForgeryToken()
-                                                        <input type="hidden" name="id" value="@Model.Id" />
-                                                        <button type="submit" class="action-button w-100">
-                                                            <i class="fas fa-play-circle"></i>
-                                                            Start Planting Phase
-                                                        </button>
-                                                    }
-                                                </div>
-                                            }
-                                        </div>
-                                    </div>
-
-                                    <!-- Activity Section -->
-                                    <div class="card">
-                                        <div class="card-header">
-                                            <i class="fas fa-list-alt"></i>
-                                            <h4>Activity Log</h4>
-                                        </div>
-                                        <div class="card-body">
-                                            <!-- Existing Activities -->
-                                            <div id="activityList">
-                                                @Html.Action("ActivityList", new { plotCropId = Model.Id })
-                                            </div>
-
-                                            <!-- Toggle Button -->
-                                            <div class="mt-3">
-                                                <button class="action-button btn-sm" id="toggleActivityForm">
-                                                    <i class="fas fa-plus"></i> Add New Activity
-                                                </button>
-                                            </div>
-
-                                            <!-- Inline Form -->
-                                            <div id="activityFormContainer" style="display:none; margin-top:15px;">
-                                                @Html.Action("ActivityForm", "PlotCrops", new { plotCropId = Model.Id })
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <!-- Severity Trends -->
-                                    @Html.Action("SeverityTrends", new { plotCropId = Model.Id })
+                        }
+                    </div>
+                    <div class="tab-pane" id="harvest">
+                        @if (Model.Status == "Harvested")
+                        {
+                            @Html.Action("HarvestAnalytics", "PlotCrops", new { id = Model.Id })
+                        }
+                        else
+                        {
+                            if (Model.ExpectedMaturityDate.HasValue)
+                            {
+                                <div class="alert alert-info">
+                                    <h5><i class="fas fa-calendar-alt"></i>Harvest Schedule</h5>
+                                    <p><strong>Estimated harvest date:</strong> @Model.ExpectedMaturityDate.Value.ToString("d")</p>
+                                    <p><strong>Days remaining:</strong> @((Model.ExpectedMaturityDate.Value - DateTime.Now).Days) days</p>
                                 </div>
-
-                                <div class="col-md-8">
-                                    <div class="card">
-                                        <div class="card-header" style="background: white; color: var(--color-soil); padding: 0;">
-                                            <ul class="nav nav-tabs card-header-tabs w-100" style="margin: 0; border: none;">
-                                                <li class="nav-item">
-                                                    <a class="nav-link active" data-toggle="tab" href="#tasks">
-                                                        <i class="fas fa-tasks"></i> Tasks
-                                                    </a>
-                                                </li>
-                                                <li class="nav-item">
-                                                    <a class="nav-link" data-toggle="tab" href="#growth">
-                                                        <i class="fas fa-chart-line"></i> Growth Tracking
-                                                    </a>
-                                                </li>
-                                                <li class="nav-item">
-                                                    <a class="nav-link" data-toggle="tab" href="#harvest">
-                                                        <i class="fas fa-cut"></i> Harvest
-                                                    </a>
-                                                </li>
-                                                <li class="nav-item">
-                                                    <a class="nav-link" data-toggle="tab" href="#analytics">
-                                                        <i class="fas fa-analytics"></i> Analytics
-                                                    </a>
-                                                </li>
-                                            </ul>
-                                        </div>
-                                        <div class="card-body" style="padding: 0;">
-                                            <div class="tab-content">
-                                                <div class="tab-pane active" id="tasks">
-                                                    @Html.Action("TaskList", "PlotCrops", new { plotCropId = Model.Id })
-                                                </div>
-                                                <div class="tab-pane" id="growth">
-                                                    @if (Model.Status != "Preparation")
-                                                    {
-                                                        @Html.Action("GrowthRecords", "PlotCrops", new { id = Model.Id })
-                                                    }
-                                                    else
-                                                    {
-                                                        <div class="alert alert-info">
-                                                            <i class="fas fa-info-circle"></i>
-                                                            <strong>Growth Tracking Unavailable</strong>
-                                                            <p>Growth tracking will be available after planting begins.</p>
-                                                        </div>
-                                                    }
-                                                </div>
-                                                <div class="tab-pane" id="harvest">
-                                                    @if (Model.Status == "Harvested")
-                                                    {
-                                                        @Html.Action("HarvestAnalytics", "PlotCrops", new { id = Model.Id })
-                                                    }
-                                                    else
-                                                    {
-                                                        if (Model.ExpectedMaturityDate.HasValue)
-                                                        {
-                                                            <div class="alert alert-info">
-                                                                <h5><i class="fas fa-calendar-alt"></i>Harvest Schedule</h5>
-                                                                <p><strong>Estimated harvest date:</strong> @Model.ExpectedMaturityDate.Value.ToString("d")</p>
-                                                                <p><strong>Days remaining:</strong> @((Model.ExpectedMaturityDate.Value - DateTime.Now).Days) days</p>
-                                                            </div>
-                                                        }
-                                                        else
-                                                        {
-                                                            <div class="alert alert-info">
-                                                                <h5><i class="fas fa-info-circle"></i>Harvest Information</h5>
-                                                                <p>Harvest information will be available once planting begins.</p>
-                                                            </div>
-                                                        }
-
-                                                        <!-- Always show Ready to Harvest option -->
-                                                        <div class="alert alert-warning">
-                                                            <h5><i class="fas fa-exclamation-triangle"></i>Ready to Harvest?</h5>
-                                                            <p>
-                                                                You can start harvesting at any time — even before the expected maturity date —
-                                                                if your crops are spoiled, damaged by pests/weather, or have matured earlier than expected.
-                                                            </p>
-
-                                                            @using (Html.BeginForm("StartHarvest", "PlotCrops", FormMethod.Post))
-                                                            {
-                                                                @Html.AntiForgeryToken()
-                                                                <input type="hidden" name="id" value="@Model.Id" />
-                                                                <button type="submit" class="action-button btn-warning">
-                                                                    <i class="fas fa-cut"></i>
-                                                                    Begin Harvest Process
-                                                                </button>
-                                                            }
-                                                        </div>
-                                                    }
-                                                </div>
-
-                                                <div class="tab-pane" id="analytics">
-                                                    @Html.Action("HarvestAnalytics", "PlotCrops", new { plotCropId = Model.Id })
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
+                            }
+                            else
+                            {
+                                <div class="alert alert-info">
+                                    <h5><i class="fas fa-info-circle"></i>Harvest Information</h5>
+                                    <p>Harvest information will be available once planting begins.</p>
                                 </div>
-                            </div>
-
-                            @functions {
-                                string GetStatusBadge(string status)
-                                {
-                                    switch (status)
-                                    {
-                                        case "Preparation": return "bg-secondary";
-                                        case "Planting": return "bg-info";
-                                        case "Growing": return "bg-primary";
-                                        case "Harvested": return "bg-success";
-                                        default: return "bg-light text-dark";
-                                    }
-                                }
-
-                                string GetDaysToMaturity(PlotCrop plotCrop)
-                                {
-                                    if (plotCrop.Status == "Harvested") return "Harvest completed";
-                                    if (!plotCrop.ExpectedMaturityDate.HasValue) return "N/A";
-
-                                    var days = (plotCrop.ExpectedMaturityDate.Value - DateTime.Now).Days;
-                                    return days > 0 ? $"{days} days" : "Ready for harvest";
-                                }
                             }
 
-                            <!-- Font Awesome for Icons -->
-                            <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+                            <!-- Always show Ready to Harvest option -->
+                            <div class="alert alert-warning">
+                                <h5><i class="fas fa-exclamation-triangle"></i>Ready to Harvest?</h5>
+                                <p>
+                                    You can start harvesting at any time — even before the expected maturity date —
+                                    if your crops are spoiled, damaged by pests/weather, or have matured earlier than expected.
+                                </p>
 
-                            @section Scripts {
-                                <script>
+                                @using (Html.BeginForm("StartHarvest", "PlotCrops", FormMethod.Post))
+                                {
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="id" value="@Model.Id" />
+                                    <button type="submit" class="action-button btn-warning">
+                                        <i class="fas fa-cut"></i>
+                                        Begin Harvest Process
+                                    </button>
+                                }
+                            </div>
+                        }
+                    </div>
+
+                    <div class="tab-pane" id="analytics">
+                        @Html.Action("HarvestAnalytics", "PlotCrops", new { plotCropId = Model.Id })
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Activity Section - Now below the tabbed content -->
+        <!-- Activity Section -->
+        <div class="card">
+            <div class="card-header">
+                <i class="fas fa-list-alt"></i>
+                <h4>Activity Log</h4>
+            </div>
+            <div class="card-body">
+                <!-- Existing Activities -->
+                <div id="activityList">
+                    @Html.Action("ActivityList", new { plotCropId = Model.Id })
+                </div>
+
+                <!-- Toggle Button -->
+                <div class="mt-3">
+                    <button class="action-button btn-sm" id="toggleActivityForm">
+                        <i class="fas fa-plus"></i> Add New Activity
+                    </button>
+                </div>
+
+                <!-- Inline Form -->
+                <div id="activityFormContainer" style="display:none; margin-top:15px;">
+                    @Html.Action("ActivityForm", "PlotCrops", new { plotCropId = Model.Id })
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@functions {
+    string GetStatusBadge(string status)
+    {
+        switch (status)
+        {
+            case "Preparation": return "bg-secondary";
+            case "Planting": return "bg-info";
+            case "Growing": return "bg-primary";
+            case "Harvested": return "bg-success";
+            default: return "bg-light text-dark";
+        }
+    }
+
+    string GetDaysToMaturity(PlotCrop plotCrop)
+    {
+        if (plotCrop.Status == "Harvested") return "Harvest completed";
+        if (!plotCrop.ExpectedMaturityDate.HasValue) return "N/A";
+
+        var days = (plotCrop.ExpectedMaturityDate.Value - DateTime.Now).Days;
+        return days > 0 ? $"{days} days" : "Ready for harvest";
+    }
+}
+
+<!-- Font Awesome for Icons -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
+@section Scripts {
+    <script>
 $(function () {
     // Toggle inline form
     $('#toggleActivityForm').click(function () {
@@ -1312,5 +1573,2008 @@ $(function () {
         $(target).hide().fadeIn(300);
     });
 });
-                                </script>
-                            }
+    </script>
+}
+
+*@
+
+
+
+
+
+@model FarmTrack.Models.PlotCrop
+@using FarmTrack.Models
+
+@using FarmTrack.Helpers
+
+@{
+    ViewBag.Title = $"{Model.Crop.Name} in Plot: {Model.Plot.Name}";
+}
+    
+<style>
+    
+    /* Custom Color Scheme */
+    :root {
+        --color-earth: #8B7355; /* Primary */
+        --color-soil: #654321; /* Secondary */
+        --color-foliage: #4CAF50; /* Tertiary */
+        --color-wheat: #F5DEB3; /* Accent */
+        --color-danger: #FF6B6B; /* Error */
+        --color-white: #FFFFFF; /* Neutral */
+        --color-light-earth: #e5d9cc; /* Light version of earth */
+        --color-light-foliage: #e8f5e9; /* Light version of foliage */
+        --color-blue: #2196F3; /* Info color */
+        --color-orange: #FF9800; /* Warning color */
+    }
+
+    body {
+        background-color: #f9f7f4;
+    }
+
+    /* Page Header */
+    .page-header {
+        background: linear-gradient(135deg, var(--color-earth) 0%, var(--color-soil) 100%);
+        border-radius: 12px;
+        padding: 30px;
+        margin-bottom: 30px;
+        position: relative;
+        overflow: hidden;
+        box-shadow: 0 10px 20px rgba(101, 67, 33, 0.2);
+    }
+
+        .page-header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 200px;
+            height: 100%;
+            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23F5DEB3" opacity="0.1"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>');
+            background-repeat: no-repeat;
+            background-position: right center;
+            background-size: 150px;
+            opacity: 0.2;
+        }
+
+        .page-header h1 {
+            color: var(--color-white);
+            font-weight: 700;
+            margin-bottom: 10px;
+            font-size: 1.8rem;
+        }
+
+        .page-header p {
+            color: var(--color-wheat);
+            font-size: 1rem;
+            margin: 0;
+        }
+
+    /* Modern Card Styling */
+    .card {
+        background-color: white;
+        border-radius: 12px;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+        border: none;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+        overflow: hidden;
+        margin-bottom: 25px;
+    }
+
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.12);
+        }
+
+    .card-header {
+        background: linear-gradient(135deg, var(--color-earth), var(--color-soil));
+        color: var(--color-white);
+        padding: 20px;
+        border-bottom: none;
+        font-weight: 600;
+        font-size: 1.1rem;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+        .card-header h4 {
+            margin: 0;
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+
+    .card-body {
+        padding: 25px;
+    }
+
+    /* Status Badges */
+    .badge {
+        padding: 8px 15px;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .bg-secondary {
+        background-color: #6c757d !important;
+    }
+
+    .bg-info {
+        background-color: var(--color-blue) !important;
+    }
+
+    .bg-primary {
+        background-color: var(--color-foliage) !important;
+    }
+
+    .bg-success {
+        background-color: var(--color-foliage) !important;
+    }
+
+    .bg-light {
+        background-color: var(--color-wheat) !important;
+        color: var(--color-soil) !important;
+    }
+
+    /* Enhanced Info Display */
+    .info-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 12px 0;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    }
+
+        .info-item:last-child {
+            border-bottom: none;
+        }
+
+    .info-label {
+        font-weight: 600;
+        color: var(--color-soil);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .info-value {
+        color: #555;
+        font-weight: 500;
+    }
+
+    /* Action Buttons */
+    .action-button {
+        background: linear-gradient(135deg, var(--color-foliage), #45a049);
+        color: white;
+        border: none;
+        border-radius: 50px;
+        padding: 12px 25px;
+        font-weight: 600;
+        font-size: 0.9rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        text-decoration: none;
+        box-shadow: 0 4px 12px rgba(76, 175, 80, 0.3);
+    }
+
+        .action-button:hover {
+            background: linear-gradient(135deg, #45a049, #3d8b40);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(76, 175, 80, 0.4);
+            color: white;
+            text-decoration: none;
+        }
+
+    .btn-warning {
+        background: linear-gradient(135deg, var(--color-orange), #f57c00);
+        box-shadow: 0 4px 12px rgba(255, 152, 0, 0.3);
+    }
+
+        .btn-warning:hover {
+            background: linear-gradient(135deg, #f57c00, #e65100);
+            box-shadow: 0 6px 15px rgba(255, 152, 0, 0.4);
+        }
+
+    .btn-sm {
+        padding: 8px 16px;
+        font-size: 0.8rem;
+        min-width: auto;
+    }
+
+    /* Tab Navigation */
+    .nav-tabs {
+        border-bottom: 2px solid var(--color-wheat);
+        margin-bottom: 0;
+    }
+
+        .nav-tabs .nav-item {
+            margin-bottom: 0;
+        }
+
+        .nav-tabs .nav-link {
+            color: var(--color-soil);
+            font-weight: 600;
+            border: none;
+            border-radius: 8px 8px 0 0;
+            padding: 15px 20px;
+            background-color: transparent;
+            transition: all 0.3s ease;
+            margin-right: 5px;
+        }
+
+            .nav-tabs .nav-link:hover {
+                background-color: var(--color-light-earth);
+                color: var(--color-soil);
+                border-color: transparent;
+            }
+
+            .nav-tabs .nav-link.active {
+                background-color: var(--color-earth);
+                color: white;
+                border-color: var(--color-earth);
+                border-bottom-color: var(--color-earth);
+            }
+
+    .tab-content {
+        padding: 25px;
+        background-color: white;
+        border-radius: 0 0 12px 12px;
+    }
+
+    /* Alert Styling */
+    .alert {
+        border-radius: 10px;
+        padding: 20px;
+        border: none;
+        margin-bottom: 20px;
+    }
+
+    .alert-info {
+        background: linear-gradient(135deg, var(--color-light-foliage), #f1f8e9);
+        color: var(--color-soil);
+        border-left: 5px solid var(--color-foliage);
+    }
+
+    .alert-warning {
+        background: linear-gradient(135deg, #fff3e0, #ffeaa7);
+        color: var(--color-soil);
+        border-left: 5px solid var(--color-orange);
+    }
+
+    .alert h5 {
+        color: var(--color-soil);
+        font-weight: 700;
+        margin-bottom: 10px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    /* Activity Section */
+    #activityFormContainer {
+        background-color: var(--color-light-foliage);
+        border-radius: 10px;
+        padding: 20px;
+        border-left: 4px solid var(--color-foliage);
+    }
+
+    .activity-fields {
+        background-color: white;
+        padding: 15px;
+        border-radius: 8px;
+        margin-top: 15px;
+        border: 1px solid var(--color-wheat);
+    }
+
+    /* Form Controls */
+    .form-control, .form-select {
+        border: 2px solid var(--color-wheat);
+        border-radius: 8px;
+        padding: 12px 15px;
+        color: var(--color-soil);
+        background-color: white;
+        transition: all 0.3s ease;
+    }
+
+        .form-control:focus, .form-select:focus {
+            border-color: var(--color-earth);
+            box-shadow: 0 0 0 3px rgba(139, 115, 85, 0.1);
+            outline: none;
+        }
+
+    /* Responsive Design */
+    @@media (max-width: 768px) {
+        .page-header {
+            padding: 20px;
+        }
+
+            .page-header h1 {
+                font-size: 1.5rem;
+            }
+
+        .card-body {
+            padding: 20px;
+        }
+
+        .nav-tabs .nav-link {
+            padding: 12px 15px;
+            font-size: 0.9rem;
+        }
+
+        .tab-content {
+            padding: 20px;
+        }
+    }
+
+    /* Loading States */
+    .loading {
+        opacity: 0.6;
+        pointer-events: none;
+    }
+
+    /* Icon Enhancements */
+    .fas, .fa {
+        margin-right: 5px;
+    }
+
+    /* Add this to your existing CSS - Scrollable Activity List */
+    #activityList {
+        max-height: 400px;
+        overflow-y: auto;
+        border: 1px solid var(--color-wheat);
+        border-radius: 8px;
+        padding: 10px;
+        background-color: #fafafa;
+    }
+
+        #activityList::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        #activityList::-webkit-scrollbar-track {
+            background: var(--color-light-earth);
+            border-radius: 3px;
+        }
+
+        #activityList::-webkit-scrollbar-thumb {
+            background: var(--color-earth);
+            border-radius: 3px;
+        }
+
+            #activityList::-webkit-scrollbar-thumb:hover {
+                background: var(--color-soil);
+            }
+
+    /* Severity Trends Card Styling */
+    .severity-trends-card {
+        background-color: white;
+        border-radius: 12px;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+        border: none;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+        overflow: hidden;
+        margin-bottom: 25px;
+    }
+
+        .severity-trends-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.12);
+        }
+
+        .severity-trends-card .card-header {
+            background: linear-gradient(135deg, var(--color-earth), var(--color-soil));
+            color: var(--color-white);
+            padding: 20px;
+            border-bottom: none;
+            font-weight: 600;
+            font-size: 1.1rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+            .severity-trends-card .card-header h5 {
+                margin: 0;
+                font-size: 1.1rem;
+                font-weight: 600;
+                color: var(--color-white);
+            }
+
+        .severity-trends-card .card-body {
+            padding: 25px;
+        }
+
+    /* Task List Table Styling */
+    .task-table {
+        background-color: white;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+    }
+
+        .task-table thead {
+            background: linear-gradient(135deg, var(--color-earth), var(--color-soil));
+        }
+
+            .task-table thead th {
+                color: var(--color-white);
+                font-weight: 600;
+                padding: 15px 12px;
+                border: none;
+                font-size: 0.9rem;
+            }
+
+        .task-table tbody td {
+            padding: 12px;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+            vertical-align: middle;
+        }
+
+        .task-table tbody tr:hover {
+            background-color: var(--color-light-earth);
+        }
+
+        .task-table tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+    /* Task Action Buttons */
+    .task-action-btn {
+        padding: 6px 12px;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-decoration: none;
+        display: inline-block;
+        margin-right: 5px;
+        transition: all 0.3s ease;
+        border: 2px solid transparent;
+    }
+
+        .task-action-btn.btn-outline-primary {
+            color: var(--color-earth);
+            border-color: var(--color-earth);
+            background-color: transparent;
+        }
+
+            .task-action-btn.btn-outline-primary:hover {
+                background-color: var(--color-earth);
+                color: white;
+                text-decoration: none;
+            }
+
+        .task-action-btn.btn-outline-success {
+            color: var(--color-foliage);
+            border-color: var(--color-foliage);
+            background-color: transparent;
+        }
+
+            .task-action-btn.btn-outline-success:hover {
+                background-color: var(--color-foliage);
+                color: white;
+                text-decoration: none;
+            }
+
+    /* Growth Tracking Styling */
+    .growth-section {
+        background-color: white;
+        padding: 25px;
+        border-radius: 12px;
+    }
+
+        .growth-section h5 {
+            color: var(--color-soil);
+            font-weight: 700;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+    .growth-form {
+        background-color: var(--color-light-foliage);
+        padding: 20px;
+        border-radius: 10px;
+        border-left: 4px solid var(--color-foliage);
+        margin-bottom: 20px;
+    }
+
+    .growth-table {
+        background-color: white;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        border: 1px solid var(--color-wheat);
+    }
+
+        .growth-table thead {
+            background: linear-gradient(135deg, var(--color-foliage), #45a049);
+        }
+
+            .growth-table thead th {
+                color: var(--color-white);
+                font-weight: 600;
+                padding: 12px;
+                border: none;
+                font-size: 0.9rem;
+            }
+
+        .growth-table tbody td {
+            padding: 10px 12px;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+        }
+
+        .growth-table tbody tr:hover {
+            background-color: var(--color-light-foliage);
+        }
+
+    /* Activity Form Styling */
+    .activity-form {
+        background-color: white;
+        padding: 20px;
+        border-radius: 10px;
+    }
+
+        .activity-form .form-group {
+            margin-bottom: 20px;
+        }
+
+        .activity-form label {
+            color: var(--color-soil);
+            font-weight: 600;
+            margin-bottom: 8px;
+            display: block;
+            font-size: 0.9rem;
+        }
+
+        .activity-form .form-control,
+        .activity-form .form-control-file {
+            border: 2px solid var(--color-wheat);
+            border-radius: 8px;
+            padding: 12px 15px;
+            color: var(--color-soil);
+            background-color: white;
+            transition: all 0.3s ease;
+            font-size: 0.9rem;
+        }
+
+            .activity-form .form-control:focus {
+                border-color: var(--color-earth);
+                box-shadow: 0 0 0 3px rgba(139, 115, 85, 0.1);
+                outline: none;
+            }
+
+        .activity-form .form-text {
+            color: #6c757d;
+            font-size: 0.8rem;
+            margin-top: 5px;
+        }
+
+        .activity-form .form-row {
+            display: flex;
+            margin-right: -10px;
+            margin-left: -10px;
+        }
+
+            .activity-form .form-row .form-group {
+                padding-right: 10px;
+                padding-left: 10px;
+            }
+
+        .activity-form .col-md-6 {
+            flex: 0 0 50%;
+            max-width: 50%;
+        }
+
+    /* Activity Fields Styling */
+    .activity-fields {
+        background-color: var(--color-light-earth);
+        padding: 20px;
+        border-radius: 8px;
+        margin-top: 15px;
+        border: 1px solid var(--color-wheat);
+    }
+
+    /* Form Submit Button */
+    .activity-form .btn-primary {
+        background: linear-gradient(135deg, var(--color-foliage), #45a049);
+        color: white;
+        border: none;
+        border-radius: 50px;
+        padding: 12px 25px;
+        font-weight: 600;
+        font-size: 0.9rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 12px rgba(76, 175, 80, 0.3);
+    }
+
+        .activity-form .btn-primary:hover {
+            background: linear-gradient(135deg, #45a049, #3d8b40);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(76, 175, 80, 0.4);
+        }
+
+    /* Growth Form Submit Button */
+    .growth-form .btn-primary {
+        background: linear-gradient(135deg, var(--color-foliage), #45a049);
+        color: white;
+        border: none;
+        border-radius: 50px;
+        padding: 10px 20px;
+        font-weight: 600;
+        font-size: 0.85rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 12px rgba(76, 175, 80, 0.3);
+    }
+
+        .growth-form .btn-primary:hover {
+            background: linear-gradient(135deg, #45a049, #3d8b40);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(76, 175, 80, 0.4);
+        }
+
+    /* Alert Styling for No Data Messages */
+    .no-data-alert {
+        background: linear-gradient(135deg, var(--color-light-foliage), #f1f8e9);
+        color: var(--color-soil);
+        border-left: 5px solid var(--color-foliage);
+        border-radius: 10px;
+        padding: 15px 20px;
+        border: none;
+        margin: 15px 0;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+        .no-data-alert i {
+            color: var(--color-foliage);
+        }
+
+
+
+    /* ===== HARVEST ANALYTICS STYLING ===== */
+
+    /* Analytics Stat Cards */
+    .analytics-stat-card {
+        background: white;
+        border-radius: 12px;
+        padding: 20px;
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+        border: none;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+        height: 100%;
+    }
+
+        .analytics-stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.12);
+        }
+
+        .analytics-stat-card .stat-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            color: white;
+            flex-shrink: 0;
+        }
+
+    .expected-yield .stat-icon {
+        background: linear-gradient(135deg, var(--color-earth), var(--color-soil));
+    }
+
+    .actual-yield .stat-icon {
+        background: linear-gradient(135deg, var(--color-foliage), #45a049);
+    }
+
+    .losses .stat-icon {
+        background: linear-gradient(135deg, var(--color-danger), #e53e3e);
+    }
+
+    .harvest-days .stat-icon {
+        background: linear-gradient(135deg, var(--color-blue), #1976d2);
+    }
+
+    .analytics-stat-card .stat-content {
+        flex-grow: 1;
+    }
+
+    .analytics-stat-card .stat-label {
+        color: #6c757d;
+        font-size: 0.8rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin: 0;
+    }
+
+    .analytics-stat-card .stat-value {
+        color: var(--color-soil);
+        font-size: 1.8rem;
+        font-weight: 700;
+        margin: 5px 0 0 0;
+        line-height: 1;
+    }
+
+        .analytics-stat-card .stat-value .unit {
+            font-size: 1rem;
+            font-weight: 500;
+            color: #6c757d;
+        }
+
+    .analytics-stat-card .stat-percentage {
+        color: #6c757d;
+        font-size: 0.85rem;
+        margin: 2px 0 0 0;
+    }
+
+    /* Analytics Chart Cards */
+    .analytics-chart-card {
+        background-color: white;
+        border-radius: 12px;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+        border: none;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+        overflow: hidden;
+    }
+
+        .analytics-chart-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.12);
+        }
+
+        .analytics-chart-card .card-header {
+            background: linear-gradient(135deg, var(--color-earth), var(--color-soil));
+            color: var(--color-white);
+            padding: 20px;
+            border-bottom: none;
+            font-weight: 600;
+            font-size: 1.1rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+            .analytics-chart-card .card-header h5 {
+                margin: 0;
+                font-size: 1.1rem;
+                font-weight: 600;
+                color: var(--color-white);
+            }
+
+        .analytics-chart-card .card-body {
+            padding: 25px;
+            height: 350px;
+        }
+
+    /* Analytics Notes Card */
+    .analytics-notes-card {
+        background-color: white;
+        border-radius: 12px;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+        border: none;
+        margin-top: 20px;
+    }
+
+        .analytics-notes-card .card-header {
+            background: linear-gradient(135deg, var(--color-orange), #f57c00);
+            color: var(--color-white);
+            padding: 20px;
+            border-bottom: none;
+            font-weight: 600;
+            font-size: 1.1rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+            .analytics-notes-card .card-header h5 {
+                margin: 0;
+                font-size: 1.1rem;
+                font-weight: 600;
+                color: var(--color-white);
+            }
+
+    .loss-reason-content {
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+        padding: 20px;
+    }
+
+        .loss-reason-content i {
+            margin-top: 3px;
+            font-size: 1.1rem;
+        }
+
+        .loss-reason-content p {
+            color: var(--color-soil);
+            line-height: 1.6;
+        }
+
+    /* ===== ACTIVITY FEED STYLING ===== */
+
+    .activity-feed {
+        max-height: 400px;
+        overflow-y: auto;
+        padding: 5px;
+    }
+
+        .activity-feed::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .activity-feed::-webkit-scrollbar-track {
+            background: var(--color-light-earth);
+            border-radius: 3px;
+        }
+
+        .activity-feed::-webkit-scrollbar-thumb {
+            background: var(--color-earth);
+            border-radius: 3px;
+        }
+
+            .activity-feed::-webkit-scrollbar-thumb:hover {
+                background: var(--color-soil);
+            }
+
+    .activity-item {
+        background: white;
+        border: 1px solid var(--color-wheat);
+        border-radius: 10px;
+        padding: 15px;
+        margin-bottom: 15px;
+        transition: all 0.3s ease;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    }
+
+        .activity-item:hover {
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            transform: translateY(-1px);
+        }
+
+        .activity-item:last-child {
+            margin-bottom: 0;
+        }
+
+    .activity-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 10px;
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+
+    .activity-type {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        color: var(--color-soil);
+        font-weight: 600;
+    }
+
+        .activity-type i {
+            color: var(--color-earth);
+            width: 16px;
+        }
+
+    .severity-badge {
+        padding: 3px 8px;
+        border-radius: 12px;
+        font-size: 0.7rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .severity-low {
+        background-color: #d4edda;
+        color: #155724;
+    }
+
+    .severity-medium {
+        background-color: #fff3cd;
+        color: #856404;
+    }
+
+    .severity-high {
+        background-color: #f8d7da;
+        color: #721c24;
+    }
+
+    .severity-critical {
+        background-color: #f5c6cb;
+        color: #721c24;
+    }
+
+    .activity-date {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        color: #6c757d;
+        font-size: 0.85rem;
+    }
+
+        .activity-date i {
+            font-size: 0.8rem;
+        }
+
+    .activity-description {
+        color: var(--color-soil);
+        margin-bottom: 8px;
+        line-height: 1.5;
+    }
+
+    .activity-notes {
+        background-color: var(--color-light-foliage);
+        padding: 10px;
+        border-radius: 6px;
+        margin-bottom: 8px;
+        border-left: 3px solid var(--color-foliage);
+        color: #555;
+        font-size: 0.9rem;
+        display: flex;
+        align-items: flex-start;
+        gap: 8px;
+    }
+
+        .activity-notes i {
+            color: var(--color-foliage);
+            margin-top: 2px;
+        }
+
+    .activity-amount {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        color: var(--color-soil);
+        font-size: 0.9rem;
+        margin-bottom: 8px;
+    }
+
+        .activity-amount i {
+            color: var(--color-earth);
+            width: 16px;
+        }
+
+    .activity-tags {
+        margin-bottom: 8px;
+    }
+
+    .activity-tag {
+        display: inline-block;
+        padding: 4px 10px;
+        border-radius: 15px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: white;
+        margin-right: 5px;
+        margin-bottom: 3px;
+    }
+
+    .activity-image {
+        margin-top: 10px;
+    }
+
+    .activity-thumbnail {
+        max-height: 120px;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: opacity 0.3s ease;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+
+        .activity-thumbnail:hover {
+            opacity: 0.8;
+        }
+
+    .no-activities-message {
+        text-align: center;
+        padding: 40px 20px;
+        color: #6c757d;
+    }
+
+        .no-activities-message i {
+            font-size: 2rem;
+            color: var(--color-wheat);
+            margin-bottom: 15px;
+        }
+
+        .no-activities-message h6 {
+            color: var(--color-soil);
+            margin-bottom: 8px;
+        }
+
+    /* ===== ACTIVITY STATS STYLING ===== */
+
+    .activity-stats-card {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+        overflow: hidden;
+        margin-bottom: 20px;
+    }
+
+    .stats-header {
+        background: linear-gradient(135deg, var(--color-earth), var(--color-soil));
+        color: var(--color-white);
+        padding: 15px 20px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+        .stats-header h6 {
+            margin: 0;
+            font-weight: 600;
+            font-size: 1rem;
+            color: var(--color-white);
+        }
+
+    .stats-content {
+        padding: 20px;
+    }
+
+    .stat-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px 0;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    }
+
+        .stat-item:last-child {
+            border-bottom: none;
+            padding-bottom: 0;
+        }
+
+        .stat-item .stat-icon {
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.9rem;
+            color: white;
+            flex-shrink: 0;
+        }
+
+    .total-activities {
+        background: linear-gradient(135deg, var(--color-earth), var(--color-soil));
+    }
+
+    .pest-reports {
+        background: linear-gradient(135deg, var(--color-danger), #e53e3e);
+    }
+
+    .disease-reports {
+        background: linear-gradient(135deg, var(--color-orange), #f57c00);
+    }
+
+    .fertilization {
+        background: linear-gradient(135deg, var(--color-foliage), #45a049);
+    }
+
+    .stat-details {
+        flex-grow: 1;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .stat-label {
+        color: #6c757d;
+        font-size: 0.85rem;
+        font-weight: 600;
+        margin-bottom: 2px;
+    }
+
+    .stat-value {
+        color: var(--color-soil);
+        font-size: 1.1rem;
+        font-weight: 700;
+    }
+
+    .stat-sub {
+        color: #6c757d;
+        font-size: 0.8rem;
+        margin-top: 2px;
+        font-style: italic;
+    }
+
+    /* Modal Enhancements */
+    .modal-content {
+        border-radius: 12px;
+        border: none;
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+    }
+
+    .modal-header {
+        background: linear-gradient(135deg, var(--color-earth), var(--color-soil));
+        color: white;
+        border-radius: 12px 12px 0 0;
+        border-bottom: none;
+    }
+
+        .modal-header .modal-title {
+            font-weight: 600;
+        }
+
+        .modal-header .close {
+            color: white;
+            opacity: 0.8;
+            text-shadow: none;
+        }
+
+            .modal-header .close:hover {
+                opacity: 1;
+                color: white;
+            }
+
+    .modal-body {
+        padding: 30px;
+    }
+
+    /* Responsive Design for Analytics Cards */
+    @@media (max-width: 768px) {
+        .analytics-stat-card {
+            flex-direction: column;
+            text-align: center;
+            padding: 15px;
+        }
+
+            .analytics-stat-card .stat-icon {
+                margin-bottom: 10px;
+            }
+
+        .analytics-chart-card .card-body {
+            height: 300px;
+            padding: 15px;
+        }
+
+        .activity-header {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .activity-type {
+            margin-bottom: 5px;
+        }
+
+        .stat-item {
+            flex-direction: column;
+            text-align: center;
+            padding: 15px 0;
+        }
+
+            .stat-item .stat-icon {
+                margin-bottom: 8px;
+            }
+    }
+
+    /* Animation for activity items */
+    @@keyframes slideInUp {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .activity-item {
+        animation: slideInUp 0.3s ease-out;
+    }
+
+    /* Loading states */
+    .loading .activity-item {
+        opacity: 0.5;
+        pointer-events: none;
+    }
+
+    /* Success animation for new activities */
+    .activity-item.new-activity {
+        border: 2px solid var(--color-foliage);
+        background: linear-gradient(135deg, rgba(76, 175, 80, 0.1), rgba(76, 175, 80, 0.05));
+    }
+
+        .activity-item.new-activity::before {
+            content: '';
+            position: absolute;
+            top: -2px;
+            left: -2px;
+            right: -2px;
+            bottom: -2px;
+            background: linear-gradient(45deg, var(--color-foliage), var(--color-earth));
+            z-index: -1;
+            border-radius: 10px;
+            opacity: 0.3;
+            animation: pulse 2s infinite;
+        }
+
+    @@keyframes pulse {
+        0% {
+            opacity: 0.3;
+            transform: scale(1);
+        }
+
+        50% {
+            opacity: 0.5;
+            transform: scale(1.02);
+        }
+
+        100% {
+            opacity: 0.3;
+            transform: scale(1);
+        }
+    }
+
+    /* Enhanced scrollbar for better UX */
+    .activity-feed {
+        scrollbar-width: thin;
+        scrollbar-color: var(--color-earth) var(--color-light-earth);
+    }
+
+    /* Focus states for accessibility */
+    .activity-thumbnail:focus,
+    .task-action-btn:focus,
+    .action-button:focus {
+        outline: 3px solid rgba(139, 115, 85, 0.3);
+        outline-offset: 2px;
+    }
+
+    /* Print styles */
+    @@media print {
+        .analytics-stat-card,
+        .analytics-chart-card,
+        .activity-item {
+            box-shadow: none;
+            border: 1px solid #ddd;
+        }
+
+        .activity-feed {
+            max-height: none;
+            overflow: visible;
+        }
+
+        .modal {
+            display: none !important;
+        }
+    }
+
+
+
+    /*------------------------------------------------------------------------------------------------------*/
+
+
+    /* Sidebar Navigation */
+    .dashboard-container {
+        display: flex;
+        min-height: calc(100vh - 200px);
+        gap: 0;
+    }
+
+    .sidebar {
+        width: 250px;
+        background: linear-gradient(135deg, var(--color-earth), var(--color-soil));
+        color: white;
+        padding: 0;
+        border-radius: 12px 0 0 12px;
+        box-shadow: 5px 0 15px rgba(0, 0, 0, 0.1);
+        flex-shrink: 0;
+    }
+
+    .sidebar-header {
+        padding: 25px 20px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        text-align: center;
+    }
+
+        .sidebar-header h4 {
+            margin: 0;
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: var(--color-wheat);
+        }
+
+    .sidebar-nav {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+
+    .nav-item {
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .nav-link {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 15px 20px;
+        color: rgba(255, 255, 255, 0.9);
+        text-decoration: none;
+        transition: all 0.3s ease;
+        border-left: 4px solid transparent;
+    }
+
+        .nav-link:hover,
+        .nav-link.active {
+            background-color: rgba(255, 255, 255, 0.1);
+            color: white;
+            border-left-color: var(--color-wheat);
+        }
+
+        .nav-link.active {
+            background-color: rgba(255, 255, 255, 0.15);
+            font-weight: 600;
+        }
+
+        .nav-link i {
+            width: 20px;
+            text-align: center;
+            font-size: 1.1rem;
+        }
+
+    .main-content {
+        flex: 1;
+        background: #f9f7f4;
+        padding: 25px;
+        border-radius: 0 12px 12px 0;
+        overflow-y: auto;
+    }
+
+    .content-section {
+        display: none;
+    }
+
+        .content-section.active {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+
+    @@keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(10px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    /* Compact card styling for sidebar layout */
+    .compact-card {
+        background: white;
+        border-radius: 10px;
+        padding: 20px;
+        margin-bottom: 20px;
+        box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08);
+        border: 1px solid var(--color-wheat);
+    }
+
+    .compact-card-header {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 15px;
+        padding-bottom: 10px;
+        border-bottom: 2px solid var(--color-light-earth);
+    }
+
+        .compact-card-header h5 {
+            margin: 0;
+            color: var(--color-soil);
+            font-weight: 600;
+            font-size: 1.1rem;
+        }
+
+        .compact-card-header i {
+            color: var(--color-earth);
+            font-size: 1.2rem;
+        }
+
+    /* Responsive design */
+    @@media (max-width: 992px) {
+        .dashboard-container {
+            flex-direction: column;
+        }
+
+        .sidebar {
+            width: 100%;
+            border-radius: 12px 12px 0 0;
+            margin-bottom: 20px;
+        }
+
+        .main-content {
+            border-radius: 0 0 12px 12px;
+        }
+
+        .sidebar-nav {
+            display: flex;
+            overflow-x: auto;
+            padding-bottom: 10px;
+        }
+
+        .nav-item {
+            border-bottom: none;
+            border-right: 1px solid rgba(255, 255, 255, 0.1);
+            flex-shrink: 0;
+        }
+
+        .nav-link {
+            border-left: none;
+            border-bottom: 3px solid transparent;
+            padding: 12px 15px;
+            white-space: nowrap;
+        }
+
+            .nav-link:hover,
+            .nav-link.active {
+                border-left-color: transparent;
+                border-bottom-color: var(--color-wheat);
+            }
+    }
+
+    @@media (max-width: 576px) {
+        .main-content {
+            padding: 15px;
+        }
+
+        .compact-card {
+            padding: 15px;
+        }
+
+        .nav-link {
+            padding: 10px 12px;
+            font-size: 0.9rem;
+        }
+
+            .nav-link i {
+                font-size: 1rem;
+            }
+    }
+
+    /* Loading states */
+    .content-loading {
+        opacity: 0.6;
+        pointer-events: none;
+    }
+
+    .loading-spinner {
+        display: inline-block;
+        width: 20px;
+        height: 20px;
+        border: 2px solid #f3f3f3;
+        border-top: 2px solid var(--color-earth);
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+        margin-right: 8px;
+    }
+
+    @@keyframes spin {
+        0% {
+            transform: rotate(0deg);
+        }
+
+        100% {
+            transform: rotate(360deg);
+        }
+    }
+
+    .loading {
+        opacity: 0.7;
+        pointer-events: none;
+    }
+
+    .loading-spinner {
+        display: inline-block;
+        width: 16px;
+        height: 16px;
+        border: 2px solid #f3f3f3;
+        border-top: 2px solid var(--color-earth);
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+        margin-right: 8px;
+    }
+
+    @@keyframes spin {
+        0% {
+            transform: rotate(0deg);
+        }
+
+        100% {
+            transform: rotate(360deg);
+        }
+    }
+
+    .task-table tr.loading {
+        background-color: rgba(0, 0, 0, 0.05);
+    }
+</style>
+
+<!-- Page Header -->
+<div class="page-header">
+    <h1><i class="fas fa-seedling"></i>@Model.Crop.Name in Plot: @Model.Plot.Name</h1>
+    <p>Monitor and manage crop cultivation activities and progress</p>
+</div>
+
+<div class="dashboard-container">
+    <!-- Sidebar Navigation -->
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <h4><i class="fas fa-bars"></i> Navigation</h4>
+        </div>
+        <ul class="sidebar-nav">
+            <li class="nav-item">
+                <a href="#overview" class="nav-link active" data-section="overview">
+                    <i class="fas fa-home"></i>
+                    <span>Overview</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="#tasks" class="nav-link" data-section="tasks">
+                    <i class="fas fa-tasks"></i>
+                    <span>Tasks</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="#growth" class="nav-link" data-section="growth">
+                    <i class="fas fa-chart-line"></i>
+                    <span>Growth Tracking</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="#harvest" class="nav-link" data-section="harvest">
+                    <i class="fas fa-cut"></i>
+                    <span>Harvest</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="#analytics" class="nav-link" data-section="analytics">
+                    <i class="fas fa-analytics"></i>
+                    <span>Analytics</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="#activities" class="nav-link" data-section="activities">
+                    <i class="fas fa-list-alt"></i>
+                    <span>Activities</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="#severity" class="nav-link" data-section="severity">
+                    <i class="fas fa-chart-bar"></i>
+                    <span>Severity Trends</span>
+                </a>
+            </li>
+        </ul>
+    </div>
+
+    <!-- Main Content Area -->
+    <div class="main-content">
+        <!-- Overview Section -->
+        <div id="overview" class="content-section active">
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="compact-card">
+                        <div class="compact-card-header">
+                            <i class="fas fa-info-circle"></i>
+                            <h5>Crop Information</h5>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label"><i class="fas fa-flag"></i><strong>Status:</strong></span>
+                            <span class="badge @GetStatusBadge(Model.Status)">@Model.Status</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label"><i class="fas fa-calendar-plus"></i><strong>Planted On:</strong></span>
+                            <span class="info-value">@(Model.DatePlanted?.ToString("d") ?? "Not planted yet")</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label"><i class="fas fa-calendar-check"></i><strong>Expected Maturity:</strong></span>
+                            <span class="info-value">@(Model.ExpectedMaturityDate?.ToString("d") ?? "N/A")</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label"><i class="fas fa-clock"></i><strong>Days to Maturity:</strong></span>
+                            <span class="info-value">@GetDaysToMaturity(Model)</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label"><i class="fas fa-weight-hanging"></i><strong>Expected Yield:</strong></span>
+                            <span class="info-value">@Model.ExpectedYield kg/hectare</span>
+                        </div>
+
+                        @if (Model.Status == "Preparation")
+                        {
+                            <div class="mt-4">
+                                @using (Html.BeginForm("StartPlanting", "PlotCrops", FormMethod.Post))
+                                {
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="id" value="@Model.Id" />
+                                    <button type="submit" class="action-button w-100">
+                                        <i class="fas fa-play-circle"></i>
+                                        Start Planting Phase
+                                    </button>
+                                }
+                            </div>
+                        }
+                    </div>
+                </div>
+
+                <div class="col-md-6">
+                    <div class="compact-card">
+                        <div class="compact-card-header">
+                            <i class="fas fa-chart-pie"></i>
+                            <h5>Quick Stats</h5>
+                        </div>
+                        @Html.Action("ActivityStats", new { plotCropId = Model.Id })
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tasks Section -->
+        <div id="tasks" class="content-section">
+            <div class="compact-card">
+                <div class="compact-card-header">
+                    <i class="fas fa-tasks"></i>
+                    <h5>Task Management</h5>
+                </div>
+                @Html.Action("TaskList", "PlotCrops", new { plotCropId = Model.Id })
+            </div>
+        </div>
+
+        <!-- Growth Tracking Section -->
+        <div id="growth" class="content-section">
+            <div class="compact-card">
+                <div class="compact-card-header">
+                    <i class="fas fa-chart-line"></i>
+                    <h5>Growth Tracking</h5>
+                </div>
+                @if (Model.Status != "Preparation")
+                {
+                    @Html.Action("GrowthRecords", "PlotCrops", new { id = Model.Id })
+                }
+                else
+                {
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle"></i>
+                        <strong>Growth Tracking Unavailable</strong>
+                        <p>Growth tracking will be available after planting begins.</p>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <!-- Harvest Section -->
+        <!-- Harvest Section -->
+        <div id="harvest" class="content-section">
+            <div class="compact-card">
+                <div class="compact-card-header">
+                    <i class="fas fa-cut"></i>
+                    <h5>Harvest Management</h5>
+                </div>
+
+                @if (Model.Status == "Harvested")
+                {
+                    @Html.Action("HarvestAnalytics", "PlotCrops", new { id = Model.Id })
+                }
+                else if (Model.Status == "Harvesting")
+                {
+                    <div class="alert alert-info">
+                        <h5><i class="fas fa-hourglass-half"></i>Harvest in Progress</h5>
+                        <p>Harvesting has started. Please log the harvest outcome to complete the process.</p>
+                        <a href="@Url.Action("LogHarvestOutcome", new { plotCropId = Model.Id })" class="action-button">
+                            <i class="fas fa-clipboard-check"></i>
+                            Log Harvest Outcome
+                        </a>
+                    </div>
+                }
+                else
+                {
+                    if (Model.ExpectedMaturityDate.HasValue)
+                    {
+                        <div class="alert alert-info">
+                            <h5><i class="fas fa-calendar-alt"></i>Harvest Schedule</h5>
+                            <p><strong>Estimated harvest date:</strong> @Model.ExpectedMaturityDate.Value.ToString("d")</p>
+                            <p><strong>Days remaining:</strong> @((Model.ExpectedMaturityDate.Value - DateTime.Now).Days) days</p>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="alert alert-info">
+                            <h5><i class="fas fa-info-circle"></i>Harvest Information</h5>
+                            <p>Harvest information will be available once planting begins.</p>
+                        </div>
+                    }
+
+                    <div class="alert alert-warning">
+                        <h5><i class="fas fa-exclamation-triangle"></i>Ready to Harvest?</h5>
+                        <p>
+                            You can start harvesting at any time — even before the expected maturity date —
+                            if your crops are spoiled, damaged by pests/weather, or have matured earlier than expected.
+                        </p>
+                        @using (Html.BeginForm("StartHarvest", "PlotCrops", FormMethod.Post))
+                        {
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="id" value="@Model.Id" />
+                            <button type="submit" class="action-button btn-warning">
+                                <i class="fas fa-cut"></i>
+                                Begin Harvest Process
+                            </button>
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+
+        <!-- Analytics Section -->
+        <div id="analytics" class="content-section">
+            <div class="compact-card">
+                <div class="compact-card-header">
+                    <i class="fas fa-analytics"></i>
+                    <h5>Harvest Analytics</h5>
+                </div>
+                @Html.Action("HarvestAnalytics", "PlotCrops", new { plotCropId = Model.Id })
+            </div>
+        </div>
+
+        <!-- Activities Section -->
+        <div id="activities" class="content-section">
+            <div class="compact-card">
+                <div class="compact-card-header">
+                    <i class="fas fa-list-alt"></i>
+                    <h5>Activity Log</h5>
+                </div>
+                <div id="activityList">
+                    @Html.Action("ActivityList", new { plotCropId = Model.Id })
+                </div>
+
+                <div class="mt-3">
+                    <button class="action-button btn-sm" id="toggleActivityForm">
+                        <i class="fas fa-plus"></i> Add New Activity
+                    </button>
+                </div>
+
+                <div id="activityFormContainer" style="display:none; margin-top:15px;">
+                    @Html.Action("ActivityForm", "PlotCrops", new { plotCropId = Model.Id })
+                </div>
+            </div>
+        </div>
+
+        <!-- Severity Trends Section -->
+        <div id="severity" class="content-section">
+            <div class="compact-card">
+                <div class="compact-card-header">
+                    <i class="fas fa-chart-bar"></i>
+                    <h5>Severity Trends</h5>
+                </div>
+                @Html.Action("SeverityTrends", new { plotCropId = Model.Id })
+            </div>
+        </div>
+    </div>
+</div>
+
+@functions {
+    string GetStatusBadge(string status)
+    {
+        switch (status)
+        {
+            case "Preparation": return "bg-secondary";
+            case "Planting": return "bg-info";
+            case "Growing": return "bg-primary";
+            case "Harvesting": return "bg-warning"; // New status for harvesting in progress
+            case "Harvested": return "bg-success";
+            default: return "bg-light text-dark";
+        }
+    }
+
+    string GetDaysToMaturity(PlotCrop plotCrop)
+    {
+        if (plotCrop.Status == "Harvested") return "Harvest completed";
+        if (!plotCrop.ExpectedMaturityDate.HasValue) return "N/A";
+
+        var days = (plotCrop.ExpectedMaturityDate.Value - DateTime.Now).Days;
+        return days > 0 ? $"{days} days" : "Ready for harvest";
+    }
+}
+
+@section Scripts {
+    <script>
+        $(function () {
+            // Sidebar navigation
+            $('.nav-link').click(function (e) {
+                e.preventDefault();
+
+                // Update active states
+                $('.nav-link').removeClass('active');
+                $(this).addClass('active');
+
+                // Show corresponding section
+                var targetSection = $(this).data('section');
+                $('.content-section').removeClass('active');
+                $('#' + targetSection).addClass('active');
+
+                // Scroll to top of content
+                $('.main-content').animate({ scrollTop: 0 }, 300);
+            });
+
+            // Toggle activity form
+            $('#toggleActivityForm').click(function () {
+                $('#activityFormContainer').slideToggle();
+                var icon = $(this).find('i');
+                if (icon.hasClass('fa-plus')) {
+                    icon.removeClass('fa-plus').addClass('fa-minus');
+                    $(this).html('<i class="fas fa-minus"></i> Hide Form');
+                } else {
+                    icon.removeClass('fa-minus').addClass('fa-plus');
+                    $(this).html('<i class="fas fa-plus"></i> Add New Activity');
+                }
+            });
+
+            // Activity form submission
+            $(document).on('submit', '#activityForm', function (e) {
+                e.preventDefault();
+                var formData = new FormData(this);
+                var $form = $(this);
+                var $container = $('#activityFormContainer');
+
+                $container.addClass('loading');
+                $form.find('button[type="submit"]').html('<span class="loading-spinner"></span> Saving...');
+
+                $.ajax({
+                    url: $(this).attr('action'),
+                    type: 'POST',
+                    data: formData,
+                    processData: false,
+                    contentType: false,
+                    success: function (response) {
+                        if (response.success) {
+                            $('#activityList').load('@Url.Action("ActivityList", new { plotCropId = Model.Id })');
+                            $('#activityForm')[0].reset();
+                            $('#activityFormContainer').slideUp();
+                            $('#toggleActivityForm').html('<i class="fas fa-plus"></i> Add New Activity');
+
+                            // Show success message
+                            showNotification('Activity added successfully!', 'success');
+                        } else {
+                            $('#activityFormContainer').html(response);
+                        }
+                    },
+                    error: function () {
+                        showNotification('An error occurred while saving the activity.', 'error');
+                    },
+                    complete: function () {
+                        $container.removeClass('loading');
+                    }
+                });
+            });
+
+            // Conditional fields
+            $(document).on('change', '#ActivityType', function () {
+                var type = $(this).val();
+                $('.activity-fields').hide();
+                $('.activity-fields input, .activity-fields select').val('');
+
+                if (type === "Fertilization") {
+                    $('#fertilizationFields').show();
+                } else if (type === "Pest" || type === "Disease") {
+                    $('#pestDiseaseFields').show();
+                } else if (type === "GrowthRecording") {
+                    $('#growthFields').show();
+                }
+            });
+
+            // Initialize
+            $('#ActivityType').trigger('change');
+
+            function showNotification(message, type) {
+                var alertClass = type === 'success' ? 'alert-success' : 'alert-danger';
+                var notification = $('<div class="alert ' + alertClass + '" style="position: fixed; top: 20px; right: 20px; z-index: 9999; min-width: 300px;">' +
+                    '<i class="fas ' + (type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle') + '"></i> ' + message + '</div>');
+
+                $('body').append(notification);
+                setTimeout(function () {
+                    notification.fadeOut(function () {
+                        $(this).remove();
+                    });
+                }, 3000);
+            }
+
+            // Task list filtering
+            $(document).on('click', '#taskFilterToggle', function (e) {
+                e.preventDefault();
+
+                var $button = $(this);
+                var $container = $button.closest('.task-table-container');
+                var plotCropId = $button.data('plotcropid');
+                var currentFilter = $button.data('showall') === 'True';
+                var newFilter = !currentFilter;
+
+                // Show loading state
+                $container.addClass('loading');
+                $button.html('<span class="loading-spinner"></span> Loading...');
+
+                $.ajax({
+                    url: '@Url.Action("TaskList", "PlotCrops")',
+                    type: 'GET',
+                    data: {
+                        plotCropId: plotCropId,
+                        showAll: newFilter
+                    },
+                    success: function (response) {
+                        $container.replaceWith(response);
+                    },
+                    error: function () {
+                        alert('Error loading tasks');
+                        $container.removeClass('loading');
+                        $button.html('<i class="fas ' + (currentFilter ? 'fa-filter' : 'fa-list') + '"></i> ' +
+                                    (currentFilter ? 'Show Pending Only' : 'Show All Tasks'));
+                    }
+                });
+            });
+
+            // Complete task functionality
+            $(document).on('click', '.complete-task-btn', function (e) {
+                e.preventDefault();
+
+                var $button = $(this);
+                var taskId = $button.data('taskid');
+                var $row = $button.closest('tr');
+
+                if (confirm('Mark this task as completed?')) {
+                    $row.addClass('loading');
+                    $button.html('<span class="loading-spinner"></span> Completing...');
+
+                    $.ajax({
+                        url: '@Url.Action("CompleteTask", "Tasks")',
+                        type: 'POST',
+                        data: { id: taskId },
+                        success: function () {
+                            // Reload the task list
+                            var plotCropId = $('#taskFilterToggle').data('plotcropid');
+                            var showAll = $('#taskFilterToggle').data('showall') === 'True';
+
+                            $.ajax({
+                                url: '@Url.Action("TaskList", "PlotCrops")',
+                                type: 'GET',
+                                data: {
+                                    plotCropId: plotCropId,
+                                    showAll: showAll
+                                },
+                                success: function (response) {
+                                    $('.task-table-container').replaceWith(response);
+                                    showNotification('Task marked as completed!', 'success');
+                                }
+                            });
+                        },
+                        error: function () {
+                            alert('Error completing task');
+                            $row.removeClass('loading');
+                            $button.html('Complete');
+                        }
+                    });
+                }
+            });
+        });
+    </script>
+}

@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace FarmTrack.Models
 {
@@ -33,5 +35,9 @@ namespace FarmTrack.Models
 
         [Display(Name = "Loss Reason")]
         public string LossReason { get; set; }
+
+        // Add grade breakdown
+        [Display(Name = "Grade Breakdown")]
+        public Dictionary<string, double> GradeBreakdown { get; set; } = new Dictionary<string, double>();
     }
 }

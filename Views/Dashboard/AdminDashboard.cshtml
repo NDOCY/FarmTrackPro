@@ -725,6 +725,9 @@
                 <a href="@Url.Action("Index", "Equipment")" class="btn m-1">
                     <i class="fas fa-tractor"></i> Equipment
                 </a>
+                <a href="@Url.Action("Index", "Products")" class="btn m-1">
+                    <i class="fas fa-boxes"></i> Products
+                </a>
                 @if (Session["Role"] != null && Session["Role"].ToString() == "Owner")
                 {
                     <a href="@Url.Action("JobApplications", "Jobs")" class="btn btn-primary mt-3">

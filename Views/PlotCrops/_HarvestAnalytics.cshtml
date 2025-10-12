@@ -2,54 +2,114 @@
 
 @if (ViewBag.NoData == true || Model == null)
 {
-    <div class="alert alert-info">
-        <i class="fas fa-info-circle"></i> No harvest data available yet.
+    <div class="no-data-alert">
+        <i class="fas fa-info-circle"></i>
+        <div>
+            <strong>No harvest data available yet</strong>
+            <p class="mb-0">Analytics will be available once harvesting is completed.</p>
+        </div>
     </div>
 }
 else
 {
-    <div class="row">
-        <!-- Stats Cards -->
+    <!-- Stats Cards Row -->
+    <div class="row mb-4">
         <div class="col-md-3 mb-3">
-            <div class="card border-left-primary shadow h-100 py-2">
-                <div class="card-body">
-                    <h6 class="text-primary text-uppercase">Expected Yield</h6>
-                    <h4>@Model.ExpectedYield.ToString("N0") kg</h4>
+            <div class="analytics-stat-card expected-yield">
+                <div class="stat-icon">
+                    <i class="fas fa-target"></i>
+                </div>
+                <div class="stat-content">
+                    <h6 class="stat-label">Expected Yield</h6>
+                    <h4 class="stat-value">@Model.ExpectedYield.ToString("N0") <span class="unit">kg</span></h4>
                 </div>
             </div>
         </div>
+
         <div class="col-md-3 mb-3">
-            <div class="card border-left-success shadow h-100 py-2">
-                <div class="card-body">
-                    <h6 class="text-success text-uppercase">Actual Yield</h6>
-                    <h4>@Model.ActualYield.ToString("N0") kg</h4>
+            <div class="analytics-stat-card actual-yield">
+                <div class="stat-icon">
+                    <i class="fas fa-weight"></i>
+                </div>
+                <div class="stat-content">
+                    <h6 class="stat-label">Actual Yield</h6>
+                    <h4 class="stat-value">@Model.ActualYield.ToString("N0") <span class="unit">kg</span></h4>
                 </div>
             </div>
         </div>
+
         <div class="col-md-3 mb-3">
-            <div class="card border-left-warning shadow h-100 py-2">
-                <div class="card-body">
-                    <h6 class="text-warning text-uppercase">Losses</h6>
-                    <h4>@Model.LossKg.ToString("N0") kg (@Model.LossPercentage.ToString("N1")%)</h4>
+            <div class="analytics-stat-card losses">
+                <div class="stat-icon">
+                    <i class="fas fa-exclamation-triangle"></i>
+                </div>
+                <div class="stat-content">
+                    <h6 class="stat-label">Losses</h6>
+                    <h4 class="stat-value">@Model.LossKg.ToString("N0") <span class="unit">kg</span></h4>
+                    <p class="stat-percentage">(@Model.LossPercentage.ToString("N1")%)</p>
                 </div>
             </div>
         </div>
+
         <div class="col-md-3 mb-3">
-            <div class="card border-left-info shadow h-100 py-2">
-                <div class="card-body">
-                    <h6 class="text-info text-uppercase">Days to Harvest</h6>
-                    <h4>@Model.DaysFromPlantingToHarvest days</h4>
+            <div class="analytics-stat-card harvest-days">
+                <div class="stat-icon">
+                    <i class="fas fa-calendar-alt"></i>
+                </div>
+                <div class="stat-content">
+                    <h6 class="stat-label">Days to Harvest</h6>
+                    <h4 class="stat-value">@Model.DaysFromPlantingToHarvest <span class="unit">days</span></h4>
                 </div>
             </div>
         </div>
     </div>
 
+    <!-- Grade Breakdown Section -->
+    if (Model.GradeBreakdown != null && Model.GradeBreakdown.Any())
+    {
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card analytics-chart-card">
+                    <div class="card-header">
+                        <i class="fas fa-star"></i>
+                        <h5>Quality Grade Breakdown</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <canvas id="gradeChart"></canvas>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="grade-breakdown-details">
+                                    @foreach (var grade in Model.GradeBreakdown.OrderByDescending(g => g.Value))
+                                    {
+                                        <div class="grade-item mb-2">
+                                            <span class="grade-badge @GetGradeBadgeClass(grade.Key)">@grade.Key</span>
+                                            <span class="grade-quantity">@grade.Value.ToString("N0") kg</span>
+                                            <span class="grade-percentage">
+                                                (@((grade.Value / Model.ActualYield * 100).ToString("N1"))%)
+                                            </span>
+                                        </div>
+                                    }
+                                    <div class="grade-total mt-3 pt-3 border-top">
+                                        <strong>Total: @Model.ActualYield.ToString("N0") kg</strong>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+
     <!-- Charts Row -->
-    <div class="row mt-4">
+    <div class="row">
         <div class="col-md-6 mb-4">
-            <div class="card shadow">
-                <div class="card-header bg-primary text-white">
-                    Expected vs Actual Yield
+            <div class="card analytics-chart-card">
+                <div class="card-header">
+                    <i class="fas fa-chart-bar"></i>
+                    <h5>Expected vs Actual Yield</h5>
                 </div>
                 <div class="card-body">
                     <canvas id="yieldChart"></canvas>
@@ -58,9 +118,10 @@ else
         </div>
 
         <div class="col-md-6 mb-4">
-            <div class="card shadow">
-                <div class="card-header bg-warning text-white">
-                    Loss Percentage
+            <div class="card analytics-chart-card">
+                <div class="card-header">
+                    <i class="fas fa-chart-pie"></i>
+                    <h5>Yield Distribution</h5>
                 </div>
                 <div class="card-body">
                     <canvas id="lossChart"></canvas>
@@ -69,51 +130,287 @@ else
         </div>
     </div>
 
-    <!-- Loss Reason -->
-    <div class="card mt-3 shadow">
-        <div class="card-header bg-secondary text-white">
-            Loss Reason / Notes
-        </div>
-        <div class="card-body">
-            @Model.LossReason
-        </div>
-    </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- Loss Reason Card -->
+    if (!string.IsNullOrEmpty(Model.LossReason))
+    {
+        <div class="card analytics-notes-card">
+            <div class="card-header">
+                <i class="fas fa-clipboard-list"></i>
+                <h5>Loss Analysis & Notes</h5>
+            </div>
+            <div class="card-body">
+                <div class="loss-reason-content">
+                    <i class="fas fa-info-circle text-warning"></i>
+                    <p class="mb-0">@Model.LossReason</p>
+                </div>
+            </div>
+        </div>
+    }
+
+    <a href="@Url.Action("SendToProducts", "PlotCrops", new { plotCropId = Model.PlotCropId })" class="btn btn-success">
+        <i class="fas fa-box-open"></i> Send to Products
+    </a>
+
+
     <script>
-        // Yield Comparison Chart
-        var ctxYield = document.getElementById('yieldChart').getContext('2d');
-        new Chart(ctxYield, {
-            type: 'bar',
-            data: {
-                labels: ['Expected', 'Actual'],
-                datasets: [{
-                    label: 'Yield (kg)',
-                    data: [@Model.ExpectedYield, @Model.ActualYield],
-                    backgroundColor: ['#4CAF50', '#2196F3']
-                }]
-            },
-            options: {
-                responsive: true,
-                plugins: { legend: { display: false } }
+        // Wait for Chart.js to load before initializing charts
+        function initializeCharts() {
+            if (typeof Chart === 'undefined') {
+                console.log('Chart.js not loaded yet, retrying...');
+                setTimeout(initializeCharts, 100);
+                return;
             }
-        });
 
-        // Loss Percentage Doughnut Chart
-        var ctxLoss = document.getElementById('lossChart').getContext('2d');
-        new Chart(ctxLoss, {
-            type: 'doughnut',
-            data: {
-                labels: ['Losses', 'Usable Yield'],
-                datasets: [{
-                    data: [@Model.LossKg, @Model.ActualYield],
-                    backgroundColor: ['#FF6B6B', '#4CAF50']
-                }]
-            },
-            options: {
-                responsive: true,
-                plugins: { legend: { position: 'bottom' } }
+            // Yield Comparison Chart
+            var ctxYield = document.getElementById('yieldChart');
+            if (ctxYield) {
+                var yieldChart = new Chart(ctxYield.getContext('2d'), {
+                    type: 'bar',
+                    data: {
+                        labels: ['Expected Yield', 'Actual Yield'],
+                        datasets: [{
+                            label: 'Yield (kg)',
+                            data: [@Model.ExpectedYield, @Model.ActualYield],
+                            backgroundColor: ['rgba(139, 115, 85, 0.8)', 'rgba(76, 175, 80, 0.8)'],
+                            borderColor: ['rgba(139, 115, 85, 1)', 'rgba(76, 175, 80, 1)'],
+                            borderWidth: 2,
+                            borderRadius: 6
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: true,
+                        aspectRatio: 2,
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: {
+                                backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                                titleColor: '#fff',
+                                bodyColor: '#fff',
+                                cornerRadius: 8
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                grid: {
+                                    color: 'rgba(0, 0, 0, 0.05)'
+                                },
+                                ticks: {
+                                    font: {
+                                        size: 12
+                                    },
+                                    callback: function(value) {
+                                        return value + ' kg';
+                                    }
+                                }
+                            },
+                            x: {
+                                grid: {
+                                    display: false
+                                },
+                                ticks: {
+                                    font: {
+                                        size: 12,
+                                        weight: '600'
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
             }
-        });
+
+            // Loss Percentage Doughnut Chart
+            var ctxLoss = document.getElementById('lossChart');
+            if (ctxLoss) {
+                var lossChart = new Chart(ctxLoss.getContext('2d'), {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['Losses', 'Usable Yield'],
+                        datasets: [{
+                            data: [@Model.LossKg, @Model.ActualYield],
+                            backgroundColor: ['rgba(255, 107, 107, 0.8)', 'rgba(76, 175, 80, 0.8)'],
+                            borderColor: ['rgba(255, 107, 107, 1)', 'rgba(76, 175, 80, 1)'],
+                            borderWidth: 2
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: true,
+                        aspectRatio: 2,
+                        plugins: {
+                            legend: {
+                                position: 'bottom',
+                                labels: {
+                                    padding: 20,
+                                    font: {
+                                        size: 12,
+                                        weight: '600'
+                                    }
+                                }
+                            },
+                            tooltip: {
+                                backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                                titleColor: '#fff',
+                                bodyColor: '#fff',
+                                cornerRadius: 8,
+                                callbacks: {
+                                    label: function(context) {
+                                        var label = context.label || '';
+                                        if (label) {
+                                            label += ': ';
+                                        }
+                                        label += context.parsed + ' kg';
+                                        return label;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+
+            // Grade Breakdown Chart (if grades exist)
+            var ctxGrade = document.getElementById('gradeChart');
+            if (ctxGrade && @Json.Encode(Model.GradeBreakdown.Any())) {
+                var gradeData = @Html.Raw(Json.Encode(Model.GradeBreakdown));
+                var gradeLabels = Object.keys(gradeData);
+                var gradeValues = Object.values(gradeData);
+
+                var gradeColors = [
+                    'rgba(76, 175, 80, 0.8)',    // Grade A - Green
+                    'rgba(255, 193, 7, 0.8)',    // Grade B - Yellow
+                    'rgba(255, 107, 107, 0.8)',  // Grade C - Red
+                    'rgba(100, 181, 246, 0.8)',  // Additional grades
+                    'rgba(186, 104, 200, 0.8)'   // Additional grades
+                ];
+
+                var gradeChart = new Chart(ctxGrade.getContext('2d'), {
+                    type: 'pie',
+                    data: {
+                        labels: gradeLabels,
+                        datasets: [{
+                            data: gradeValues,
+                            backgroundColor: gradeColors,
+                            borderColor: gradeColors.map(color => color.replace('0.8', '1')),
+                            borderWidth: 2
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: true,
+                        aspectRatio: 1.5,
+                        plugins: {
+                            legend: {
+                                position: 'bottom',
+                                labels: {
+                                    padding: 20,
+                                    font: {
+                                        size: 12,
+                                        weight: '600'
+                                    }
+                                }
+                            },
+                            tooltip: {
+                                backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                                titleColor: '#fff',
+                                bodyColor: '#fff',
+                                cornerRadius: 8,
+                                callbacks: {
+                                    label: function(context) {
+                                        var label = context.label || '';
+                                        var value = context.parsed;
+                                        var percentage = (value / @Model.ActualYield * 100).toFixed(1);
+                                        return `${label}: ${value} kg (${percentage}%)`;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+        }
+
+        // Initialize charts when document is ready
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initializeCharts);
+        } else {
+            initializeCharts();
+        }
     </script>
 }
+
+@functions {
+    string GetGradeBadgeClass(string gradeName)
+    {
+        switch (gradeName.ToLower())
+        {
+            case "grade a":
+                return "grade-a";
+            case "grade b":
+                return "grade-b";
+            case "grade c":
+                return "grade-c";
+            default:
+                return "grade-other";
+        }
+    }
+}
+
+<style>
+    .grade-breakdown-details {
+        padding: 20px;
+    }
+
+    .grade-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 8px 12px;
+        background: #f8f9fa;
+        border-radius: 8px;
+        margin-bottom: 8px;
+    }
+
+    .grade-badge {
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 600;
+        color: white;
+    }
+
+    .grade-a {
+        background: linear-gradient(135deg, #4CAF50, #45a049);
+    }
+
+    .grade-b {
+        background: linear-gradient(135deg, #FFC107, #ff9800);
+    }
+
+    .grade-c {
+        background: linear-gradient(135deg, #FF6B6B, #f44336);
+    }
+
+    .grade-other {
+        background: linear-gradient(135deg, #9E9E9E, #757575);
+    }
+
+    .grade-quantity {
+        font-weight: 600;
+        color: #333;
+    }
+
+    .grade-percentage {
+        color: #666;
+        font-size: 12px;
+    }
+
+    .grade-total {
+        font-size: 14px;
+        color: #2c3e50;
+    }
+</style>

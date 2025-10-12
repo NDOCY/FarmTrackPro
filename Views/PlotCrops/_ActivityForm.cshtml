@@ -1,97 +1,104 @@
 ﻿@model FarmTrack.Models.ActivityViewModel
 
-@using (Html.BeginForm("AddActivity", "PlotCrops", FormMethod.Post,
-    new { id = "activityForm", enctype = "multipart/form-data" }))
-{
-    @Html.AntiForgeryToken()
-    @Html.HiddenFor(m => m.PlotCropId)
+<div class="activity-form">
+    @using (Html.BeginForm("AddActivity", "PlotCrops", FormMethod.Post, new { id = "activityForm", enctype = "multipart/form-data" }))
+    {
+        @Html.AntiForgeryToken()
+        @Html.HiddenFor(m => m.PlotCropId)
 
-    <!-- Activity Type -->
-    <div class="form-group">
-        @Html.LabelFor(m => m.ActivityType)
-        @Html.DropDownListFor(m => m.ActivityType, (SelectList)ViewBag.ActivityTypes,
-            "Select Activity Type",
-            new { @class = "form-control", required = "required", id = "ActivityType" })
-    </div>
-
-    <!-- Date -->
-    <div class="form-group">
-        @Html.LabelFor(m => m.ActivityDate)
-        @Html.TextBoxFor(m => m.ActivityDate, "{0:yyyy-MM-ddTHH:mm}",
-            new { @class = "form-control", type = "datetime-local" })
-    </div>
-
-    <!-- Description -->
-    <div class="form-group">
-        @Html.LabelFor(m => m.Description)
-        @Html.TextBoxFor(m => m.Description,
-            new { @class = "form-control", required = "required" })
-    </div>
-
-    <!-- Notes -->
-    <div class="form-group">
-        @Html.LabelFor(m => m.Notes)
-        @Html.TextAreaFor(m => m.Notes,
-            new { @class = "form-control", rows = 3 })
-    </div>
-
-    <!-- Image Upload -->
-    <div class="form-group">
-        @Html.LabelFor(m => m.ImageFile)
-        @Html.TextBoxFor(m => m.ImageFile,
-            new { type = "file", @class = "form-control-file" })
-        <small class="form-text text-muted">Upload photo evidence (optional)</small>
-    </div>
-
-    <!-- Fertilization Fields -->
-    <div id="fertilizationFields" class="activity-fields" style="display:none;">
-        <div class="form-group">
-            @Html.LabelFor(m => m.ProductName)
-            @Html.TextBoxFor(m => m.ProductName, new { @class = "form-control" })
-        </div>
         <div class="form-row">
             <div class="form-group col-md-6">
-                @Html.LabelFor(m => m.AmountUsed)
-                @Html.TextBoxFor(m => m.AmountUsed,
-                    new { @class = "form-control", type = "number", step = "0.1" })
+                @Html.LabelFor(m => m.ActivityType)
+                @Html.DropDownListFor(m => m.ActivityType, (SelectList)ViewBag.ActivityTypes, "Select Activity Type", new { @class = "form-control", required = "required" })
+                @Html.ValidationMessageFor(m => m.ActivityType)
             </div>
+
             <div class="form-group col-md-6">
-                @Html.LabelFor(m => m.Unit)
-                @Html.TextBoxFor(m => m.Unit,
-                    new { @class = "form-control", placeholder = "kg, ml, etc." })
+                @Html.LabelFor(m => m.ActivityDate)
+                @Html.TextBoxFor(m => m.ActivityDate, "{0:yyyy-MM-dd}", new { @class = "form-control", type = "date", required = "required" })
+                @Html.ValidationMessageFor(m => m.ActivityDate)
             </div>
         </div>
-    </div>
 
-    <!-- Pest / Disease Fields -->
-    <div id="pestDiseaseFields" class="activity-fields" style="display:none;">
         <div class="form-group">
-            @Html.LabelFor(m => m.Severity)
-            @Html.DropDownListFor(m => m.Severity, (SelectList)ViewBag.SeverityLevels,
-                "Select Severity", new { @class = "form-control" })
+            @Html.LabelFor(m => m.Description)
+            @Html.TextAreaFor(m => m.Description, new { @class = "form-control", rows = "3", required = "required", placeholder = "Describe the activity..." })
+            @Html.ValidationMessageFor(m => m.Description)
         </div>
-        <div class="form-group">
-            @Html.LabelFor(m => m.ProductName, "Treatment Used")
-            @Html.TextBoxFor(m => m.ProductName, new { @class = "form-control" })
-        </div>
-    </div>
 
-    <!-- Growth Recording Fields -->
-    <div id="growthFields" class="activity-fields" style="display:none;">
         <div class="form-group">
-            @Html.LabelFor(m => m.GrowthStage)
-            @Html.DropDownListFor(m => m.GrowthStage, (SelectList)ViewBag.GrowthStages,
-                "Select Growth Stage", new { @class = "form-control" })
+            @Html.LabelFor(m => m.Notes)
+            @Html.TextAreaFor(m => m.Notes, new { @class = "form-control", rows = "2", placeholder = "Additional notes or observations..." })
+            @Html.ValidationMessageFor(m => m.Notes)
         </div>
-        <div class="form-group">
-            @Html.LabelFor(m => m.MeasurementValue, "Measurement (cm/kg)")
-            @Html.TextBoxFor(m => m.MeasurementValue,
-                new { @class = "form-control", type = "number", step = "0.1" })
-        </div>
-    </div>
 
-    <!-- Submit -->
-    <div class="form-group">
-        <button type="submit" class="btn btn-primary">Save Activity</button>
-    </div>
-}
+        <!-- Conditional fields will be shown based on activity type -->
+        <div id="fertilizationFields" class="activity-fields" style="display: none;">
+            <div class="form-row">
+                <div class="form-group col-md-6">
+                    @Html.LabelFor(m => m.ProductName)
+                    @Html.TextBoxFor(m => m.ProductName, new { @class = "form-control", placeholder = "Fertilizer name" })
+                </div>
+                <div class="form-group col-md-3">
+                    @Html.LabelFor(m => m.AmountUsed)
+                    @Html.TextBoxFor(m => m.AmountUsed, new { @class = "form-control", type = "number", step = "0.01", placeholder = "0.00" })
+                </div>
+                <div class="form-group col-md-3">
+                    @Html.LabelFor(m => m.Unit)
+                    @Html.TextBoxFor(m => m.Unit, new { @class = "form-control", placeholder = "kg, ml, etc." })
+                </div>
+            </div>
+        </div>
+
+        <div id="pestDiseaseFields" class="activity-fields" style="display: none;">
+            <div class="form-row">
+                <div class="form-group col-md-6">
+                    @Html.LabelFor(m => m.Severity)
+                    @Html.DropDownListFor(m => m.Severity, (SelectList)ViewBag.SeverityLevels, "Select Severity", new { @class = "form-control" })
+                </div>
+                <div class="form-group col-md-6">
+                    @Html.LabelFor(m => m.ProductName)
+                    @Html.TextBoxFor(m => m.ProductName, new { @class = "form-control", placeholder = "Treatment or pesticide name" })
+                </div>
+            </div>
+        </div>
+
+        <div id="growthFields" class="activity-fields" style="display: none;">
+            <div class="form-row">
+                <div class="form-group col-md-6">
+                    @Html.LabelFor(m => m.GrowthStage)
+                    @Html.DropDownListFor(m => m.GrowthStage, (SelectList)ViewBag.GrowthStages, "Select Growth Stage", new { @class = "form-control" })
+                </div>
+                <div class="form-group col-md-6">
+                    @Html.LabelFor(m => m.MeasurementValue)
+                    @Html.TextBoxFor(m => m.MeasurementValue, new { @class = "form-control", type = "number", step = "0.01", placeholder = "Measurement value" })
+                </div>
+            </div>
+        </div>
+
+        <button type="submit" class="btn btn-primary">
+            <i class="fas fa-save"></i> Save Activity
+        </button>
+    }
+</div>
+
+<script>
+    $(function () {
+        // Show/hide conditional fields based on activity type
+        $('#ActivityType').change(function () {
+            var type = $(this).val();
+            $('.activity-fields').hide();
+
+            if (type === "Fertilization") {
+                $('#fertilizationFields').show();
+            } else if (type === "Pest" || type === "Disease") {
+                $('#pestDiseaseFields').show();
+            } else if (type === "GrowthRecording") {
+                $('#growthFields').show();
+            }
+        });
+
+        // Trigger change on load
+        $('#ActivityType').trigger('change');
+    });
+</script>

@@ -1,48 +1,74 @@
 ﻿@model IEnumerable<FarmTrack.Models.GrowthRecord>
 
-<div>
-    <h5>Growth Tracking</h5>
+<div class="growth-section">
+    <h5><i class="fas fa-chart-line"></i> Growth Tracking</h5>
 
-    <form method="post" action="@Url.Action("AddGrowthRecord", "PlotCrops")">
-        @Html.AntiForgeryToken()
-        <input type="hidden" name="plotCropId" value="@ViewBag.PlotCropId" />
-        <div class="form-group">
-            <label>Stage</label>
-            <input type="text" name="stage" class="form-control" placeholder="e.g. Germination" required />
-        </div>
-        <div class="form-group">
-            <label>Notes</label>
-            <textarea name="notes" class="form-control"></textarea>
-        </div>
-        <button type="submit" class="btn btn-sm btn-primary">Add</button>
-    </form>
+    <div class="growth-form">
+        <form method="post" action="@Url.Action("AddGrowthRecord", "PlotCrops")">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="plotCropId" value="@ViewBag.PlotCropId" />
 
-    <hr />
+            <div class="form-row">
+                <div class="form-group col-md-6">
+                    <label><i class="fas fa-seedling"></i> Growth Stage</label>
+                    <input type="text" name="stage" class="form-control" placeholder="e.g. Germination, Flowering" required />
+                </div>
+                <div class="form-group col-md-6">
+                    <label><i class="fas fa-sticky-note"></i> Notes</label>
+                    <textarea name="notes" class="form-control" rows="1" placeholder="Additional observations..."></textarea>
+                </div>
+            </div>
+
+            <div class="form-group mb-0">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-plus"></i> Add Growth Record
+                </button>
+            </div>
+        </form>
+    </div>
 
     @if (!Model.Any())
     {
-        <div class="alert alert-info">No growth records yet.</div>
+        <div class="no-data-alert">
+            <i class="fas fa-info-circle"></i>
+            <div>
+                <strong>No growth records yet</strong>
+                <p class="mb-0">Start tracking growth by adding your first record above.</p>
+            </div>
+        </div>
     }
     else
     {
-        <table class="table table-sm table-bordered">
-            <thead>
-                <tr>
-                    <th>Date</th>
-                    <th>Stage</th>
-                    <th>Notes</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach (var r in Model)
-                {
+        <div class="growth-table-container">
+            <table class="table growth-table">
+                <thead>
                     <tr>
-                        <td>@r.DateRecorded.ToShortDateString()</td>
-                        <td>@r.Stage</td>
-                        <td>@r.Notes</td>
+                        <th><i class="fas fa-calendar"></i> Date Recorded</th>
+                        <th><i class="fas fa-leaf"></i> Growth Stage</th>
+                        <th><i class="fas fa-notes-medical"></i> Notes</th>
                     </tr>
-                }
-            </tbody>
-        </table>
+                </thead>
+                <tbody>
+                    @foreach (var r in Model.OrderByDescending(x => x.DateRecorded))
+                    {
+                        <tr>
+                            <td>
+                                <i class="fas fa-calendar-alt text-muted"></i>
+                                @r.DateRecorded.ToShortDateString()
+                            </td>
+                            <td>
+                                <span class="badge bg-success">
+                                    <i class="fas fa-seedling"></i>
+                                    @r.Stage
+                                </span>
+                            </td>
+                            <td>
+                                <span class="text-muted">@(string.IsNullOrEmpty(r.Notes) ? "No notes" : r.Notes)</span>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
     }
 </div>

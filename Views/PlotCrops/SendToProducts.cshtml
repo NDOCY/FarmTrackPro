@@ -1,0 +1,25 @@
+﻿@model FarmTrack.Models.SendHarvestToProductsViewModel
+
+<h2>Send Harvest to Products</h2>
+
+<p>
+    <strong>Harvest:</strong> @Model.HarvestName <br />
+    <strong>Available Quantity:</strong> @Model.AvailableQuantity kg
+</p>
+
+@using (Html.BeginForm())
+{
+    @Html.AntiForgeryToken()
+    @Html.HiddenFor(m => m.PlotCropId)
+
+    <div class="form-group">
+        @Html.LabelFor(m => m.QuantityToSend)
+        @Html.TextBoxFor(m => m.QuantityToSend, new { @class = "form-control", type = "number", min = "1", max = Model.AvailableQuantity })
+        @Html.ValidationMessageFor(m => m.QuantityToSend)
+    </div>
+
+    <button type="submit" class="btn btn-success">
+        <i class="fas fa-box-open"></i> Send to Products
+    </button>
+    <a href="@Url.Action("Details", "Harvest", new { plotCropId = Model.PlotCropId })" class="btn btn-secondary">Cancel</a>
+}

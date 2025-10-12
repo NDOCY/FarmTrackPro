@@ -1,40 +1,100 @@
 ﻿@model IEnumerable<FarmTrack.Models.FarmTask>
-
-<table class="table table-sm">
-    <thead>
-        <tr>
-            <th>Task</th>
-            <th>Description</th>
-            <th>Due Date</th>
-            <th>Status</th>
-            <th>Actions</th>
-        </tr>
-    </thead>
-    <tbody>
-        @foreach (var task in Model)
-        {
-            <tr>
-                <td>@task.Title</td>
-                <td>@task.Description</td>
-                <td>@task.DueDate.ToString("d")</td>
-                <td>
-                    <span class="badge @(task.Status == "Completed" ? "bg-success" : "bg-warning")">
-                        @task.Status
-                    </span>
-                </td>
-                <td>
-                    @Html.ActionLink("Edit", "Edit", "Tasks", new { id = task.TaskId }, new { @class = "btn btn-sm btn-outline-primary" })
-                    @if (task.Status != "Completed")
-                    {
-                        @Html.ActionLink("Complete", "CompleteTask", "Tasks", new { id = task.TaskId }, new { @class = "btn btn-sm btn-outline-success" })
-                    }
-                </td>
-            </tr>
-        }
-    </tbody>
-</table>
-
-@if (!Model.Any())
-{
-    <div class="alert alert-info">No tasks found for this plot crop.</div>
+@{
+    bool showAll = ViewBag.ShowAll ?? false;
+    int plotCropId = ViewBag.PlotCropId;
 }
+
+<div class="task-table-container">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h5 class="mb-0">Tasks</h5>
+        <button id="taskFilterToggle"
+                class="btn btn-outline-primary btn-sm"
+                data-plotcropid="@plotCropId"
+                data-showall="@showAll">
+            <i class="fas @(showAll ? "fa-filter" : "fa-list")"></i>
+            @(showAll ? "Show Pending Only" : "Show All Tasks")
+        </button>
+    </div>
+
+    <table class="table task-table">
+        <thead>
+            <tr>
+                <th><i class="fas fa-tasks"></i> Task</th>
+                <th><i class="fas fa-file-alt"></i> Description</th>
+                <th><i class="fas fa-calendar-alt"></i> Due Date</th>
+                <th><i class="fas fa-flag"></i> Status</th>
+                <th><i class="fas fa-cog"></i> Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var task in Model)
+            {
+                <tr>
+                    <td>
+                        <strong>@task.Title</strong>
+                        @if (task.IsRecurring)
+                        {
+                            <span class="badge bg-info ms-1" title="Recurring task">
+                                <i class="fas fa-sync-alt"></i>
+                            </span>
+                        }
+                    </td>
+                    <td>
+                        <span class="text-muted">@task.Description</span>
+                    </td>
+                    <td>
+                        <i class="fas fa-calendar"></i>
+                        @task.DueDate.ToString("d")
+                        @if (task.DueDate < DateTime.Now && task.Status != "Completed")
+                        {
+                            <span class="badge bg-danger ms-1">Overdue</span>
+                        }
+                    </td>
+                    <td>
+                        <span class="badge @(task.Status == "Completed" ? "bg-success" : "bg-warning")">
+                            @if (task.Status == "Completed")
+                            {
+                                <i class="fas fa-check"></i>
+                            }
+                            else
+                            {
+                                <i class="fas fa-clock"></i>
+                            }
+                            @task.Status
+                        </span>
+                    </td>
+                    <td>
+                        @if (task.Status != "Completed")
+                        {
+                            @Html.ActionLink("Complete", "Details", "Task", new { id = task.TaskId },
+                                new { @class = "btn btn-sm btn-outline-success"@*, onclick = "return confirm('Mark this task as completed?')" *@})
+                        }
+                        else
+                        {
+                            <span class="text-muted">Completed</span>
+                        }
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    @if (!Model.Any())
+    {
+        <div class="no-data-alert">
+            <i class="fas fa-info-circle"></i>
+            <div>
+                @if (showAll)
+                {
+                    <strong>No tasks found</strong>
+                    <p class="mb-0">No tasks have been created for this plot crop yet.</p>
+                }
+                else
+                {
+                    <strong>All tasks completed!</strong>
+                    <p class="mb-0">All pending tasks have been completed. <a href="@Url.Action("TaskList", new { plotCropId = plotCropId, showAll = true })">View all tasks</a></p>
+                }
+            </div>
+        </div>
+    }
+</div>

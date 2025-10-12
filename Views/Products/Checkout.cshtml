@@ -1,0 +1,277 @@
+﻿@model FarmTrack.Models.CheckoutViewModel
+
+@{
+    ViewBag.Title = "Checkout";
+    var grandTotal = Model.CartItems.Sum(i => i.Total);
+}
+
+<h2><i class="fas fa-credit-card"></i> Checkout</h2>
+
+@if (!Model.CartItems.Any())
+{
+    <div class="alert alert-warning text-center">
+        <i class="fas fa-shopping-cart fa-2x mb-3"></i>
+        <h4>Your cart is empty</h4>
+        <a href="@Url.Action("Store")" class="btn btn-primary">
+            <i class="fas fa-store"></i> Continue Shopping
+        </a>
+    </div>
+}
+else
+{
+    using (Html.BeginForm("ProcessCheckout", "Products", FormMethod.Post, new { id = "checkoutForm" }))
+    {
+        @Html.AntiForgeryToken()
+
+        <div class="row">
+            <!-- Left Column: Customer Info + Payment -->
+            <div class="col-md-8">
+                <!-- Customer Information -->
+                <div class="card mb-4">
+                    <div class="card-header bg-info text-white">
+                        <h4><i class="fas fa-user"></i> Delivery Information</h4>
+                        <small class="fst-italic">Pre-filled from your profile - you can edit if needed</small>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    @Html.LabelFor(m => m.CustomerName, new { @class = "form-label" })
+                                    @Html.TextBoxFor(m => m.CustomerName, new { @class = "form-control", placeholder = "Enter your full name", required = "required" })
+                                    @Html.ValidationMessageFor(m => m.CustomerName, "", new { @class = "text-danger small" })
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    @Html.LabelFor(m => m.CustomerPhone, new { @class = "form-label" })
+                                    @Html.TextBoxFor(m => m.CustomerPhone, new { @class = "form-control", placeholder = "Enter your phone number", required = "required" })
+                                    @Html.ValidationMessageFor(m => m.CustomerPhone, "", new { @class = "text-danger small" })
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            @Html.LabelFor(m => m.CustomerEmail, new { @class = "form-label" })
+                            @Html.TextBoxFor(m => m.CustomerEmail, new { @class = "form-control", placeholder = "Enter your email", type = "email", required = "required" })
+                            @Html.ValidationMessageFor(m => m.CustomerEmail, "", new { @class = "text-danger small" })
+                        </div>
+                        <div class="mb-3">
+                            @Html.LabelFor(m => m.DeliveryAddress, new { @class = "form-label" })
+                            @Html.TextAreaFor(m => m.DeliveryAddress, new { @class = "form-control", rows = "3", placeholder = "Enter full delivery address", required = "required" })
+                            @Html.ValidationMessageFor(m => m.DeliveryAddress, "", new { @class = "text-danger small" })
+                        </div>
+                        <div class="mb-3">
+                            @Html.LabelFor(m => m.DeliveryInstructions, new { @class = "form-label" })
+                            @Html.TextAreaFor(m => m.DeliveryInstructions, new { @class = "form-control", rows = "2", placeholder = "Any special delivery instructions?" })
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Payment Method -->
+                <div class="card mb-4">
+                    <div class="card-header bg-warning text-dark">
+                        <h4><i class="fas fa-credit-card"></i> Payment Method</h4>
+                    </div>
+                    <div class="card-body">
+                        <!-- Payment Method Selection -->
+                        <div class="mb-3">
+                            <label class="form-label">Select Payment Method *</label>
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="radio" name="PaymentMethod" value="Cash" id="cash" checked>
+                                <label class="form-check-label" for="cash">
+                                    <i class="fas fa-money-bill-wave"></i> Cash on Delivery
+                                </label>
+                            </div>
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="radio" name="PaymentMethod" value="Card" id="card">
+                                <label class="form-check-label" for="card">
+                                    <i class="fas fa-credit-card"></i> Credit/Debit Card (Simulated)
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="PaymentMethod" value="Transfer" id="transfer">
+                                <label class="form-check-label" for="transfer">
+                                    <i class="fas fa-university"></i> Bank Transfer
+                                </label>
+                            </div>
+                            @Html.ValidationMessageFor(m => m.PaymentMethod, "", new { @class = "text-danger small" })
+                        </div>
+
+                        <!-- Card Details (Hidden by default) -->
+                        <div id="cardDetails" style="display: none;">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label">Card Number</label>
+                                        <input type="text" name="cardNumber" class="form-control" placeholder="1234 5678 9012 3456" maxlength="19">
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="mb-3">
+                                        <label class="form-label">Expiry Date</label>
+                                        <input type="text" name="expiryDate" class="form-control" placeholder="MM/YY" maxlength="5">
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="mb-3">
+                                        <label class="form-label">CVV</label>
+                                        <input type="text" name="cvv" class="form-control" placeholder="123" maxlength="3">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Name on Card</label>
+                                <input type="text" name="nameOnCard" class="form-control" placeholder="As shown on card">
+                            </div>
+                            <div class="alert alert-info">
+                                <small><i class="fas fa-info-circle"></i> This is a simulated payment. No real transactions will occur.</small>
+                            </div>
+                        </div>
+
+                        <!-- Bank Transfer Details -->
+                        <div id="transferDetails" style="display: none;">
+                            <div class="alert alert-info">
+                                <h6><i class="fas fa-university"></i> Bank Transfer Instructions</h6>
+                                <p>
+                                    <strong>Bank:</strong> FarmTrack Bank<br>
+                                    <strong>Account:</strong> 1234 5678 9012<br>
+                                    <strong>Reference:</strong> Your Name + Order #
+                                </p>
+                                <small>Please send proof of payment to payments@farmtrack.com</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column: Order Summary -->
+            <div class="col-md-4">
+                <div class="card sticky-top" style="top: 20px;">
+                    <div class="card-header bg-success text-white">
+                        <h4><i class="fas fa-receipt"></i> Order Summary</h4>
+                    </div>
+                    <div class="card-body">
+                        <!-- Order Items -->
+                        <div class="mb-3">
+                            <h6>Items (@Model.CartItems.Sum(i => i.Quantity))</h6>
+                            @foreach (var item in Model.CartItems)
+                            {
+                                <div class="d-flex justify-content-between small mb-1">
+                                    <span>@item.Name x @item.Quantity</span>
+                                    <span>R@(item.Total.ToString("F2"))</span>
+                                </div>
+                            }
+                        </div>
+
+                        <hr>
+
+                        <!-- Pricing Breakdown -->
+                        <div class="d-flex justify-content-between mb-1">
+                            <span>Subtotal:</span>
+                            <span>R@(grandTotal.ToString("F2"))</span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-1">
+                            <span>Delivery Fee:</span>
+                            <span>R0.00</span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-1">
+                            <span>Tax:</span>
+                            <span>R0.00</span>
+                        </div>
+                        <hr>
+                        <div class="d-flex justify-content-between fw-bold fs-5">
+                            <span>Total:</span>
+                            <span class="text-success">R@(grandTotal.ToString("F2"))</span>
+                        </div>
+
+                        <!-- Delivery Estimate -->
+                        <div class="alert alert-secondary mt-3">
+                            <i class="fas fa-shipping-fast"></i>
+                            <strong>Estimated Delivery:</strong><br>
+                            <span id="deliveryEstimate">2-3 business days</span>
+                        </div>
+
+                        <!-- Submit Button -->
+                        <button type="submit" class="btn btn-success btn-lg w-100">
+                            <i class="fas fa-lock"></i> Place Order
+                        </button>
+
+                        <div class="text-center mt-2">
+                            <small class="text-muted">
+                                <i class="fas fa-shield-alt"></i> Secure checkout
+                            </small>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Support Info -->
+                <div class="card mt-3">
+                    <div class="card-body text-center">
+                        <h6><i class="fas fa-headset"></i> Need Help?</h6>
+                        <small class="text-muted">Call: (012) 345-6789<br>Email: support@farmtrack.com</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+}
+
+@section Scripts {
+    @Scripts.Render("~/bundles/jqueryval")
+
+    <script>
+        // Show/hide payment details based on selection
+        $('input[name="PaymentMethod"]').change(function () {
+            $('#cardDetails').hide();
+            $('#transferDetails').hide();
+
+            if ($(this).val() === 'Card') {
+                $('#cardDetails').show();
+            } else if ($(this).val() === 'Transfer') {
+                $('#transferDetails').show();
+            }
+        });
+
+        // Format card number input
+        $('input[name="cardNumber"]').on('input', function () {
+            var value = $(this).val().replace(/\s+/g, '').replace(/[^0-9]/gi, '');
+            var matches = value.match(/\d{4,16}/g);
+            var match = matches ? matches[0] : '';
+            var parts = [];
+
+            for (var i = 0; i < match.length; i += 4) {
+                parts.push(match.substring(i, i + 4));
+            }
+
+            if (parts.length) {
+                $(this).val(parts.join(' '));
+            }
+        });
+
+        // Format expiry date input
+        $('input[name="expiryDate"]').on('input', function () {
+            var value = $(this).val().replace(/\//g, '');
+            if (value.length >= 2) {
+                value = value.substring(0, 2) + '/' + value.substring(2, 4);
+            }
+            $(this).val(value);
+        });
+
+        // Simple form validation
+        $('#checkoutForm').on('submit', function () {
+            var paymentMethod = $('input[name="PaymentMethod"]:checked').val();
+
+            if (paymentMethod === 'Card') {
+                var cardNumber = $('input[name="cardNumber"]').val();
+                var expiryDate = $('input[name="expiryDate"]').val();
+                var cvv = $('input[name="cvv"]').val();
+
+                if (!cardNumber || !expiryDate || !cvv) {
+                    alert('Please complete all card details');
+                    return false;
+                }
+            }
+
+            return true;
+        });
+    </script>
+}

@@ -152,6 +152,13 @@
             <i class="fas fa-plus-circle"></i> Restock
         </a>
     }
+    @if (Session["Role"] != null && (Session["Role"].ToString() == "Admin" || Session["Role"].ToString() == "Owner"))
+    {
+        <a href="@Url.Action("SendToProducts", "Inventory", new { id = Model.InventoryId })" class="btn btn-success">
+            <i class="fas fa-box-open"></i> Send to Products
+        </a>
+    }
+
 
     @if (Session["Role"] != null && Session["Role"].ToString() == "Owner")
     {
@@ -162,8 +169,8 @@
                 <a href="@Url.Action("Delete", new { id = Model.InventoryId })" class="btn btn-danger">
                     <i class="fas fa-trash"></i> Delete
                 </a>-->
-            }
-        </div>
+    }
+</div>
         </div>
 
         <!-- Font Awesome for Icons -->

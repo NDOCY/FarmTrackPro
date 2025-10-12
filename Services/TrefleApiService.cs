@@ -4,7 +4,7 @@ using Newtonsoft.Json.Linq;
 
 public class TrefleApiService
 {
-    private readonly string _apiKey = "32z0Oo8HBYgaoy7FTBrl3c2nTjIOc3CdFEqPmkKd8NI"; // Replace this
+    private readonly string _apiKey = "32z0Oo8gdxFGCHFFHFgaoy7FTBrl3c2nTBJGDUIN337qPmkdadhbhasbaGTA64DCGH"; // Replace this
 
     public async Task<JObject> SearchCropAsync(string cropName)
     {

@@ -1,4 +1,5 @@
-﻿using FarmTrack.Models;
+﻿using FarmPro.Models;
+using FarmTrack.Models;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -15,15 +16,18 @@ namespace FarmTrack.Controllers
         public ActionResult Dashboard(int id)
         {
             var plotCrop = db.PlotCrops
-                .Include("Plot") // Use string-based Include for navigation properties
+                .Include("Plot")
                 .Include("Crop")
                 .Include("Tasks")
+                .Include("HarvestOutcomes.HarvestGrades")
                 .FirstOrDefault(pc => pc.Id == id);
 
             if (plotCrop == null) return HttpNotFound();
 
+            ViewBag.PlotCropId = id;
             return View(plotCrop);
         }
+
 
         private void UpdatePlotStatus(int plotId, string newStatus)
         {
@@ -37,12 +41,27 @@ namespace FarmTrack.Controllers
 
 
         // Controllers/TasksController.cs
-        public ActionResult TaskList(int plotCropId)
+        
+        public ActionResult TaskList(int plotCropId, bool showAll = false)
         {
             var tasks = db.Tasks
                 .Where(t => t.PlotCropId == plotCropId)
                 .OrderBy(t => t.DueDate)
                 .ToList();
+
+            if (!showAll)
+            {
+                // Filter to show only pending tasks by default
+                tasks = tasks.Where(t => t.Status != "Completed").ToList();
+            }
+
+            ViewBag.ShowAll = showAll;
+            ViewBag.PlotCropId = plotCropId;
+
+            if (Request.IsAjaxRequest())
+            {
+                return PartialView("_TaskList", tasks);
+            }
 
             return PartialView("_TaskList", tasks);
         }
@@ -270,15 +289,17 @@ namespace FarmTrack.Controllers
         {
             var plotCrop = db.PlotCrops.Find(id);
             if (plotCrop == null) return HttpNotFound();
-                
 
-            plotCrop.Status = "Harvested";
-            plotCrop.HarvestDate = DateTime.Now;
-            // ✅ Update plot to harvested
-            UpdatePlotStatus(plotCrop.PlotId, "Harvested");
+            // Only change status to "Harvesting" instead of "Harvested"
+            plotCrop.Status = "Harvesting";
+            plotCrop.HarvestDate = null; // Don't set harvest date yet
+
+            // Update plot to "Harvesting" instead of "Harvested"
+            UpdatePlotStatus(plotCrop.PlotId, "Harvesting");
 
             db.SaveChanges();
-            // Redirect to log harvest details (Use Case 13)
+
+            // Redirect to log harvest details
             return RedirectToAction("LogHarvestOutcome", new { plotCropId = plotCrop.Id });
         }
 
@@ -296,7 +317,8 @@ namespace FarmTrack.Controllers
                 PlotCropId = plotCropId,
                 CropName = plotCrop.Crop.Name,
                 PlotName = plotCrop.Plot.Name,
-                HarvestDate = plotCrop.HarvestDate ?? DateTime.Now
+                HarvestDate = plotCrop.HarvestDate ?? DateTime.Now,
+                ExpectedYield = plotCrop.ExpectedYield // Add this for validation
             };
 
             return View(model);
@@ -308,25 +330,60 @@ namespace FarmTrack.Controllers
         {
             if (ModelState.IsValid)
             {
-                var harvest = new HarvestOutcome
+                // Validate that grades sum to actual yield (within 0.01kg tolerance)
+                if (Math.Abs(model.TotalFromGrades - model.ActualYieldKg) > 0.01)
+                {
+                    ModelState.AddModelError("", $"Sum of grades ({model.TotalFromGrades}kg) must equal actual yield ({model.ActualYieldKg}kg)");
+                    return View(model);
+                }
+
+                // Validate total doesn't exceed expected yield
+                var plotCrop = db.PlotCrops.Find(model.PlotCropId);
+                if (model.ActualYieldKg > plotCrop.ExpectedYield * 1.5) // Allow 50% over expected
+                {
+                    ModelState.AddModelError("", $"Actual yield ({model.ActualYieldKg}kg) seems unusually high compared to expected yield ({plotCrop.ExpectedYield}kg)");
+                    return View(model);
+                }
+
+                var harvestOutcome = new HarvestOutcome
                 {
                     PlotCropId = model.PlotCropId,
                     HarvestDate = model.HarvestDate,
                     ActualYieldKg = model.ActualYieldKg,
-                    QualityGrade = model.QualityGrade,
                     LossesKg = model.LossesKg,
+                    QualityGrade = model.QualityGrade,
                     Notes = model.Notes
                 };
 
-                db.HarvestOutcomes.Add(harvest);
+                // Add the grade breakdown
+                harvestOutcome.HarvestGrades = new List<HarvestGrade>
+        {
+            new HarvestGrade { GradeName = "Grade A", QuantityKg = model.GradeAQty, Notes = model.GradeANotes },
+            new HarvestGrade { GradeName = "Grade B", QuantityKg = model.GradeBQty, Notes = model.GradeBNotes },
+            new HarvestGrade { GradeName = "Grade C", QuantityKg = model.GradeCQty, Notes = model.GradeCNotes }
+        };
+
+                db.HarvestOutcomes.Add(harvestOutcome);
+
+                // ✅ NOW mark as harvested and set the harvest date
+                plotCrop.Status = "Harvested";
+                plotCrop.HarvestDate = model.HarvestDate;
+
+                // ✅ Update plot to harvested status
+                UpdatePlotStatus(plotCrop.PlotId, "Harvested");
+
                 db.SaveChanges();
 
-                // Optional: Log the activity
+                // Log the activity
                 int userId = Convert.ToInt32(Session["UserId"] ?? 1);
-                db.LogActivity(userId, $"Logged harvest outcome for PlotCrop ID {model.PlotCropId}");
+                db.LogActivity(userId, $"Logged harvest outcome for PlotCrop ID {model.PlotCropId} with {model.TotalFromGrades}kg total yield");
 
                 return RedirectToAction("Dashboard", "PlotCrops", new { id = model.PlotCropId });
             }
+
+            // Reload expected yield for the view
+            var plotCropReload = db.PlotCrops.Find(model.PlotCropId);
+            model.ExpectedYield = plotCropReload?.ExpectedYield ?? 0;
 
             return View(model);
         }
@@ -415,6 +472,7 @@ namespace FarmTrack.Controllers
                 return HttpNotFound();
 
             var outcome = db.HarvestOutcomes
+                .Include("HarvestGrades") // Include grades
                 .Where(h => h.PlotCropId == id)
                 .OrderByDescending(h => h.HarvestDate)
                 .FirstOrDefault();
@@ -443,12 +501,16 @@ namespace FarmTrack.Controllers
                 DaysFromPlantingToHarvest = plotCrop.DatePlanted.HasValue
                     ? (outcome.HarvestDate - plotCrop.DatePlanted.Value).Days
                     : 0,
-                LossReason = string.IsNullOrEmpty(outcome.Notes) ? "Not specified" : outcome.Notes
+                LossReason = outcome.Notes,
+                // Add grade breakdown information
+                GradeBreakdown = outcome.HarvestGrades?
+                    .OrderByDescending(g => g.QuantityKg)
+                    .ToDictionary(g => g.GradeName, g => g.QuantityKg)
+                    ?? new Dictionary<string, double>()
             };
 
             return PartialView("_HarvestAnalytics", model);
         }
-
 
 
 
@@ -519,17 +581,21 @@ namespace FarmTrack.Controllers
 
         public ActionResult ActivityForm(int plotCropId)
         {
+            // Clear model state to avoid conflicts with parent view
+            ModelState.Clear();
+
+            // Create the view model
             var model = new ActivityViewModel
             {
                 PlotCropId = plotCropId,
                 ActivityDate = DateTime.Now,
-
                 AvailableTags = new MultiSelectList(db.Tags.ToList(), "Id", "Name")
             };
 
+            // Set ViewBag values
             ViewBag.ActivityTypes = new SelectList(new[] {
-        "Fertilization", "Pest", "Disease", "Weeding",
-        "GrowthRecording", "Irrigation", "Pruning", "Other"
+        "Fertilization", "Pest", "Disease",
+         "Irrigation", "Other"
     });
 
             ViewBag.SeverityLevels = new SelectList(new[] {
@@ -540,6 +606,7 @@ namespace FarmTrack.Controllers
         "Seedling", "Vegetative", "Flowering", "Fruiting", "Mature"
     });
 
+            // Return partial view with the correct model
             return PartialView("_ActivityForm", model);
         }
 
@@ -637,9 +704,10 @@ namespace FarmTrack.Controllers
             // If we got here, validation failed → reload form
             model.AvailableTags = new MultiSelectList(db.Tags.ToList(), "Id", "Name", model.SelectedTagIds);
 
+            // Set ViewBag values
             ViewBag.ActivityTypes = new SelectList(new[] {
-        "Fertilization", "Pest", "Disease", "Weeding",
-        "GrowthRecording", "Irrigation", "Pruning", "Other"
+        "Fertilization", "Pest", "Disease",
+         "Irrigation", "Other"
     }, model.ActivityType);
 
             ViewBag.SeverityLevels = new SelectList(new[] {
@@ -665,24 +733,58 @@ namespace FarmTrack.Controllers
             return PartialView("_GrowthRecords", records);
         }
 
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public ActionResult AddGrowthRecord(int plotCropId, string stage, string notes)
+        [HttpGet]
+        public ActionResult SendToProducts(int plotCropId)
         {
-            var record = new GrowthRecord
+            var harvest = db.HarvestOutcomes
+                .Include("PlotCrop.Crop")
+                .FirstOrDefault(h => h.PlotCropId == plotCropId);
+
+            if (harvest == null) return HttpNotFound();
+
+            var model = new SendHarvestToProductsViewModel
             {
                 PlotCropId = plotCropId,
-                DateRecorded = DateTime.Now,
-                Stage = stage,
-                Notes = notes
+                HarvestName = harvest.PlotCrop.Crop.Name,
+                AvailableQuantity = (int)harvest.ActualYieldKg
             };
 
-            db.GrowthRecords.Add(record);
+            return View(model);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public ActionResult SendToProducts(SendHarvestToProductsViewModel model)
+        {
+            if (!ModelState.IsValid) return View(model);
+
+            var harvest = db.HarvestOutcomes
+                .Include("PlotCrop.Crop")   // 👈 make sure PlotCrop and Crop are loaded
+                .FirstOrDefault(h => h.PlotCropId == model.PlotCropId);
+
+            if (harvest == null) return HttpNotFound();
+
+            var product = new Product
+            {
+                Name = harvest.PlotCrop.Crop.Name,
+                ProductType = "Crop",             // 👈 required field
+                Category = "Harvest",
+                Quantity = model.QuantityToSend,
+                CreatedAt = DateTime.Now,
+                HarvestOutcomeId = harvest.Id     // 👈 link back to source (optional but good)
+            };
+
+            db.Products.Add(product);
             db.SaveChanges();
 
-            return RedirectToAction("GrowthRecords", new { id = plotCropId });
+            TempData["Success"] = "Harvest successfully sent to Products.";
+            return RedirectToAction("Details", "Harvest", new { plotCropId = model.PlotCropId });
         }
 
 
+
+
     }
+
+
 }

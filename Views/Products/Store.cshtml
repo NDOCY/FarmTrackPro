@@ -1,0 +1,396 @@
+﻿@model FarmTrack.Models.StoreViewModel
+
+@{
+    ViewBag.Title = "Farm Store";
+}
+
+<style>
+    :root {
+        --color-earth: #8B7355;
+        --color-soil: #654321;
+        --color-wheat: #F5DEB3;
+        --color-hay: #DAA520;
+    }
+
+    .store-header {
+        background: linear-gradient(135deg, var(--color-wheat) 0%, var(--color-hay) 100%);
+        border-radius: 15px;
+        padding: 30px;
+        margin-bottom: 30px;
+        color: var(--color-soil);
+    }
+
+    .product-card {
+        border: none;
+        border-radius: 12px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        transition: all 0.3s ease;
+        height: 100%;
+    }
+
+        .product-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        }
+
+    .product-image {
+        height: 200px;
+        object-fit: cover;
+        border-radius: 8px 8px 0 0;
+        width: 100%;
+    }
+
+    .product-card-body {
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+    }
+
+    .product-title {
+        font-weight: 700;
+        color: var(--color-soil);
+        margin-bottom: 8px;
+        font-size: 1.1rem;
+    }
+
+    .product-category {
+        color: #6c757d;
+        font-size: 0.9rem;
+        margin-bottom: 10px;
+    }
+
+    .product-price {
+        font-size: 1.3rem;
+        font-weight: 700;
+        color: var(--color-earth);
+        margin-bottom: 5px;
+    }
+
+    .product-unit {
+        color: #6c757d;
+        font-size: 0.9rem;
+    }
+
+    .stock-info {
+        font-size: 0.9rem;
+        margin-bottom: 15px;
+    }
+
+    .in-stock {
+        color: #28a745;
+        font-weight: 600;
+    }
+
+    .out-of-stock {
+        color: #dc3545;
+        font-weight: 600;
+    }
+
+    .btn-view-details {
+        background: var(--color-earth);
+        color: white;
+        border: none;
+        padding: 8px 15px;
+        border-radius: 6px;
+        font-weight: 600;
+        transition: all 0.3s;
+        text-decoration: none;
+        display: inline-block;
+        text-align: center;
+    }
+
+        .btn-view-details:hover {
+            background: var(--color-hay);
+            color: white;
+            text-decoration: none;
+            transform: translateY(-2px);
+        }
+
+    .cart-indicator {
+        background: white;
+        padding: 15px;
+        border-radius: 10px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        margin-bottom: 20px;
+    }
+
+    .filter-section {
+        background: white;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        margin-bottom: 30px;
+    }
+
+    .category-header {
+        background: linear-gradient(135deg, var(--color-earth) 0%, var(--color-soil) 100%);
+        color: white;
+        padding: 15px 20px;
+        border-radius: 10px 10px 0 0;
+        margin-bottom: 0;
+    }
+
+    .no-products {
+        text-align: center;
+        padding: 40px;
+        color: #6c757d;
+    }
+
+    .quantity-input {
+        max-width: 80px;
+    }
+
+    .action-buttons {
+        display: flex;
+        gap: 10px;
+        margin-top: auto;
+    }
+
+    .btn-add-to-cart {
+        background: var(--color-earth);
+        color: white;
+        border: none;
+        padding: 8px 15px;
+        border-radius: 6px;
+        font-weight: 600;
+        transition: all 0.3s;
+        flex: 1;
+    }
+
+        .btn-add-to-cart:hover {
+            background: var(--color-hay);
+            transform: translateY(-2px);
+        }
+
+        .btn-add-to-cart:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+            transform: none;
+        }
+</style>
+
+<div class="container-fluid mt-4">
+    <!-- Store Header -->
+    <div class="store-header">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <h1><i class="fas fa-store"></i> Farm Store</h1>
+                <p class="lead mb-0">Fresh farm products delivered to your doorstep</p>
+            </div>
+            <div class="col-md-4 text-end">
+                <div class="cart-indicator">
+                    <a href="@Url.Action("Cart")" class="btn btn-outline-success btn-lg">
+                        <i class="fas fa-shopping-cart"></i> View Cart
+                        @{
+                            var cart = Session["Cart"] as List<FarmTrack.Models.CartItem>;
+                            var itemCount = cart?.Sum(item => item.Quantity) ?? 0;
+                        }
+                        @if (itemCount > 0)
+                        {
+                            <span class="badge bg-danger ms-2">@itemCount</span>
+                        }
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 🔍 Filters -->
+    <div class="filter-section">
+        <h4><i class="fas fa-filter"></i> Filter Products</h4>
+        @using (Html.BeginForm("Store", "Products", FormMethod.Get, new { @class = "row g-3" }))
+        {
+            <div class="col-md-3">
+                <label class="form-label">Product Type</label>
+                @Html.TextBox("typeFilter", Model.TypeFilter, new { @class = "form-control", placeholder = "Crop, Livestock, Inventory" })
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Category</label>
+                @Html.TextBox("categoryFilter", Model.CategoryFilter, new { @class = "form-control", placeholder = "Vegetables, Fruits, Dairy" })
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">&nbsp;</label>
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-search"></i> Apply Filters
+                    </button>
+                    <a href="@Url.Action("Store")" class="btn btn-secondary">Clear</a>
+                </div>
+            </div>
+        }
+    </div>
+
+    <!-- 🛒 Product Listing -->
+    @if (!Model.Categories.Any())
+    {
+        <div class="no-products">
+            <i class="fas fa-box-open fa-3x mb-3"></i>
+            <h4>No products found</h4>
+            <p class="text-muted">Try adjusting your filters or check back later for new products.</p>
+            <a href="@Url.Action("Store")" class="btn btn-primary">View All Products</a>
+        </div>
+    }
+    else
+    {
+        foreach (var category in Model.Categories)
+        {
+            <div class="card mb-4">
+                <div class="category-header">
+                    <h4 class="mb-0">
+                        <i class="fas fa-tag"></i> @category.Category
+                        <span class="badge bg-light text-dark ms-2">@category.Items.Count products</span>
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        @foreach (var product in category.Items)
+                        {
+                            <div class="col-xl-3 col-lg-4 col-md-6 mb-4">
+                                <div class="card product-card">
+                                    <!-- Product Image -->
+                                    <img src="@(string.IsNullOrEmpty(product.ImageUrl) ? "/Content/images/placeholder-product.jpg" : product.ImageUrl)"
+                                         alt="@product.Name"
+                                         class="product-image"
+                                         onclick="window.location.href='@Url.Action("Details", new { id = product.Id })'"
+                                         style="cursor: pointer;">
+
+                                    <div class="product-card-body">
+                                        <!-- Product Info -->
+                                        <div>
+                                            <h5 class="product-title">@product.Name</h5>
+                                            <div class="product-category">
+                                                <i class="fas fa-tag"></i> @product.ProductType
+                                                @if (product.IsFeatured)
+                                                {
+                                                    <span class="badge bg-warning ms-1">Featured</span>
+                                                }
+                                            </div>
+
+                                            <!-- Price -->
+                                            <div class="product-price">
+                                                R@(product.PricePerUnit?.ToString("F2") ?? "0.00")
+                                            </div>
+                                            <div class="product-unit">per @product.Unit</div>
+
+                                            <!-- Stock Information -->
+                                            <div class="stock-info">
+                                                @if (product.IsAvailable && product.Quantity > 0)
+                                                {
+                                                    <span class="in-stock">
+                                                        <i class="fas fa-check-circle"></i>
+                                                        @product.Quantity @product.Unit available
+                                                    </span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="out-of-stock">
+                                                        <i class="fas fa-times-circle"></i> Out of Stock
+                                                    </span>
+                                                }
+                                            </div>
+
+                                            <!-- Product Description (Truncated) -->
+                                            @if (!string.IsNullOrEmpty(product.Description))
+                                            {
+                                                <p class="product-description small text-muted mb-3">
+                                                    @(product.Description.Length > 100 ? product.Description.Substring(0, 100) + "..." : product.Description)
+                                                </p>
+                                            }
+                                        </div>
+
+                                        <!-- Action Buttons -->
+                                        <div class="action-buttons">
+                                            @if (product.IsAvailable && product.Quantity > 0)
+                                            {
+                                                using (Html.BeginForm("AddToCart", "Products", FormMethod.Post, new { @class = "d-flex gap-2 w-100" }))
+                                                {
+                                                    @Html.Hidden("productId", product.Id)
+                                                    <input type="number" name="quantity" value="1" min="1" max="@product.Quantity"
+                                                           class="form-control quantity-input" required>
+                                                    <button type="submit" class="btn btn-add-to-cart">
+                                                        <i class="fas fa-cart-plus"></i> Add
+                                                    </button>
+                                                }
+                                            }
+                                            else
+                                            {
+                                                <button class="btn btn-secondary w-100" disabled>
+                                                    <i class="fas fa-times-circle"></i> Out of Stock
+                                                </button>
+                                            }
+                                        </div>
+
+                                        <!-- View Details Button -->
+                                        <a href="@Url.Action("Details", new { id = product.Id })" class="btn-view-details mt-2">
+                                            <i class="fas fa-eye"></i> View Details
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        }
+    }
+</div>
+
+@section Scripts {
+    <script>
+        // Add to cart with quantity validation
+        $(document).ready(function() {
+            $('form').submit(function(e) {
+                var quantityInput = $(this).find('input[name="quantity"]');
+                var maxQuantity = parseInt(quantityInput.attr('max'));
+                var quantity = parseInt(quantityInput.val());
+
+                if (quantity > maxQuantity) {
+                    alert('Cannot add more than ' + maxQuantity + ' items. Only ' + maxQuantity + ' available in stock.');
+                    e.preventDefault();
+                    return false;
+                }
+
+                if (quantity < 1) {
+                    alert('Please enter a valid quantity.');
+                    e.preventDefault();
+                    return false;
+                }
+
+                return true;
+            });
+
+            // Image click navigation
+            $('.product-image').click(function() {
+                var productId = $(this).closest('.product-card').find('input[name="productId"]').val();
+                if (productId) {
+                    window.location.href = '@Url.Action("Details", "Products")' + '/' + productId;
+                }
+            });
+        });
+
+        // Quick add to cart with feedback
+        function quickAddToCart(productId, maxQuantity) {
+            var quantity = 1;
+            if (quantity > maxQuantity) {
+                alert('Only ' + maxQuantity + ' items available in stock.');
+                return;
+            }
+
+            $.post('@Url.Action("AddToCart", "Products")', { productId: productId, quantity: quantity })
+                .done(function(response) {
+                    if (response.success) {
+                        // Show success message
+                        alert('Product added to cart!');
+                        // Update cart count
+                        location.reload();
+                    } else {
+                        alert('Error: ' + response.message);
+                    }
+                })
+                .fail(function() {
+                    alert('Error adding product to cart.');
+                });
+        }
+    </script>
+}

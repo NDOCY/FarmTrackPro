@@ -1,28 +1,18 @@
 ﻿@model IEnumerable<FarmTrack.Models.Activity>
-
 @{
     var pestData = Model
         .Where(a => a.ActivityType == "Pest")
         .GroupBy(a => string.IsNullOrEmpty(a.Severity) ? "Unknown" : a.Severity)
         .ToDictionary(g => g.Key, g => g.Count());
-
     var diseaseData = Model
         .Where(a => a.ActivityType == "Disease")
         .GroupBy(a => string.IsNullOrEmpty(a.Severity) ? "Unknown" : a.Severity)
         .ToDictionary(g => g.Key, g => g.Count());
 }
-@*@{
-    var pestData = Model.Where(a => a.ActivityType == "Pest")
-                       .GroupBy(a => a.Severity)
-                       .ToDictionary(g => g.Key, g => g.Count());
 
-    var diseaseData = Model.Where(a => a.ActivityType == "Disease")
-                         .GroupBy(a => a.Severity)
-                         .ToDictionary(g => g.Key, g => g.Count());
-}*@
-
-<div class="card mb-4">
+<div class="card severity-trends-card">
     <div class="card-header">
+        <i class="fas fa-chart-bar"></i>
         <h5>Severity Trends</h5>
     </div>
     <div class="card-body">
@@ -46,7 +36,10 @@
                             @(pestData.ContainsKey("High") ? pestData["High"] : 0),
                             @(pestData.ContainsKey("Critical") ? pestData["Critical"] : 0)
                         ],
-                        backgroundColor: 'rgba(255, 99, 132, 0.7)'
+                        backgroundColor: 'rgba(255, 107, 107, 0.8)',
+                        borderColor: 'rgba(255, 107, 107, 1)',
+                        borderWidth: 1,
+                        borderRadius: 4
                     },
                     {
                         label: 'Diseases',
@@ -56,24 +49,64 @@
                             @(diseaseData.ContainsKey("High") ? diseaseData["High"] : 0),
                             @(diseaseData.ContainsKey("Critical") ? diseaseData["Critical"] : 0)
                         ],
-                        backgroundColor: 'rgba(54, 162, 235, 0.7)'
+                        backgroundColor: 'rgba(76, 175, 80, 0.8)',
+                        borderColor: 'rgba(76, 175, 80, 1)',
+                        borderWidth: 1,
+                        borderRadius: 4
                     }
                 ]
             },
             options: {
                 responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'top',
+                        labels: {
+                            padding: 20,
+                            font: {
+                                size: 12,
+                                weight: '600'
+                            }
+                        }
+                    }
+                },
                 scales: {
                     y: {
                         beginAtZero: true,
                         title: {
                             display: true,
-                            text: 'Occurrences'
+                            text: 'Occurrences',
+                            font: {
+                                size: 12,
+                                weight: '600'
+                            }
+                        },
+                        grid: {
+                            color: 'rgba(0, 0, 0, 0.05)'
+                        },
+                        ticks: {
+                            font: {
+                                size: 11
+                            }
                         }
                     },
                     x: {
                         title: {
                             display: true,
-                            text: 'Severity Level'
+                            text: 'Severity Level',
+                            font: {
+                                size: 12,
+                                weight: '600'
+                            }
+                        },
+                        grid: {
+                            display: false
+                        },
+                        ticks: {
+                            font: {
+                                size: 11
+                            }
                         }
                     }
                 }

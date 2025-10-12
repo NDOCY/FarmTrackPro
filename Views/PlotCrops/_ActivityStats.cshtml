@@ -1,21 +1,66 @@
 ﻿@model FarmTrack.Models.ActivityStatsViewModel
 
-<dl class="row">
-    <dt class="col-sm-6">Total Activities:</dt>
-    <dd class="col-sm-6">@Model.TotalActivities</dd>
+<div class="activity-stats-card">
+    <div class="stats-header">
+        <i class="fas fa-chart-bar"></i>
+        <h6>Activity Statistics</h6>
+    </div>
 
-    <dt class="col-sm-6">Pest Reports:</dt>
-    <dd class="col-sm-6">@Model.PestCount</dd>
+    <div class="stats-content">
+        <div class="stat-item">
+            <div class="stat-icon total-activities">
+                <i class="fas fa-list-alt"></i>
+            </div>
+            <div class="stat-details">
+                <span class="stat-label">Total Activities</span>
+                <span class="stat-value">@Model.TotalActivities</span>
+            </div>
+        </div>
 
-    <dt class="col-sm-6">Disease Reports:</dt>
-    <dd class="col-sm-6">@Model.DiseaseCount</dd>
+        <div class="stat-item">
+            <div class="stat-icon pest-reports">
+                <i class="fas fa-bug"></i>
+            </div>
+            <div class="stat-details">
+                <span class="stat-label">Pest Reports</span>
+                <span class="stat-value">@Model.PestCount</span>
+            </div>
+        </div>
 
-    @if (Model.LastFertilization != null)
-    {
-        <dt class="col-sm-6">Last Fertilization:</dt>
-        <dd class="col-sm-6">
-            @Model.LastFertilization.ActivityDate.ToString("d")<br>
-            @Model.LastFertilization.ProductName
-        </dd>
-    }
-</dl>
+        <div class="stat-item">
+            <div class="stat-icon disease-reports">
+                <i class="fas fa-virus"></i>
+            </div>
+            <div class="stat-details">
+                <span class="stat-label">Disease Reports</span>
+                <span class="stat-value">@Model.DiseaseCount</span>
+            </div>
+        </div>
+
+        @if (Model.LastFertilization != null)
+        {
+            <div class="stat-item last-fertilization">
+                <div class="stat-icon fertilization">
+                    <i class="fas fa-flask"></i>
+                </div>
+                <div class="stat-details">
+                    <span class="stat-label">Last Fertilization</span>
+                    <span class="stat-value">@Model.LastFertilization.ActivityDate.ToString("MMM d, yyyy")</span>
+                    <span class="stat-sub">@Model.LastFertilization.ProductName</span>
+                </div>
+            </div>
+        }
+        else
+        {
+            <div class="stat-item no-fertilization">
+                <div class="stat-icon fertilization">
+                    <i class="fas fa-flask"></i>
+                </div>
+                <div class="stat-details">
+                    <span class="stat-label">Last Fertilization</span>
+                    <span class="stat-value text-muted">Not yet</span>
+                </div>
+            </div>
+        }
+    </div>
+</div>

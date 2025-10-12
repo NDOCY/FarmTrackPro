@@ -1,0 +1,438 @@
+﻿@model FarmTrack.Models.SalesListViewModel
+
+@{
+    ViewBag.Title = "Sales Management";
+}
+
+<div class="container-fluid mt-4">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1><i class="fas fa-chart-line"></i> Sales Management</h1>
+            <p class="lead mb-0">Manage and track all customer orders</p>
+        </div>
+        <div>
+            <a href="@Url.Action("ExportSales", new { status = Model.Filter.Status, startDate = Model.Filter.StartDate, endDate = Model.Filter.EndDate })"
+               class="btn btn-outline-success">
+                <i class="fas fa-file-export"></i> Export CSV
+            </a>
+            <a href="@Url.Action("DeliveryDashboard")" class="btn btn-warning">
+                <i class="fas fa-truck"></i> Delivery Dashboard
+            </a>
+            <a href="@Url.Action("AdminDashboard", "Dashboard")" class="btn btn-secondary">
+                <i class="fas fa-tachometer-alt"></i> Dashboard
+            </a>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card text-white bg-primary">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4>@Model.Stats.TotalOrders</h4>
+                            <p class="mb-0">Total Orders</p>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-shopping-bag fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-white bg-success">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4>R@(Model.Stats.TotalRevenue.ToString("N2"))</h4>
+                            <p class="mb-0">Total Revenue</p>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-money-bill-wave fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-white bg-warning">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4>@Model.Stats.PendingOrders</h4>
+                            <p class="mb-0">Pending Orders</p>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-clock fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-white bg-info">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4>@Model.Stats.DeliveredOrders</h4>
+                            <p class="mb-0">Delivered Orders</p>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-check-circle fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="mb-0"><i class="fas fa-filter"></i> Filters</h5>
+        </div>
+        <div class="card-body">
+            @using (Html.BeginForm("SalesList", "Products", FormMethod.Get))
+            {
+                <div class="row g-3">
+                    <div class="col-md-2">
+                        <label class="form-label">Status</label>
+                        @Html.DropDownList("status", new SelectList(new[]
+                        {
+                            new { Value = "All", Text = "All Statuses" },
+                            new { Value = "Pending", Text = "Pending" },
+                            new { Value = "Confirmed", Text = "Confirmed" },
+                            new { Value = "Assigned to Driver", Text = "Assigned" },
+                            new { Value = "Out for Delivery", Text = "Out for Delivery" },
+                            new { Value = "Delivered", Text = "Delivered" },
+                            new { Value = "Cancelled", Text = "Cancelled" }
+                        }, "Value", "Text", Model.Filter.Status), new { @class = "form-select" })
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Payment Status</label>
+                        @Html.DropDownList("paymentStatus", new SelectList(new[]
+                        {
+                            new { Value = "All", Text = "All Payments" },
+                            new { Value = "Pending", Text = "Pending" },
+                            new { Value = "Completed", Text = "Completed" },
+                            new { Value = "Failed", Text = "Failed" }
+                        }, "Value", "Text", Model.Filter.PaymentStatus), new { @class = "form-select" })
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Driver Status</label>
+                        <select name="driverStatus" class="form-select">
+                            <option value="">All Drivers</option>
+                            <option value="assigned" @(ViewBag.DriverStatus == "assigned" ? "selected" : "")>Assigned</option>
+                            <option value="unassigned" @(ViewBag.DriverStatus == "unassigned" ? "selected" : "")>Unassigned</option>
+                            <option value="active" @(ViewBag.DriverStatus == "active" ? "selected" : "")>Active Delivery</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Start Date</label>
+                        <input type="date" name="startDate" value="@(Model.Filter.StartDate?.ToString("yyyy-MM-dd"))" class="form-control">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">End Date</label>
+                        <input type="date" name="endDate" value="@(Model.Filter.EndDate?.ToString("yyyy-MM-dd"))" class="form-control">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Search</label>
+                        <input type="text" name="searchTerm" value="@Model.Filter.SearchTerm" class="form-control" placeholder="Order ID, Customer...">
+                    </div>
+                    <div class="col-md-12">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-search"></i> Apply Filters
+                        </button>
+                        <a href="@Url.Action("SalesList")" class="btn btn-secondary">Clear</a>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- Sales Table -->
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0"><i class="fas fa-list"></i> Orders (@Model.Sales.Count found)</h5>
+
+            <!-- Bulk Actions -->
+            <div class="d-flex gap-2">
+                <select id="bulkAction" class="form-select form-select-sm" style="width: auto;">
+                    <option value="">Bulk Actions</option>
+                    <option value="Confirmed">Mark as Confirmed</option>
+                    <option value="Assigned to Driver">Mark as Assigned</option>
+                    <option value="Out for Delivery">Mark as Out for Delivery</option>
+                    <option value="Delivered">Mark as Delivered</option>
+                </select>
+                <button id="applyBulkAction" class="btn btn-sm btn-outline-primary">Apply</button>
+            </div>
+        </div>
+        <div class="card-body">
+            @if (!Model.Sales.Any())
+            {
+                <div class="text-center py-5">
+                    <i class="fas fa-box-open fa-3x text-muted mb-3"></i>
+                    <h4>No orders found</h4>
+                    <p class="text-muted">Try adjusting your filters</p>
+                </div>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover">
+                        <thead class="table-dark">
+                            <tr>
+                                <th width="30">
+                                    <input type="checkbox" id="selectAll">
+                                </th>
+                                <th>Order ID</th>
+                                <th>Date</th>
+                                <th>Customer</th>
+                                <th>Amount</th>
+                                <th>Status</th>
+                                <th>Assigned Driver</th>
+                                <th>Delivery Status</th>
+                                <th>Payment</th>
+                                <th>Items</th>
+                                <th>User</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var sale in Model.Sales)
+                            {
+                                <tr>
+                                    <td>
+                                        <input type="checkbox" class="order-checkbox" value="@sale.SaleId">
+                                    </td>
+                                    <td>
+                                        <strong>#@sale.SaleId</strong>
+                                        <br>
+                                        <small class="text-muted">@sale.TrackingNumber</small>
+                                    </td>
+                                    <td>
+                                        @sale.SaleDate.ToString("MMM dd, yyyy")
+                                        <br>
+                                        <small class="text-muted">@sale.SaleDate.ToString("HH:mm")</small>
+                                    </td>
+                                    <td>
+                                        <strong>@sale.CustomerName</strong>
+                                        <br>
+                                        <small class="text-muted">@sale.CustomerEmail</small>
+                                        <br>
+                                        <small>@sale.CustomerPhone</small>
+                                    </td>
+                                    <td>
+                                        <strong>R@sale.TotalAmount.ToString("N2")</strong>
+                                        <br>
+                                        <small class="text-muted">@sale.PaymentMethod</small>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-@GetStatusBadgeColor(sale.Status)">@sale.Status</span>
+                                        <br>
+                                        @if (sale.EstimatedDelivery.HasValue)
+                                        {
+                                            <small class="text-muted">Est: @sale.EstimatedDelivery.Value.ToString("MMM dd")</small>
+                                        }
+                                    </td>
+                                    <td>
+                                        @if (!string.IsNullOrEmpty(sale.DeliveryDriver))
+                                        {
+                                            <div>
+                                                <strong>@sale.DeliveryDriver</strong>
+                                                <br>
+                                                @if (!string.IsNullOrEmpty(sale.VehicleType))
+                                                {
+                                                    <small class="text-muted">@sale.VehicleType • @sale.VehicleNumber</small>
+                                                    <br>
+                                                }
+                                                @if (!string.IsNullOrEmpty(sale.DriverPhone))
+                                                {
+                                                    <small>@sale.DriverPhone</small>
+                                                }
+                                            </div>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">Unassigned</span>
+                                            <br>
+                                            <a href="@Url.Action("OrderManagement", new { id = sale.SaleId })" class="btn btn-sm btn-outline-primary mt-1">
+                                                <i class="fas fa-user-plus"></i> Assign
+                                            </a>
+                                        }
+                                    </td>
+                                    <td>
+                                        @if (sale.IsActiveDelivery)
+                                        {
+                                            <span class="badge bg-success">LIVE TRACKING</span>
+                                        }
+                                        else if (!string.IsNullOrEmpty(sale.DeliveryDriver))
+                                        {
+                                            <span class="badge bg-info">ASSIGNED</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-secondary">NO DRIVER</span>
+                                        }
+                                        <br>
+                                        @if (sale.LastLocationUpdate.HasValue)
+                                        {
+                                            <small class="text-muted">@sale.LastLocationUpdate.Value.ToString("g")</small>
+                                        }
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-@(sale.PaymentStatus == "Completed" ? "success" : "warning")">
+                                            @sale.PaymentStatus
+                                        </span>
+                                    </td>
+                                    <td>@sale.ItemCount items</td>
+                                    <td>
+                                        <small>@sale.UserName</small>
+                                        <br>
+                                        <small class="text-muted">ID: @sale.UserId</small>
+                                    </td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm">
+                                            <!-- Order Management Button -->
+                                            <a href="@Url.Action("OrderManagement", new { id = sale.SaleId })"
+                                               class="btn btn-primary" title="Manage Order">
+                                                <i class="fas fa-cog"></i> Manage
+                                            </a>
+
+                                            <!-- Quick Status Dropdown -->
+                                            <div class="dropdown">
+                                                <button class="btn btn-outline-secondary dropdown-toggle" type="button"
+                                                        data-bs-toggle="dropdown" title="Quick Actions">
+                                                    <i class="fas fa-edit"></i>
+                                                </button>
+                                                <ul class="dropdown-menu">
+                                                    <li><a class="dropdown-item" href="#" onclick="updateStatus(@sale.SaleId, 'Confirmed')">Mark as Confirmed</a></li>
+                                                    <li><a class="dropdown-item" href="#" onclick="updateStatus(@sale.SaleId, 'Assigned to Driver')">Assign to Driver</a></li>
+                                                    <li><a class="dropdown-item" href="#" onclick="updateStatus(@sale.SaleId, 'Out for Delivery')">Start Delivery</a></li>
+                                                    <li><a class="dropdown-item" href="#" onclick="updateStatus(@sale.SaleId, 'Delivered')">Mark as Delivered</a></li>
+                                                    <li><hr class="dropdown-divider"></li>
+                                                    <li><a class="dropdown-item text-danger" href="#" onclick="updateStatus(@sale.SaleId, 'Cancelled')">Cancel Order</a></li>
+                                                </ul>
+                                            </div>
+
+                                            <!-- Live Tracking Button -->
+                                            @if (sale.IsActiveDelivery)
+                                            {
+                                                <a href="@Url.Action("LiveTrackingMap", new { id = sale.SaleId })"
+                                                   class="btn btn-success" target="_blank" title="Live Tracking">
+                                                    <i class="fas fa-map-marker-alt"></i>
+                                                </a>
+                                            }
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Select all checkbox
+        $('#selectAll').change(function() {
+            $('.order-checkbox').prop('checked', this.checked);
+        });
+
+        // Bulk action
+        $('#applyBulkAction').click(function() {
+            var selectedOrders = $('.order-checkbox:checked').map(function() {
+                return $(this).val();
+            }).get();
+
+            var action = $('#bulkAction').val();
+
+            if (selectedOrders.length === 0) {
+                alert('Please select at least one order.');
+                return;
+            }
+
+            if (!action) {
+                alert('Please select an action.');
+                return;
+            }
+
+            if (confirm(`Are you sure you want to update ${selectedOrders.length} orders to "${action}"?`)) {
+                $.post('@Url.Action("BulkUpdateStatus", "Products")', {
+                    saleIds: selectedOrders,
+                    status: action
+                }, function(response) {
+                    if (response.success) {
+                        location.reload();
+                    } else {
+                        alert('Error: ' + response.message);
+                    }
+                });
+            }
+        });
+
+        // Individual status update
+        function updateStatus(orderId, status) {
+            if (confirm(`Update order #${orderId} to "${status}"?`)) {
+                $.post('@Url.Action("UpdateOrderStatus", "Products")', {
+                    saleId: orderId,
+                    status: status
+                }, function(response) {
+                    if (response.success) {
+                        location.reload();
+                    } else {
+                        alert('Error: ' + response.message);
+                    }
+                });
+            }
+        }
+
+        // Assign to current user
+        function assignToMe(orderId) {
+            if (confirm('Assign this delivery to yourself?')) {
+                $.post('@Url.Action("AssignDeliveryToMe", "Products")', { saleId: orderId })
+                    .done(function(response) {
+                        if (response.success) {
+                            location.reload();
+                        } else {
+                            alert('Error: ' + response.message);
+                        }
+                    });
+            }
+        }
+
+        // Auto-refresh every 2 minutes
+        setTimeout(function() {
+            window.location.reload();
+        }, 120000);
+    </script>
+}
+
+@functions {
+    public string GetStatusBadgeColor(string status)
+    {
+        switch (status)
+        {
+            case "Pending":
+                return "warning";
+            case "Confirmed":
+                return "info";
+            case "Assigned to Driver":
+                return "primary";
+            case "Out for Delivery":
+                return "success";
+            case "Delivered":
+                return "secondary";
+            case "Cancelled":
+                return "danger";
+            default:
+                return "secondary";
+        }
+    }
+}

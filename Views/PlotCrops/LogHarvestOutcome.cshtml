@@ -1,9 +1,11 @@
 ﻿@model FarmTrack.Models.HarvestOutcomeViewModel
+
 @{
     ViewBag.Title = "Log Harvest Outcome";
 }
 
 <style>
+    
     /* Custom Color Scheme */
     :root {
         --color-earth: #8B7355; /* Primary */
@@ -132,16 +134,16 @@
         margin-bottom: 25px;
     }
 
-    .form-group label {
-        color: var(--color-soil);
-        font-weight: 600;
-        margin-bottom: 10px;
-        display: block;
-        font-size: 1.1rem;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-    }
+        .form-group label {
+            color: var(--color-soil);
+            font-weight: 600;
+            margin-bottom: 10px;
+            display: block;
+            font-size: 1.1rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
 
     .form-control {
         width: 100%;
@@ -273,9 +275,9 @@
             padding: 20px;
         }
 
-        .page-header h2 {
-            font-size: 1.6rem;
-        }
+            .page-header h2 {
+                font-size: 1.6rem;
+            }
 
         .form-container {
             margin: 0 15px 30px;
@@ -321,8 +323,101 @@
         }
 
     @@keyframes spin {
-        0% { transform: rotate(0deg); }
-        100% { transform: rotate(360deg); }
+        0% {
+            transform: rotate(0deg);
+        }
+
+        100% {
+            transform: rotate(360deg);
+        }
+    }
+
+
+
+    /*--------------------------------------------------------------------------*/
+
+    /* Add to existing styles */
+    .grade-section {
+        background: #f8f9fa;
+        border-radius: 12px;
+        padding: 20px;
+        margin-bottom: 20px;
+        border-left: 4px solid;
+    }
+
+        .grade-section h5 {
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+    .grade-a-section {
+        border-left-color: #4CAF50;
+        background: linear-gradient(135deg, #f1f8e9, #e8f5e9);
+    }
+
+    .grade-b-section {
+        border-left-color: #FFC107;
+        background: linear-gradient(135deg, #fffde7, #fff9c4);
+    }
+
+    .grade-c-section {
+        border-left-color: #FF6B6B;
+        background: linear-gradient(135deg, #ffebee, #ffcdd2);
+    }
+
+    .total-yield-display {
+        background: linear-gradient(135deg, #e3f2fd, #bbdefb);
+        padding: 20px;
+        border-radius: 12px;
+        margin-bottom: 25px;
+        text-align: center;
+        border: 2px solid #2196F3;
+    }
+
+        .total-yield-display h5 {
+            margin: 0;
+            color: #1976d2;
+            font-weight: 700;
+        }
+
+    #totalYield {
+        font-size: 1.5em;
+        color: #1565c0;
+        font-weight: 800;
+    }
+
+    #yieldWarning {
+        background: #ffebee;
+        color: #c62828;
+        padding: 10px;
+        border-radius: 6px;
+        margin-top: 10px;
+        border-left: 4px solid #f44336;
+    }
+
+    .yield-summary {
+        background: linear-gradient(135deg, #e8f5e9, #c8e6c9);
+        padding: 15px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+        border: 1px solid #4CAF50;
+    }
+
+    .yield-summary-item {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 5px;
+        font-size: 14px;
+    }
+
+    .yield-summary-total {
+        font-weight: 700;
+        color: #2e7d32;
+        border-top: 2px solid #4CAF50;
+        padding-top: 10px;
+        margin-top: 10px;
     }
 </style>
 
@@ -350,6 +445,11 @@
         <span class="crop-detail-label">Plot:</span>
         <span class="crop-detail-value">@Model.PlotName</span>
     </div>
+    <div class="crop-detail">
+        <i class="fas fa-bullseye crop-detail-icon"></i>
+        <span class="crop-detail-label">Expected Yield:</span>
+        <span class="crop-detail-value">@Model.ExpectedYield.ToString("N0") kg</span>
+    </div>
 </div>
 
 <!-- Information Section -->
@@ -359,10 +459,8 @@
         Harvest Recording Guide
     </div>
     <p class="info-text">
-        Please provide accurate measurements for your harvest outcome.
-        <strong>Actual Yield</strong> should include the total usable crop harvested,
-        while <strong>Losses</strong> represent any crop that was damaged or unusable.
-        Select an appropriate <strong>Quality Grade</strong> based on market standards.
+        Please distribute your total yield among the quality grades. The sum of all grades must equal your total actual yield.
+        <strong>Grade A</strong> represents premium quality, <strong>Grade B</strong> is standard quality, and <strong>Grade C</strong> is commercial quality.
     </p>
 </div>
 
@@ -382,27 +480,98 @@
     {
         @Html.AntiForgeryToken()
         @Html.HiddenFor(m => m.PlotCropId)
+        @Html.HiddenFor(m => m.ExpectedYield)
 
         <div class="form-group">
             <label for="HarvestDate">
                 <i class="fas fa-calendar-alt"></i>
-                @Html.DisplayNameFor(m => m.HarvestDate)
+                Harvest Date
             </label>
             @Html.TextBoxFor(m => m.HarvestDate, "{0:yyyy-MM-dd}", new { @class = "form-control", type = "date", required = "required" })
+        </div>
+
+        <!-- Grade A Section -->
+        <div class="grade-section grade-a-section">
+            <h5 style="color: #4CAF50;">
+                <i class="fas fa-star"></i> Grade A (Premium Quality)
+            </h5>
+            <div class="form-group">
+                <label>Quantity (kg)</label>
+                @Html.TextBoxFor(m => m.GradeAQty, new { @class = "form-control grade-qty", type = "number", step = "0.01", min = "0", required = "required", oninput = "calculateTotal()", placeholder = "Enter Grade A quantity" })
+            </div>
+            <div class="form-group">
+                <label>Notes</label>
+                @Html.TextAreaFor(m => m.GradeANotes, new { @class = "form-control", rows = "2", placeholder = "Notes for Grade A premium quality..." })
+            </div>
+        </div>
+
+        <!-- Grade B Section -->
+        <div class="grade-section grade-b-section">
+            <h5 style="color: #FFC107;">
+                <i class="fas fa-star-half-alt"></i> Grade B (Standard Quality)
+            </h5>
+            <div class="form-group">
+                <label>Quantity (kg)</label>
+                @Html.TextBoxFor(m => m.GradeBQty, new { @class = "form-control grade-qty", type = "number", step = "0.01", min = "0", required = "required", oninput = "calculateTotal()", placeholder = "Enter Grade B quantity" })
+            </div>
+            <div class="form-group">
+                <label>Notes</label>
+                @Html.TextAreaFor(m => m.GradeBNotes, new { @class = "form-control", rows = "2", placeholder = "Notes for Grade B standard quality..." })
+            </div>
+        </div>
+
+        <!-- Grade C Section -->
+        <div class="grade-section grade-c-section">
+            <h5 style="color: #FF6B6B;">
+                <i class="fas fa-star"></i> Grade C (Commercial Quality)
+            </h5>
+            <div class="form-group">
+                <label>Quantity (kg)</label>
+                @Html.TextBoxFor(m => m.GradeCQty, new { @class = "form-control grade-qty", type = "number", step = "0.01", min = "0", required = "required", oninput = "calculateTotal()", placeholder = "Enter Grade C quantity" })
+            </div>
+            <div class="form-group">
+                <label>Notes</label>
+                @Html.TextAreaFor(m => m.GradeCNotes, new { @class = "form-control", rows = "2", placeholder = "Notes for Grade C commercial quality..." })
+            </div>
+        </div>
+
+        <!-- Total Yield Display -->
+        <div class="total-yield-display">
+            <h5>Total Harvested Yield: <span id="totalYield">0.00</span> kg</h5>
+            <div class="yield-summary">
+                <div class="yield-summary-item">
+                    <span>Expected Yield:</span>
+                    <span>@Model.ExpectedYield.ToString("N0") kg</span>
+                </div>
+                <div class="yield-summary-item">
+                    <span>Actual Yield:</span>
+                    <span id="summaryActualYield">0.00 kg</span>
+                </div>
+                <div class="yield-summary-item">
+                    <span>Difference:</span>
+                    <span id="summaryDifference">0.00 kg</span>
+                </div>
+                <div class="yield-summary-total" id="summaryTotal">
+                    Grades Total: 0.00 kg
+                </div>
+            </div>
+            <div id="yieldWarning" style="color: #dc3545; display: none;">
+                <i class="fas fa-exclamation-triangle"></i> Sum of grades must equal actual yield!
+            </div>
         </div>
 
         <div class="form-group">
             <label for="ActualYieldKg">
                 <i class="fas fa-weight"></i>
-                @Html.DisplayNameFor(m => m.ActualYieldKg)
+                Total Actual Yield (kg)
             </label>
-            @Html.TextBoxFor(m => m.ActualYieldKg, new { @class = "form-control", type = "number", step = "0.01", min = "0", placeholder = "Enter yield in kilograms", required = "required" })
+            @Html.TextBoxFor(m => m.ActualYieldKg, new { @class = "form-control", type = "number", step = "0.01", min = "0", required = "required", oninput = "validateYield()", placeholder = "Enter total actual yield" })
         </div>
 
         <div class="form-group">
             <label for="LossesKg">
                 <i class="fas fa-exclamation-triangle"></i>
-                @Html.DisplayNameFor(m => m.LossesKg)
+                Losses (kg)
             </label>
             @Html.TextBoxFor(m => m.LossesKg, new { @class = "form-control", type = "number", step = "0.01", min = "0", placeholder = "Enter losses in kilograms" })
         </div>
@@ -410,23 +579,23 @@
         <div class="form-group">
             <label for="QualityGrade">
                 <i class="fas fa-star"></i>
-                @Html.DisplayNameFor(m => m.QualityGrade)
+                Overall Quality Grade
             </label>
-            @Html.DropDownListFor(m => m.QualityGrade, new SelectList(new[] { "Excellent", "Good", "Average", "Poor" }), "Select Quality Grade", new { @class = "form-control", required = "required" })
+            @Html.DropDownListFor(m => m.QualityGrade, new SelectList(new[] { "Excellent", "Good", "Average", "Poor" }), "Select Overall Quality Grade", new { @class = "form-control", required = "required" })
         </div>
 
         <div class="form-group">
             <label for="Notes">
                 <i class="fas fa-sticky-note"></i>
-                @Html.DisplayNameFor(m => m.Notes)
+                General Notes
             </label>
             @Html.TextAreaFor(m => m.Notes, new { @class = "form-control", rows = 4, placeholder = "Add any additional notes about the harvest..." })
         </div>
 
         <div class="action-buttons">
-            <button type="submit" class="action-button btn-success" id="saveBtn">
+            <button type="submit" class="action-button btn-success" id="saveBtn" disabled>
                 <i class="fas fa-save"></i>
-                Save Outcome
+                Save Harvest Grades
             </button>
             <a href="javascript:history.back()" class="action-button btn-secondary">
                 <i class="fas fa-arrow-left"></i>
@@ -440,12 +609,71 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 
 <script>
+    function calculateTotal() {
+        const gradeA = parseFloat(document.getElementById('GradeAQty').value) || 0;
+        const gradeB = parseFloat(document.getElementById('GradeBQty').value) || 0;
+        const gradeC = parseFloat(document.getElementById('GradeCQty').value) || 0;
+
+        const total = gradeA + gradeB + gradeC;
+        document.getElementById('totalYield').textContent = total.toFixed(2);
+        document.getElementById('summaryTotal').textContent = `Grades Total: ${total.toFixed(2)} kg`;
+
+        validateYield();
+    }
+
+    function validateYield() {
+        const gradeA = parseFloat(document.getElementById('GradeAQty').value) || 0;
+        const gradeB = parseFloat(document.getElementById('GradeBQty').value) || 0;
+        const gradeC = parseFloat(document.getElementById('GradeCQty').value) || 0;
+        const gradesTotal = gradeA + gradeB + gradeC;
+
+        const actualYield = parseFloat(document.getElementById('ActualYieldKg').value) || 0;
+        const expectedYield = @Model.ExpectedYield;
+
+        const warningElement = document.getElementById('yieldWarning');
+        const saveBtn = document.getElementById('saveBtn');
+
+        // Update summary
+        document.getElementById('summaryActualYield').textContent = `${actualYield.toFixed(2)} kg`;
+        const difference = actualYield - expectedYield;
+        document.getElementById('summaryDifference').textContent = `${difference.toFixed(2)} kg`;
+        document.getElementById('summaryDifference').style.color = difference >= 0 ? '#4CAF50' : '#FF6B6B';
+
+        // Validate grades sum equals actual yield
+        if (Math.abs(gradesTotal - actualYield) > 0.01) {
+            warningElement.style.display = 'block';
+            warningElement.innerHTML = `<i class="fas fa-exclamation-triangle"></i> Sum of grades (${gradesTotal.toFixed(2)}kg) must equal actual yield (${actualYield.toFixed(2)}kg)`;
+            saveBtn.disabled = true;
+        } else {
+            warningElement.style.display = 'none';
+            saveBtn.disabled = false;
+        }
+
+        // Validate against expected yield
+        if (actualYield > expectedYield * 2) {
+            warningElement.style.display = 'block';
+            warningElement.innerHTML = `<i class="fas fa-exclamation-triangle"></i> Actual yield seems unusually high compared to expected yield`;
+            saveBtn.disabled = true;
+        }
+    }
+
     document.addEventListener('DOMContentLoaded', function() {
         const form = document.querySelector('form');
         const saveBtn = document.getElementById('saveBtn');
         const formContainer = document.querySelector('.form-container');
 
-        // Add form submission handling
+        // Initialize calculations
+        calculateTotal();
+
+        // Add input validation
+        const inputs = document.querySelectorAll('input[type="number"]');
+        inputs.forEach(input => {
+            input.addEventListener('blur', function() {
+                if (this.value < 0) this.value = 0;
+                calculateTotal();
+            });
+        });
+
         form.addEventListener('submit', function(e) {
             const harvestDate = document.getElementById('HarvestDate');
             const actualYield = document.getElementById('ActualYieldKg');
@@ -457,62 +685,26 @@
                 return;
             }
 
+            // Validate grades sum
+            const gradeA = parseFloat(document.getElementById('GradeAQty').value) || 0;
+            const gradeB = parseFloat(document.getElementById('GradeBQty').value) || 0;
+            const gradeC = parseFloat(document.getElementById('GradeCQty').value) || 0;
+            const gradesTotal = gradeA + gradeB + gradeC;
+
+            if (Math.abs(gradesTotal - parseFloat(actualYield.value)) > 0.01) {
+                e.preventDefault();
+                alert('Sum of grades must equal total actual yield. Please adjust your entries.');
+                return;
+            }
+
             // Add loading state
             saveBtn.classList.add('submit-loading');
             saveBtn.disabled = true;
             saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
             formContainer.classList.add('loading');
         });
-
-        // Add visual feedback for quality grade selection
-        const qualitySelect = document.getElementById('QualityGrade');
-        qualitySelect.addEventListener('change', function() {
-            const selectedValue = this.value.toLowerCase();
-
-            // Reset border color
-            this.style.borderColor = '';
-            this.style.backgroundColor = '';
-
-            // Apply color based on quality
-            switch(selectedValue) {
-                case 'excellent':
-                    this.style.borderColor = '#4CAF50';
-                    this.style.backgroundColor = '#e8f5e9';
-                    break;
-                case 'good':
-                    this.style.borderColor = '#8BC34A';
-                    this.style.backgroundColor = '#f1f8e9';
-                    break;
-                case 'average':
-                    this.style.borderColor = '#FFC107';
-                    this.style.backgroundColor = '#fffde7';
-                    break;
-                case 'poor':
-                    this.style.borderColor = '#FF6B6B';
-                    this.style.backgroundColor = '#ffebee';
-                    break;
-            }
-        });
-
-        // Auto-calculate net yield
-        const actualYieldInput = document.getElementById('ActualYieldKg');
-        const lossesInput = document.getElementById('LossesKg');
-
-        function updateCalculations() {
-            const actualYield = parseFloat(actualYieldInput.value) || 0;
-            const losses = parseFloat(lossesInput.value) || 0;
-
-            // Optional: You can add a net yield display here if needed
-            if (losses > actualYield && losses > 0) {
-                lossesInput.style.borderColor = '#FF6B6B';
-                lossesInput.style.backgroundColor = '#ffebee';
-            } else {
-                lossesInput.style.borderColor = '';
-                lossesInput.style.backgroundColor = '';
-            }
-        }
-
-        actualYieldInput.addEventListener('input', updateCalculations);
-        lossesInput.addEventListener('input', updateCalculations);
     });
 </script>
+
+
+
