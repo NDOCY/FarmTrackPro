@@ -1,9 +1,12 @@
-﻿using FarmPro.Models;
-using FarmTrack.Models;
+﻿using FarmTrack.Models;
+using FarmTrack.Services;
 using System;
 using System.Collections.Generic;
+using System.Configuration;
 using System.Data.Entity;
 using System.Linq;
+using System.Threading.Tasks;
+using System.Web;
 using System.Web.Mvc;
 
 namespace FarmTrack.Controllers
@@ -11,6 +14,14 @@ namespace FarmTrack.Controllers
     public class ProductsController : Controller
     {
         private FarmTrackContext db = new FarmTrackContext();
+
+        private BlobStorageService _blobService;
+
+        public ProductsController()
+        {
+            var connectionString = ConfigurationManager.AppSettings["AzureBlobStorageConnectionString"];
+            _blobService = new BlobStorageService(connectionString);
+        }
 
         // GET: Products
         public ActionResult Index()
@@ -91,19 +102,24 @@ namespace FarmTrack.Controllers
                 .Any(i => i.ProductId == productId);
         }
 
-        // POST: Submit review
+        // REPLACE YOUR SubmitReview METHOD with this:
+
         [HttpPost]
-        [ValidateAntiForgeryToken]
+        // Remove [ValidateAntiForgeryToken] for AJAX calls - or handle it properly
         public JsonResult SubmitReview(int ProductId, int Rating, string ReviewText, bool IsVerifiedPurchase = false)
         {
             try
             {
+                System.Diagnostics.Debug.WriteLine($"SubmitReview called: ProductId={ProductId}, Rating={Rating}");
+
                 if (Session["UserId"] == null)
                 {
+                    System.Diagnostics.Debug.WriteLine("User not logged in");
                     return Json(new { success = false, message = "Please log in to submit a review." });
                 }
 
                 int userId = (int)Session["UserId"];
+                System.Diagnostics.Debug.WriteLine($"User ID: {userId}");
 
                 // Check if user has already reviewed this product
                 var existingReview = db.ProductReviews
@@ -111,15 +127,17 @@ namespace FarmTrack.Controllers
 
                 if (existingReview != null)
                 {
+                    System.Diagnostics.Debug.WriteLine("User already reviewed this product");
                     return Json(new { success = false, message = "You have already reviewed this product." });
                 }
 
+                // Create new review
                 var review = new ProductReview
                 {
                     ProductId = ProductId,
                     UserId = userId,
                     Rating = Rating,
-                    ReviewText = ReviewText,
+                    ReviewText = ReviewText ?? "",
                     IsVerifiedPurchase = IsVerifiedPurchase,
                     ReviewDate = DateTime.Now,
                     IsActive = true
@@ -128,61 +146,29 @@ namespace FarmTrack.Controllers
                 db.ProductReviews.Add(review);
                 db.SaveChanges();
 
+                System.Diagnostics.Debug.WriteLine($"✅ Review saved successfully! ID: {review.ProductReviewId}");
+
                 // Log activity
-                db.LogActivity(userId, $"Reviewed product #{ProductId} with {Rating} stars");
+                try
+                {
+                    db.LogActivity(userId, $"Reviewed product #{ProductId} with {Rating} stars");
+                }
+                catch (Exception logEx)
+                {
+                    System.Diagnostics.Debug.WriteLine($"Warning: Failed to log activity: {logEx.Message}");
+                }
 
                 return Json(new { success = true, message = "Review submitted successfully!" });
             }
             catch (Exception ex)
             {
+                System.Diagnostics.Debug.WriteLine($"❌ SubmitReview ERROR: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"Stack trace: {ex.StackTrace}");
                 return Json(new { success = false, message = "Error submitting review: " + ex.Message });
             }
         }
 
-        // ADMIN: Order Management Detail View
         /*
-         public ActionResult OrderManagement(int id)
-         {
-             // Check if user is admin
-             if (Session["Role"]?.ToString() != "Admin" && Session["Role"]?.ToString() != "Owner")
-             {
-                 TempData["Error"] = "Access denied. Admin privileges required.";
-                 return RedirectToAction("MyOrders");
-             }
-
-             var sale = db.Sales
-                 .Include(s => s.User)
-                 .Include(s => s.Items)
-                 .Include(s => s.Items.Select(i => i.Product))
-                 .Include(s => s.OrderStatusUpdates)
-                 .Include(s => s.AssignedDriver)
-                 .FirstOrDefault(s => s.SaleId == id);
-
-             if (sale == null)
-             {
-                 TempData["Error"] = "Order not found.";
-                 return RedirectToAction("SalesList");
-             }
-
-             // Get available drivers (admins and owners who are active)
-             var availableDrivers = db.Users
-                 .Where(u => (u.Role == "Admin" || u.Role == "Owner") && u.IsActive)
-                 .Select(u => new
-                 {
-                     u.UserId,
-                     u.FullName,
-                     u.PhoneNumber,
-                     u.VehicleType,
-                     u.VehicleNumber
-                 })
-                 .ToList();
-
-             ViewBag.AvailableDrivers = availableDrivers;
-
-             return View(sale);
-         }*/
-        // Add these helper methods to your ProductsController class
-
         // CRITICAL FIX 1: Geocode customer address to get actual coordinates
         private (decimal? lat, decimal? lng) GeocodeAddress(string address)
         {
@@ -214,13 +200,12 @@ namespace FarmTrack.Controllers
             }
 
             return (null, null);
-        }
+        }*/
 
-        // CRITICAL FIX 2: Update ProcessCheckout to geocode delivery address
         [HttpPost]
         [ValidateAntiForgeryToken]
         public ActionResult ProcessCheckout(string CustomerName, string CustomerEmail, string CustomerPhone,
-            string DeliveryAddress, string PaymentMethod, string DeliveryInstructions = "")
+    string DeliveryAddress, string PaymentMethod, string voucherCode = null, string DeliveryInstructions = "")
         {
             if (Session["UserId"] == null)
             {
@@ -249,13 +234,56 @@ namespace FarmTrack.Controllers
                     return RedirectToAction("Checkout");
                 }
 
+                // Calculate totals and apply voucher
+                decimal subtotal = (decimal)cart.Sum(item => item.Total);
+                decimal discountAmount = 0;
+                DiscountVoucher appliedVoucher = null;
+
+                // Apply voucher if provided
+                if (!string.IsNullOrEmpty(voucherCode))
+                {
+                    appliedVoucher = db.DiscountVouchers
+                        .FirstOrDefault(v => v.Code.ToUpper() == voucherCode.ToUpper() && v.IsActive);
+
+                    if (appliedVoucher != null && appliedVoucher.IsValid)
+                    {
+                        // Check if voucher is applicable to cart
+                        if (!IsVoucherApplicableToCart(appliedVoucher, cart))
+                        {
+                            TempData["Error"] = "Voucher is not applicable to items in your cart.";
+                            return RedirectToAction("Checkout");
+                        }
+
+                        // Check minimum order amount
+                        if (appliedVoucher.MinimumOrderAmount.HasValue && subtotal < appliedVoucher.MinimumOrderAmount.Value)
+                        {
+                            TempData["Error"] = $"Voucher requires minimum order of R{appliedVoucher.MinimumOrderAmount.Value:0.##}";
+                            return RedirectToAction("Checkout");
+                        }
+
+                        discountAmount = CalculateDiscount(appliedVoucher, subtotal);
+
+                        // Update voucher usage
+                        appliedVoucher.UsedCount++;
+                    }
+                    else
+                    {
+                        TempData["Error"] = "Invalid or expired voucher code.";
+                        return RedirectToAction("Checkout");
+                    }
+                }
+
+                decimal totalAmount = subtotal - discountAmount;
+
                 var trackingNumber = "FT" + DateTime.Now.ToString("yyyyMMddHHmmss");
                 var estimatedDelivery = DateTime.Now.AddDays(new Random().Next(2, 4));
 
                 var sale = new Sale
                 {
                     SaleDate = DateTime.Now,
-                    TotalAmount = (decimal)cart.Sum(item => item.Total),
+                    Subtotal = subtotal,
+                    DiscountAmount = discountAmount,
+                    TotalAmount = totalAmount,
                     UserId = userId,
                     Status = PaymentMethod == "Cash" ? "Confirmed" : "Pending",
                     TrackingNumber = trackingNumber,
@@ -271,9 +299,14 @@ namespace FarmTrack.Controllers
                     DestinationLatitude = destLat.Value,
                     DestinationLongitude = destLng.Value,
 
+                    // Voucher information
+                    AppliedVoucherId = appliedVoucher?.VoucherId,
+                    AppliedVoucherCode = appliedVoucher?.Code,
+
                     Items = new List<SaleItem>()
                 };
 
+                // Create sale items and update inventory
                 foreach (var cartItem in cart)
                 {
                     var saleItem = new SaleItem
@@ -291,6 +324,23 @@ namespace FarmTrack.Controllers
                     }
                 }
 
+                // Record voucher usage
+                if (appliedVoucher != null)
+                {
+                    var voucherUsage = new VoucherUsage
+                    {
+                        VoucherId = appliedVoucher.VoucherId,
+                        SaleId = sale.SaleId,
+                        UserId = userId,
+                        DiscountAmount = discountAmount,
+                        OrderTotalBeforeDiscount = subtotal,
+                        OrderTotalAfterDiscount = totalAmount,
+                        UsedAt = DateTime.Now
+                    };
+                    db.VoucherUsages.Add(voucherUsage);
+                }
+
+                // Payment processing
                 if (PaymentMethod != "Cash")
                 {
                     System.Threading.Thread.Sleep(2000);
@@ -301,7 +351,20 @@ namespace FarmTrack.Controllers
                     {
                         SaleId = sale.SaleId,
                         Status = "Order Confirmed",
-                        Notes = "Payment received. Preparing your order.",
+                        Notes = "Payment received. Preparing your order." +
+                               (appliedVoucher != null ? $" Voucher '{appliedVoucher.Code}' applied." : ""),
+                        UpdateTime = DateTime.Now
+                    });
+                }
+                else
+                {
+                    // Add initial status update for cash orders
+                    db.OrderStatusUpdates.Add(new OrderStatusUpdate
+                    {
+                        SaleId = sale.SaleId,
+                        Status = "Order Confirmed",
+                        Notes = "Order confirmed. Awaiting payment on delivery." +
+                               (appliedVoucher != null ? $" Voucher '{appliedVoucher.Code}' applied." : ""),
                         UpdateTime = DateTime.Now
                     });
                 }
@@ -311,18 +374,545 @@ namespace FarmTrack.Controllers
 
                 Session["Cart"] = new List<CartItem>();
 
-                TempData["Success"] = $"Order #{sale.SaleId} placed successfully! Tracking: {trackingNumber}";
+                string successMessage = $"Order #{sale.SaleId} placed successfully! ";
+                if (discountAmount > 0)
+                {
+                    successMessage += $"You saved R{discountAmount:0.##}! ";
+                }
+                successMessage += $"Tracking: {trackingNumber}";
+
+                TempData["Success"] = successMessage;
                 return RedirectToAction("OrderTracking", new { id = sale.SaleId });
             }
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"Checkout error: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"Stack trace: {ex.StackTrace}");
                 TempData["Error"] = $"Checkout failed: {ex.Message}";
                 return RedirectToAction("Checkout");
             }
         }
 
-        // CRITICAL FIX 3: Fixed GetRealDeliveryData to use actual driver location
+        // Helper method to check voucher applicability to cart
+        private bool IsVoucherApplicableToCart(DiscountVoucher voucher, List<CartItem> cart)
+        {
+            switch (voucher.Applicability)
+            {
+                case VoucherApplicability.AllProducts:
+                    return true;
+                case VoucherApplicability.SpecificCategory:
+                    return cart.Any(item => item.Category == voucher.ApplicableCategory);
+                case VoucherApplicability.SpecificProduct:
+                    return cart.Any(item => item.ProductId == voucher.ApplicableProductId);
+                case VoucherApplicability.MinimumOrderOnly:
+                    return true;
+                default:
+                    return true;
+            }
+        }
+
+        // Helper method to calculate discount
+        private decimal CalculateDiscount(DiscountVoucher voucher, decimal cartTotal)
+        {
+            decimal discount = 0;
+
+            if (voucher.VoucherType == VoucherType.FixedAmount)
+            {
+                discount = Math.Min(voucher.DiscountValue, cartTotal);
+            }
+            else if (voucher.VoucherType == VoucherType.Percentage)
+            {
+                discount = cartTotal * (voucher.DiscountValue / 100);
+
+                // Apply maximum discount limit
+                if (voucher.MaximumDiscount.HasValue)
+                {
+                    discount = Math.Min(discount, voucher.MaximumDiscount.Value);
+                }
+            }
+
+            return Math.Round(discount, 2);
+        }
+
+        // ===== PASTE THIS INTO YOUR ProductsController.cs - REPLACE THE EXISTING METHODS =====
+
+        // STEP 1: IMPROVED GEOCODING with better error handling
+        // IMPROVED GEOCODING with better accuracy
+        private (decimal? lat, decimal? lng) GeocodeAddress(string address)
+        {
+            if (string.IsNullOrEmpty(address))
+            {
+                System.Diagnostics.Debug.WriteLine("GeocodeAddress: Empty address provided");
+                return (-29.8587m, 31.0218m); // Default Durban coordinates
+            }
+
+            try
+            {
+                string apiKey = ConfigurationManager.AppSettings["GoogleMapsApiKey"];
+
+                if (string.IsNullOrEmpty(apiKey))
+                {
+                    System.Diagnostics.Debug.WriteLine("GeocodeAddress: No Google Maps API key found");
+                    return (-29.8587m, 31.0218m);
+                }
+
+                // Clean and improve the address for better geocoding
+                string cleanedAddress = CleanAddressForGeocoding(address);
+
+                string url = $"https://maps.googleapis.com/maps/api/geocode/json?address={Uri.EscapeDataString(cleanedAddress)}&region=za&key={apiKey}";
+
+                using (var client = new System.Net.WebClient())
+                {
+                    string response = client.DownloadString(url);
+                    dynamic json = Newtonsoft.Json.JsonConvert.DeserializeObject(response);
+
+                    System.Diagnostics.Debug.WriteLine($"Geocoding response status: {json.status}");
+
+                    if (json.status == "OK" && json.results.Count > 0)
+                    {
+                        // Get the most precise result
+                        var result = json.results[0];
+                        decimal lat = result.geometry.location.lat;
+                        decimal lng = result.geometry.location.lng;
+
+                        // Check location type for accuracy
+                        string locationType = result.geometry.location_type;
+                        decimal accuracy = GetAccuracyScore(locationType);
+
+                        System.Diagnostics.Debug.WriteLine($"Geocoded '{address}' to: {lat}, {lng} (Accuracy: {locationType})");
+
+                        return (lat, lng);
+                    }
+                    else
+                    {
+                        System.Diagnostics.Debug.WriteLine($"Geocoding failed. Status: {json.status}");
+                        return (-29.8587m, 31.0218m);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Geocoding error: {ex.Message}");
+                return (-29.8587m, 31.0218m);
+            }
+        }
+
+        // Helper method to clean addresses for better geocoding
+        private string CleanAddressForGeocoding(string address)
+        {
+            if (string.IsNullOrEmpty(address)) return address;
+
+            // Add South Africa to improve accuracy
+            if (!address.ToLower().Contains("south africa") && !address.ToLower().Contains("sa"))
+            {
+                address += ", South Africa";
+            }
+
+            // Remove common issues
+            address = address.Replace("P.O. Box", "").Replace("P.O Box", "").Replace("PO Box", "");
+
+            return address.Trim();
+        }
+
+        // Helper method to score geocoding accuracy
+        private decimal GetAccuracyScore(string locationType)
+        {
+            switch (locationType)
+            {
+                case "ROOFTOP": return 1.0m;      // Most accurate
+                case "RANGE_INTERPOLATED": return 0.8m;
+                case "GEOMETRIC_CENTER": return 0.6m;
+                case "APPROXIMATE": return 0.4m;  // Least accurate
+                default: return 0.5m;
+            }
+        }/*
+        private (decimal? lat, decimal? lng) GeocodeAddress(string address)
+        {
+            if (string.IsNullOrEmpty(address)) return (null, null);
+
+            try
+            {
+                string apiKey = System.Configuration.ConfigurationManager.AppSettings["GoogleMapsApiKey"];
+
+                // Add region bias for South Africa
+                string url = $"https://maps.googleapis.com/maps/api/geocode/json?address={Uri.EscapeDataString(address)}&region=za&key={apiKey}";
+
+                using (var client = new System.Net.WebClient())
+                {
+                    string response = client.DownloadString(url);
+                    dynamic json = Newtonsoft.Json.JsonConvert.DeserializeObject(response);
+
+                    System.Diagnostics.Debug.WriteLine($"Geocoding response: {response}");
+
+                    if (json.status == "OK" && json.results.Count > 0)
+                    {
+                        decimal lat = json.results[0].geometry.location.lat;
+                        decimal lng = json.results[0].geometry.location.lng;
+
+                        System.Diagnostics.Debug.WriteLine($"Geocoded: {address} -> {lat}, {lng}");
+
+                        return (lat, lng);
+                    }
+                    else
+                    {
+                        System.Diagnostics.Debug.WriteLine($"Geocoding failed: {json.status}");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Geocoding error: {ex.Message}");
+            }
+
+            return (null, null);
+        }*/
+
+        // STEP 2: FIXED GetRealDeliveryData - ONE SET OF FALLBACK COORDINATES
+        // FIXED: GetRealDeliveryData - Uses real-time driver GPS when available
+        public JsonResult GetRealDeliveryData(int saleId)
+        {
+            try
+            {
+                int? userId = Session["UserId"] as int?;
+                if (!userId.HasValue)
+                {
+                    return Json(new { success = false, error = "Not logged in" }, JsonRequestBehavior.AllowGet);
+                }
+
+                var sale = db.Sales
+                    .Include(s => s.AssignedDriver)
+                    .FirstOrDefault(s => s.SaleId == saleId);
+
+                if (sale == null)
+                {
+                    return Json(new { success = false, error = "Order not found" }, JsonRequestBehavior.AllowGet);
+                }
+
+                // Verify permissions
+                string userRole = Session["Role"]?.ToString();
+                bool isCustomer = sale.UserId == userId.Value;
+                bool isDriver = sale.AssignedDriverId == userId.Value;
+                bool isAdmin = userRole == "Admin" || userRole == "Owner";
+
+                if (!isCustomer && !isDriver && !isAdmin)
+                {
+                    return Json(new { success = false, error = "Access denied" }, JsonRequestBehavior.AllowGet);
+                }
+
+                // **CRITICAL FIX: Get REAL-TIME driver location from User table**
+                decimal? currentLat = null;
+                decimal? currentLng = null;
+                bool hasRealLocation = false;
+
+                if (sale.AssignedDriverId.HasValue)
+                {
+                    var driver = db.Users.Find(sale.AssignedDriverId.Value);
+
+                    // **Check if driver is online AND has recent location (within 2 minutes)**
+                    if (driver != null && driver.IsOnlineAsDriver &&
+                        driver.CurrentLatitude.HasValue && driver.CurrentLongitude.HasValue &&
+                        driver.LastOnlineTime.HasValue &&
+                        (DateTime.Now - driver.LastOnlineTime.Value).TotalMinutes < 2)
+                    {
+                        currentLat = driver.CurrentLatitude;
+                        currentLng = driver.CurrentLongitude;
+                        hasRealLocation = true;
+
+                        System.Diagnostics.Debug.WriteLine($"USING REAL-TIME DRIVER LOCATION: {currentLat}, {currentLng}");
+
+                        // Update sale with current real-time location
+                        sale.CurrentLatitude = currentLat;
+                        sale.CurrentLongitude = currentLng;
+                        sale.LastLocationUpdate = DateTime.Now;
+                        db.SaveChanges();
+                    }
+                    else
+                    {
+                        System.Diagnostics.Debug.WriteLine($"Driver offline or location stale. Online: {driver?.IsOnlineAsDriver}, LastUpdate: {driver?.LastOnlineTime}");
+                    }
+                }
+
+                // Get destination coordinates
+                decimal destinationLat = sale.DestinationLatitude ?? -29.8587m;
+                decimal destinationLng = sale.DestinationLongitude ?? 31.0218m;
+
+                // **FIX: Only use fallback if no real location available**
+                if (!hasRealLocation)
+                {
+                    if (sale.AssignedDriverId.HasValue && sale.CurrentLatitude.HasValue && sale.CurrentLongitude.HasValue)
+                    {
+                        // Use last known location from sale record
+                        currentLat = sale.CurrentLatitude;
+                        currentLng = sale.CurrentLongitude;
+                        System.Diagnostics.Debug.WriteLine($"USING LAST KNOWN LOCATION: {currentLat}, {currentLng}");
+                    }
+                    else
+                    {
+                        // No driver or no location - use destination as placeholder
+                        currentLat = destinationLat;
+                        currentLng = destinationLng;
+                        System.Diagnostics.Debug.WriteLine($"USING DESTINATION AS PLACEHOLDER: {currentLat}, {currentLng}");
+                    }
+                }
+
+                var deliveryData = new
+                {
+                    currentLat = currentLat.Value,
+                    currentLng = currentLng.Value,
+                    destinationLat = destinationLat,
+                    destinationLng = destinationLng,
+                    driverName = sale.DeliveryDriver ?? "Not assigned",
+                    driverPhone = sale.DriverPhone ?? "",
+                    vehicleType = sale.VehicleType ?? "Vehicle",
+                    vehicleNumber = sale.VehicleNumber ?? "TBD",
+                    status = sale.Status,
+                    isActive = sale.IsActiveDelivery,
+                    lastUpdate = sale.LastLocationUpdate?.ToString("g") ?? "No updates yet",
+                    deliveryAddress = sale.DeliveryAddress,
+                    hasDriver = sale.AssignedDriverId.HasValue,
+                    driverIsOnline = sale.AssignedDriver?.IsOnlineAsDriver ?? false,
+                    hasRealLocation = hasRealLocation,
+                    locationSource = hasRealLocation ? "real-time-gps" : (sale.AssignedDriverId.HasValue ? "last-known" : "destination")
+                };
+
+                System.Diagnostics.Debug.WriteLine($"Delivery Data - Source: {deliveryData.locationSource}, RealLocation: {hasRealLocation}");
+
+                return Json(new { success = true, deliveryData }, JsonRequestBehavior.AllowGet);
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"GetRealDeliveryData ERROR: {ex.Message}");
+                return Json(new { success = false, error = "Server error loading delivery data" }, JsonRequestBehavior.AllowGet);
+            }
+        }
+
+        // STEP 3: BETTER UpdateDriverLocation with debugging
+        [HttpPost]
+        public JsonResult UpdateDriverLocation(decimal latitude, decimal longitude)
+        {
+            try
+            {
+                if (Session["UserId"] == null)
+                {
+                    return Json(new { success = false, message = "Not logged in" });
+                }
+
+                int userId = (int)Session["UserId"];
+                var user = db.Users.Find(userId);
+
+                if (user == null)
+                {
+                    return Json(new { success = false, message = "User not found" });
+                }
+
+                System.Diagnostics.Debug.WriteLine($"UPDATING DRIVER LOCATION: User={userId}, Lat={latitude}, Lng={longitude}");
+
+                // Update user's location
+                user.CurrentLatitude = latitude;
+                user.CurrentLongitude = longitude;
+                user.LastOnlineTime = DateTime.Now;
+                user.IsOnlineAsDriver = true;
+
+                // Update ALL active deliveries
+                var activeDeliveries = db.Sales
+                    .Where(s => s.AssignedDriverId == userId &&
+                           (s.Status == "Assigned to Driver" || s.Status == "Out for Delivery"))
+                    .ToList();
+
+                System.Diagnostics.Debug.WriteLine($"Found {activeDeliveries.Count} active deliveries");
+
+                foreach (var delivery in activeDeliveries)
+                {
+                    delivery.CurrentLatitude = latitude;
+                    delivery.CurrentLongitude = longitude;
+                    delivery.LastLocationUpdate = DateTime.Now;
+                    delivery.IsActiveDelivery = true;
+
+                    // Record in history
+                    db.DeliveryLocations.Add(new DeliveryLocation
+                    {
+                        SaleId = delivery.SaleId,
+                        DriverUserId = userId,
+                        Latitude = latitude,
+                        Longitude = longitude,
+                        Timestamp = DateTime.Now,
+                        Sequence = db.DeliveryLocations.Count(dl => dl.SaleId == delivery.SaleId) + 1
+                    });
+
+                    System.Diagnostics.Debug.WriteLine($"Updated delivery #{delivery.SaleId} to {latitude},{longitude}");
+                }
+
+                db.SaveChanges();
+
+                return Json(new
+                {
+                    success = true,
+                    updatedDeliveries = activeDeliveries.Count,
+                    message = $"Location updated: {latitude:F6}, {longitude:F6}",
+                    latitude = latitude,
+                    longitude = longitude
+                });
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"UpdateDriverLocation ERROR: {ex.Message}");
+                return Json(new { success = false, message = ex.Message });
+            }
+        }
+
+        // STEP 4: BETTER GoOnlineAsDriver
+        [HttpPost]
+        public JsonResult GoOnlineAsDriver(decimal latitude, decimal longitude)
+        {
+            try
+            {
+                if (Session["UserId"] == null)
+                {
+                    return Json(new { success = false, message = "Not logged in" });
+                }
+
+                int userId = (int)Session["UserId"];
+                var user = db.Users.Find(userId);
+
+                if (user == null)
+                {
+                    return Json(new { success = false, message = "User not found" });
+                }
+
+                System.Diagnostics.Debug.WriteLine($"GO ONLINE: User={userId}, Lat={latitude}, Lng={longitude}");
+
+                user.CurrentLatitude = latitude;
+                user.CurrentLongitude = longitude;
+                user.IsOnlineAsDriver = true;
+                user.LastOnlineTime = DateTime.Now;
+
+                db.SaveChanges();
+
+                System.Diagnostics.Debug.WriteLine($"Driver #{userId} now ONLINE at {latitude},{longitude}");
+
+                return Json(new
+                {
+                    success = true,
+                    message = "You are now online",
+                    latitude = latitude,
+                    longitude = longitude
+                });
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"GoOnlineAsDriver ERROR: {ex.Message}");
+                return Json(new { success = false, message = ex.Message });
+            }
+        }/*
+
+        // FIXED: GetRealDeliveryData - Now properly shows driver's actual location
+        public JsonResult GetRealDeliveryData(int saleId)
+        {
+            try
+            {
+                // Check user permission
+                int? userId = Session["UserId"] as int?;
+                if (!userId.HasValue)
+                {
+                    return Json(new { success = false, error = "Not logged in" }, JsonRequestBehavior.AllowGet);
+                }
+
+                var sale = db.Sales
+                    .Include(s => s.AssignedDriver)
+                    .FirstOrDefault(s => s.SaleId == saleId);
+
+                if (sale == null)
+                {
+                    return Json(new { success = false, error = "Order not found" }, JsonRequestBehavior.AllowGet);
+                }
+
+                // Verify user can view this order (customer or assigned driver or admin)
+                string userRole = Session["Role"]?.ToString();
+                bool isCustomer = sale.UserId == userId.Value;
+                bool isDriver = sale.AssignedDriverId == userId.Value;
+                bool isAdmin = userRole == "Admin" || userRole == "Owner";
+
+                if (!isCustomer && !isDriver && !isAdmin)
+                {
+                    return Json(new { success = false, error = "Access denied" }, JsonRequestBehavior.AllowGet);
+                }
+
+                // **FIX: Always get REAL driver location from User table FIRST**
+                decimal? currentLat = null;
+                decimal? currentLng = null;
+                bool hasRealLocation = false;
+
+                if (sale.AssignedDriverId.HasValue)
+                {
+                    var driver = db.Users.Find(sale.AssignedDriverId.Value);
+
+                    // Check if driver has a current location (they're online)
+                    if (driver != null &&
+                        driver.IsOnlineAsDriver &&
+                        driver.CurrentLatitude.HasValue &&
+                        driver.CurrentLongitude.HasValue)
+                    {
+                        currentLat = driver.CurrentLatitude;
+                        currentLng = driver.CurrentLongitude;
+                        hasRealLocation = true;
+
+                        // Update sale's current location for tracking
+                        sale.CurrentLatitude = currentLat;
+                        sale.CurrentLongitude = currentLng;
+                        sale.LastLocationUpdate = DateTime.Now;
+                        db.SaveChanges();
+                    }
+                }
+
+                // **FIX: Use stored destination coordinates from order**
+                decimal destinationLat = sale.DestinationLatitude ?? -29.8587m; // Durban fallback
+                decimal destinationLng = sale.DestinationLongitude ?? 31.0218m;
+
+                // **FIX: Only use destination as driver location if driver hasn't been assigned at all**
+                // Don't show fake location if driver is assigned but offline
+                if (!hasRealLocation && !sale.AssignedDriverId.HasValue)
+                {
+                    // No driver assigned - show destination as placeholder
+                    currentLat = destinationLat;
+                    currentLng = destinationLng;
+                }
+                else if (!hasRealLocation && sale.AssignedDriverId.HasValue)
+                {
+                    // Driver assigned but offline/no location - use last known location or null
+                    currentLat = sale.CurrentLatitude ?? null;
+                    currentLng = sale.CurrentLongitude ?? null;
+                }
+
+                var deliveryData = new
+                {
+                    currentLat = currentLat ?? destinationLat, // Fallback only if really needed
+                    currentLng = currentLng ?? destinationLng,
+                    destinationLat = destinationLat,
+                    destinationLng = destinationLng,
+                    driverName = sale.DeliveryDriver ?? "Not assigned",
+                    driverPhone = sale.DriverPhone ?? "",
+                    vehicleType = sale.VehicleType ?? "Vehicle",
+                    vehicleNumber = sale.VehicleNumber ?? "TBD",
+                    status = sale.Status,
+                    isActive = sale.IsActiveDelivery,
+                    lastUpdate = sale.LastLocationUpdate?.ToString("g") ?? "No updates yet",
+                    deliveryAddress = sale.DeliveryAddress,
+                    hasDriver = sale.AssignedDriverId.HasValue,
+                    driverIsOnline = sale.AssignedDriver?.IsOnlineAsDriver ?? false,
+                    hasRealLocation = hasRealLocation // NEW: Tell frontend if location is real
+                };
+
+                return Json(new { success = true, deliveryData }, JsonRequestBehavior.AllowGet);
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"GetRealDeliveryData error: {ex.Message}");
+                return Json(new { success = false, error = ex.Message }, JsonRequestBehavior.AllowGet);
+            }
+        }
+        */
+
+        /*// CRITICAL FIX 3: Fixed GetRealDeliveryData to use actual driver location
         public JsonResult GetRealDeliveryData(int saleId)
         {
             try
@@ -411,10 +1001,10 @@ namespace FarmTrack.Controllers
                 System.Diagnostics.Debug.WriteLine($"GetRealDeliveryData error: {ex.Message}");
                 return Json(new { success = false, error = ex.Message }, JsonRequestBehavior.AllowGet);
             }
-        }
+        }*/
 
         // CRITICAL FIX 4: Update driver location properly
-        [HttpPost]
+        /*[HttpPost]
         public JsonResult UpdateDriverLocation(decimal latitude, decimal longitude)
         {
             try
@@ -470,7 +1060,7 @@ namespace FarmTrack.Controllers
                 System.Diagnostics.Debug.WriteLine($"UpdateDriverLocation error: {ex.Message}");
                 return Json(new { success = false, message = ex.Message });
             }
-        }
+        }*/
 
         // CRITICAL FIX 5: Get driver's active deliveries correctly
         public JsonResult GetMyActiveDeliveries()
@@ -698,16 +1288,51 @@ namespace FarmTrack.Controllers
             return View();
         }
 
-        // POST: Products/Create
+        // POST: Products/Create - UPDATED FOR BLOB STORAGE
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public ActionResult Create([Bind(Include = "Id,Name,ProductType,Category,Unit,Quantity,PricePerUnit,HarvestOutcomeId,LivestockId,InventoryId,CreatedAt")] Product product)
+        public async Task<ActionResult> Create([Bind(Include = "Id,Name,ProductType,Category,Unit,Quantity,PricePerUnit,Description,ImageUrl,IsAvailable,IsFeatured,MinimumOrder,HarvestOutcomeId,LivestockId,InventoryId")] Product product, HttpPostedFileBase imageFile)
         {
             if (ModelState.IsValid)
             {
-                db.Products.Add(product);
-                db.SaveChanges();
-                return RedirectToAction("Index");
+                try
+                {
+                    // Handle image upload
+                    if (imageFile != null && imageFile.ContentLength > 0)
+                    {
+                        var imageUrl = await _blobService.UploadImageAsync(imageFile, product.Name);
+                        if (!string.IsNullOrEmpty(imageUrl))
+                        {
+                            product.ImageUrl = imageUrl;
+                        }
+                        else
+                        {
+                            TempData["Error"] = "Failed to upload image. Please try again.";
+                            ViewBag.HarvestOutcomeId = new SelectList(db.HarvestOutcomes, "Id", "QualityGrade", product.HarvestOutcomeId);
+                            ViewBag.InventoryId = new SelectList(db.Inventories, "InventoryId", "ItemName", product.InventoryId);
+                            ViewBag.LivestockId = new SelectList(db.Livestocks, "LivestockId", "Type", product.LivestockId);
+                            return View(product);
+                        }
+                    }
+
+                    // Set timestamps
+                    product.CreatedAt = DateTime.Now;
+                    product.LastUpdated = DateTime.Now;
+
+                    // Set default values if not provided
+                    if (product.MinimumOrder <= 0) product.MinimumOrder = 1;
+                    if (string.IsNullOrEmpty(product.Description)) product.Description = $"High quality {product.Name}";
+
+                    db.Products.Add(product);
+                    db.SaveChanges();
+
+                    TempData["Success"] = "Product created successfully!";
+                    return RedirectToAction("Index");
+                }
+                catch (Exception ex)
+                {
+                    TempData["Error"] = $"Error creating product: {ex.Message}";
+                }
             }
 
             ViewBag.HarvestOutcomeId = new SelectList(db.HarvestOutcomes, "Id", "QualityGrade", product.HarvestOutcomeId);
@@ -732,21 +1357,50 @@ namespace FarmTrack.Controllers
             return View(product);
         }
 
-        // POST: Products/Edit/5
+        // POST: Products/Edit/5 - UPDATED FOR BLOB STORAGE
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public ActionResult Edit([Bind(Include = "Id,Name,ProductType,Category,Unit,Quantity,PricePerUnit,Description,ImageUrl,IsAvailable,IsFeatured,MinimumOrder,HarvestOutcomeId,LivestockId,InventoryId,CreatedAt")] Product product)
+        public async Task<ActionResult> Edit([Bind(Include = "Id,Name,ProductType,Category,Unit,Quantity,PricePerUnit,Description,ImageUrl,IsAvailable,IsFeatured,MinimumOrder,HarvestOutcomeId,LivestockId,InventoryId,CreatedAt")] Product product, HttpPostedFileBase imageFile)
         {
             if (ModelState.IsValid)
             {
-                // Update the LastUpdated timestamp
-                product.LastUpdated = DateTime.Now;
+                try
+                {
+                    // Handle image upload
+                    if (imageFile != null && imageFile.ContentLength > 0)
+                    {
+                        // Upload to blob storage and get URL
+                        var imageUrl = await _blobService.UploadImageAsync(imageFile, product.Name);
 
-                db.Entry(product).State = EntityState.Modified;
-                db.SaveChanges();
+                        if (!string.IsNullOrEmpty(imageUrl))
+                        {
+                            // Delete old image if it exists and is from blob storage
+                            if (!string.IsNullOrEmpty(product.ImageUrl) && product.ImageUrl.Contains("blob.core.windows.net"))
+                            {
+                                await _blobService.DeleteImageAsync(product.ImageUrl);
+                            }
+                            product.ImageUrl = imageUrl;
+                        }
+                        else
+                        {
+                            TempData["Error"] = "Failed to upload image. Please try again.";
+                            return View(product);
+                        }
+                    }
 
-                TempData["Success"] = "Product updated successfully!";
-                return RedirectToAction("Index");
+                    // Update the LastUpdated timestamp
+                    product.LastUpdated = DateTime.Now;
+
+                    db.Entry(product).State = EntityState.Modified;
+                    db.SaveChanges();
+
+                    TempData["Success"] = "Product updated successfully!";
+                    return RedirectToAction("Index");
+                }
+                catch (Exception ex)
+                {
+                    TempData["Error"] = $"Error updating product: {ex.Message}";
+                }
             }
 
             ViewBag.HarvestOutcomeId = new SelectList(db.HarvestOutcomes, "Id", "QualityGrade", product.HarvestOutcomeId);
@@ -841,7 +1495,8 @@ namespace FarmTrack.Controllers
                     Name = product.Name,
                     Unit = product.Unit,
                     PricePerUnit = product.PricePerUnit ?? 0,
-                    Quantity = quantity
+                    Quantity = quantity,
+                    Category = product.Category,
                 });
             }
 
@@ -910,110 +1565,6 @@ namespace FarmTrack.Controllers
             return View(new CheckoutViewModel { CartItems = cart });
         }
 
-        // CHECKOUT FUNCTIONALITY - POST (process the actual checkout
-        /*
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public ActionResult ProcessCheckout(string CustomerName, string CustomerEmail, string CustomerPhone, string DeliveryAddress, string PaymentMethod, string DeliveryInstructions = "")
-        {
-            // Check if user is logged in
-            if (Session["UserId"] == null)
-            {
-                TempData["Error"] = "Please log in to complete your purchase.";
-                return RedirectToAction("Login", "Account");
-            }
-
-            var cart = Session["Cart"] as List<CartItem> ?? new List<CartItem>();
-
-            if (!cart.Any())
-            {
-                TempData["Error"] = "Your cart is empty.";
-                return RedirectToAction("Cart");
-            }
-
-            try
-            {
-                int userId = (int)Session["UserId"];
-
-                // Generate tracking number
-                var trackingNumber = "FT" + DateTime.Now.ToString("yyyyMMddHHmmss");
-                var estimatedDelivery = DateTime.Now.AddDays(new Random().Next(2, 4));
-
-                // Create new Sale with UserId
-                var sale = new Sale
-                {
-                    SaleDate = DateTime.Now,
-                    TotalAmount = (decimal)cart.Sum(item => item.Total),
-                    UserId = userId, // Link to logged-in user
-                    Status = PaymentMethod == "Cash" ? "Confirmed" : "Pending",
-                    TrackingNumber = trackingNumber,
-                    EstimatedDelivery = estimatedDelivery,
-                    CustomerName = CustomerName,
-                    CustomerEmail = CustomerEmail,
-                    CustomerPhone = CustomerPhone,
-                    DeliveryAddress = DeliveryAddress,
-                    PaymentMethod = PaymentMethod,
-                    PaymentStatus = PaymentMethod == "Cash" ? "Pending" : "Simulated",
-                    Items = new List<SaleItem>()
-                };
-
-                // Create SaleItems from cart and update stock
-                foreach (var cartItem in cart)
-                {
-                    var saleItem = new SaleItem
-                    {
-                        ProductId = cartItem.ProductId,
-                        Quantity = cartItem.Quantity,
-                        Price = (decimal)cartItem.PricePerUnit
-                    };
-                    sale.Items.Add(saleItem);
-
-                    // Update product stock
-                    var product = db.Products.Find(cartItem.ProductId);
-                    if (product != null)
-                    {
-                        product.Quantity = Math.Max(0, product.Quantity - cartItem.Quantity);
-                    }
-                }
-
-                // Simulate payment processing for non-cash methods
-                if (PaymentMethod != "Cash")
-                {
-                    System.Threading.Thread.Sleep(2000);
-                    sale.PaymentStatus = "Completed";
-                    sale.Status = "Confirmed";
-
-                    // Create initial status update
-                    db.OrderStatusUpdates.Add(new OrderStatusUpdate
-                    {
-                        SaleId = sale.SaleId,
-                        Status = "Order Confirmed",
-                        Notes = "Payment received. Preparing your order.",
-                        UpdateTime = DateTime.Now
-                    });
-                }
-
-                // Save to database
-                db.Sales.Add(sale);
-                db.SaveChanges();
-
-                // Clear cart
-                Session["Cart"] = new List<CartItem>();
-
-                TempData["Success"] = $"Order #{sale.SaleId} placed successfully! Tracking: {trackingNumber}";
-                return RedirectToAction("OrderTracking", new { id = sale.SaleId });
-            }
-            catch (Exception ex)
-            {
-                // Log the actual error for debugging
-                System.Diagnostics.Debug.WriteLine($"Checkout error: {ex.Message}");
-                System.Diagnostics.Debug.WriteLine($"Stack trace: {ex.StackTrace}");
-
-                TempData["Error"] = $"Checkout failed. Please try again. Error: {ex.Message}";
-                return RedirectToAction("Checkout");
-            }
-        }*/
-
         protected override void Dispose(bool disposing)
         {
             if (disposing)
@@ -1022,9 +1573,6 @@ namespace FarmTrack.Controllers
             base.Dispose(disposing);
         }
 
-
-        // Simple orders list for customers
-        // My Orders page for customers
         // My Orders page for customers - now filtered by logged-in user
         public ActionResult MyOrders(string statusFilter = "")
         {
@@ -1079,8 +1627,6 @@ namespace FarmTrack.Controllers
             return View(viewModel);
         }
 
-       
-
         public ActionResult OrderTracking(int id)
         {
             // Check if user is logged in
@@ -1132,7 +1678,6 @@ namespace FarmTrack.Controllers
             return View(sale);
         }
 
-        // AJAX endpoint for live updates
         // AJAX endpoint for live updates - with user verification
         public JsonResult GetOrderStatus(int saleId)
         {
@@ -1197,6 +1742,7 @@ namespace FarmTrack.Controllers
                 return Json(new { count = 0 }, JsonRequestBehavior.AllowGet);
             }
         }
+
         // ADMIN: Sales List with management
         public ActionResult SalesList(string status, string paymentStatus, DateTime? startDate, DateTime? endDate, string searchTerm, string driverStatus)
         {
@@ -1317,32 +1863,6 @@ namespace FarmTrack.Controllers
 
             return View(viewModel);
         }
-        /*
-        // ADMIN: Order 
-        public ActionResult OrderManagement(int id)
-        {
-            // Check if user is admin
-            if (Session["Role"]?.ToString() != "Admin" && Session["Role"]?.ToString() != "Owner")
-            {
-                TempData["Error"] = "Access denied. Admin privileges required.";
-                return RedirectToAction("MyOrders");
-            }
-
-            var sale = db.Sales
-                .Include(s => s.User)
-                .Include(s => s.Items)
-                .Include(s => s.Items.Select(i => i.Product))
-                .Include(s => s.OrderStatusUpdates)
-                .FirstOrDefault(s => s.SaleId == id);
-
-            if (sale == null)
-            {
-                TempData["Error"] = "Order not found.";
-                return RedirectToAction("SalesList");
-            }
-
-            return View(sale);
-        }*/
 
         // ADMIN: Update Order Status
         [HttpPost]
@@ -1485,7 +2005,7 @@ namespace FarmTrack.Controllers
 
             return View(deliveries);
         }
-
+        /*
         // Go online as delivery driver
         [HttpPost]
         public JsonResult GoOnlineAsDriver(decimal latitude, decimal longitude)
@@ -1509,7 +2029,7 @@ namespace FarmTrack.Controllers
             {
                 return Json(new { success = false, message = ex.Message });
             }
-        }
+        }*/
 
         // Assign delivery to current admin
         [HttpPost]
@@ -1538,89 +2058,6 @@ namespace FarmTrack.Controllers
             }
         }
 
-       /* // Start delivery - begin tracking
-        [HttpPost]
-        public JsonResult StartDelivery(int saleId)
-        {
-            try
-            {
-                int userId = (int)Session["UserId"];
-                var sale = db.Sales.Find(saleId);
-
-                if (sale.AssignedDriverId != userId)
-                {
-                    return Json(new { success = false, message = "Delivery not assigned to you" });
-                }
-
-                sale.Status = "Out for Delivery";
-                sale.IsActiveDelivery = true;
-
-                // Use admin's current location as starting point
-                var driver = db.Users.Find(userId);
-                if (driver.CurrentLatitude.HasValue)
-                {
-                    sale.CurrentLatitude = driver.CurrentLatitude;
-                    sale.CurrentLongitude = driver.CurrentLongitude;
-                    sale.LastLocationUpdate = DateTime.Now;
-                }
-
-                db.SaveChanges();
-
-                return Json(new { success = true });
-            }
-            catch (Exception ex)
-            {
-                return Json(new { success = false, message = ex.Message });
-            }
-        }*/
-        /*
-        // Get REAL delivery data for tracking
-        public JsonResult GetRealDeliveryData(int saleId)
-        {
-            try
-            {
-                var sale = db.Sales
-                    .Include(s => s.AssignedDriver)
-                    .FirstOrDefault(s => s.SaleId == saleId);
-
-                if (sale == null) return Json(new { success = false });
-
-                // Get the assigned admin/driver's current location
-                decimal currentLat = sale.CurrentLatitude ?? -25.7479m;
-                decimal currentLng = sale.CurrentLongitude ?? 28.2293m;
-
-                if (sale.AssignedDriverId.HasValue && sale.IsActiveDelivery)
-                {
-                    var driver = db.Users.Find(sale.AssignedDriverId);
-                    if (driver.CurrentLatitude.HasValue)
-                    {
-                        currentLat = driver.CurrentLatitude.Value;
-                        currentLng = driver.CurrentLongitude.Value;
-                    }
-                }
-
-                var deliveryData = new
-                {
-                    currentLat = currentLat,
-                    currentLng = currentLng,
-                    destinationLat = -25.8600m, // Would geocode the address
-                    destinationLng = 28.1890m,
-                    driverName = sale.DeliveryDriver,
-                    driverPhone = sale.DriverPhone,
-                    vehicleType = sale.VehicleType,
-                    vehicleNumber = sale.VehicleNumber,
-                    status = sale.Status,
-                    isActive = sale.IsActiveDelivery,
-                    lastUpdate = sale.LastLocationUpdate?.ToString("g")
-                };
-
-                return Json(new { success = true, deliveryData }, JsonRequestBehavior.AllowGet);
-            }
-            catch (Exception ex)
-            {
-                return Json(new { success = false, error = ex.Message });
-            }
-        }*/
 
         // Go offline as driver
         [HttpPost]
@@ -1660,32 +2097,6 @@ namespace FarmTrack.Controllers
                 return Json(false, JsonRequestBehavior.AllowGet);
             }
         }
-        /*
-        // Get current user's active deliveries
-        public JsonResult GetMyActiveDeliveries()
-        {
-            try
-            {
-                int userId = (int)Session["UserId"];
-
-                var deliveries = db.Sales
-                    .Where(s => s.AssignedDriverId == userId && s.IsActiveDelivery)
-                    .Select(s => new
-                    {
-                        saleId = s.SaleId,
-                        customerName = s.CustomerName,
-                        deliveryAddress = s.DeliveryAddress,
-                        status = s.Status
-                    })
-                    .ToList();
-
-                return Json(deliveries, JsonRequestBehavior.AllowGet);
-            }
-            catch (Exception ex)
-            {
-                return Json(new List<object>(), JsonRequestBehavior.AllowGet);
-            }
-        }*/
 
         // Complete delivery
         [HttpPost]
@@ -1748,49 +2159,319 @@ namespace FarmTrack.Controllers
             return View(sale);
         }
 
-       /* [HttpPost]
-        public JsonResult UpdateDriverLocation(decimal latitude, decimal longitude)
+        // Add this method to your ProductsController.cs
+
+        public ActionResult SalesAnalytics(string period = "30days")
         {
-            try
+            // Check if user is admin
+            if (Session["Role"]?.ToString() != "Admin" && Session["Role"]?.ToString() != "Owner")
             {
-                int userId = (int)Session["UserId"];
-                var user = db.Users.Find(userId);
+                TempData["Error"] = "Access denied. Admin privileges required.";
+                return RedirectToAction("Index", "Home");
+            }
 
-                user.CurrentLatitude = latitude;
-                user.CurrentLongitude = longitude;
-                user.LastOnlineTime = DateTime.Now;
+            // Determine date range based on period
+            DateTime endDate = DateTime.Now;
+            DateTime startDate;
+            DateTime previousStartDate;
+            DateTime previousEndDate;
 
-                // Also update any active deliveries
-                var activeDeliveries = db.Sales
-                    .Where(s => s.AssignedDriverId == userId && s.IsActiveDelivery)
-                    .ToList();
+            switch (period)
+            {
+                case "7days":
+                    startDate = endDate.AddDays(-7);
+                    previousStartDate = startDate.AddDays(-7);
+                    previousEndDate = startDate;
+                    break;
+                case "90days":
+                    startDate = endDate.AddDays(-90);
+                    previousStartDate = startDate.AddDays(-90);
+                    previousEndDate = startDate;
+                    break;
+                case "year":
+                    startDate = new DateTime(endDate.Year, 1, 1);
+                    previousStartDate = new DateTime(endDate.Year - 1, 1, 1);
+                    previousEndDate = new DateTime(endDate.Year - 1, 12, 31);
+                    break;
+                default: // 30days
+                    period = "30days";
+                    startDate = endDate.AddDays(-30);
+                    previousStartDate = startDate.AddDays(-30);
+                    previousEndDate = startDate;
+                    break;
+            }
 
-                foreach (var delivery in activeDeliveries)
+            // Get current period sales
+            var currentSales = db.Sales
+                .Include(s => s.Items)
+                .Include(s => s.Items.Select(i => i.Product))
+                .Include(s => s.User)
+                .Where(s => s.SaleDate >= startDate && s.SaleDate <= endDate)
+                .ToList();
+
+            // Get previous period sales for comparison
+            var previousSales = db.Sales
+                .Where(s => s.SaleDate >= previousStartDate && s.SaleDate < previousEndDate)
+                .ToList();
+
+            // Calculate key metrics
+            decimal totalRevenue = currentSales.Sum(s => s.TotalAmount);
+            int totalOrders = currentSales.Count;
+            decimal avgOrderValue = totalOrders > 0 ? totalRevenue / totalOrders : 0;
+
+            // Previous period metrics for comparison
+            decimal previousRevenue = previousSales.Sum(s => s.TotalAmount);
+            int previousOrders = previousSales.Count;
+            decimal previousAOV = previousOrders > 0 ? previousRevenue / previousOrders : 0;
+
+            // Calculate changes
+            decimal revenueChange = previousRevenue > 0 ? ((totalRevenue - previousRevenue) / previousRevenue) * 100 : 0;
+            decimal ordersChange = previousOrders > 0 ? ((totalOrders - previousOrders) / (decimal)previousOrders) * 100 : 0;
+            decimal aovChange = previousAOV > 0 ? ((avgOrderValue - previousAOV) / previousAOV) * 100 : 0;
+
+            // Order status breakdown
+            int pendingOrders = currentSales.Count(s => s.Status == "Pending");
+            int confirmedOrders = currentSales.Count(s => s.Status == "Confirmed");
+            int outForDeliveryOrders = currentSales.Count(s => s.Status == "Out for Delivery");
+            int deliveredOrders = currentSales.Count(s => s.Status == "Delivered");
+            int cancelledOrders = currentSales.Count(s => s.Status == "Cancelled");
+
+            // Fulfillment rate
+            decimal fulfillmentRate = totalOrders > 0 ? (deliveredOrders * 100.0m / totalOrders) : 0;
+
+            // Top performing products
+            var topProducts = currentSales
+                .SelectMany(s => s.Items)
+                .GroupBy(i => new { i.Product.Name, i.Product.Category })
+                .Select(g => new TopProductData
                 {
-                    delivery.CurrentLatitude = latitude;
-                    delivery.CurrentLongitude = longitude;
-                    delivery.LastLocationUpdate = DateTime.Now;
+                    ProductName = g.Key.Name ?? "Unknown",
+                    Category = g.Key.Category ?? "Uncategorized",
+                    UnitsSold = g.Sum(i => i.Quantity),
+                    Revenue = g.Sum(i => i.Price * i.Quantity),
+                    RevenuePercentage = 0 // Will calculate after
+                })
+                .OrderByDescending(p => p.Revenue)
+                .Take(10)
+                .ToList();
 
-                    // Record location history
-                    db.DeliveryLocations.Add(new DeliveryLocation
-                    {
-                        SaleId = delivery.SaleId,
-                        DriverUserId = userId,
-                        Latitude = latitude,
-                        Longitude = longitude,
-                        Timestamp = DateTime.Now,
-                        Sequence = db.DeliveryLocations.Count(dl => dl.SaleId == delivery.SaleId) + 1
-                    });
-                }
-
-                db.SaveChanges();
-
-                return Json(new { success = true });
-            }
-            catch (Exception ex)
+            // Calculate revenue percentages
+            foreach (var product in topProducts)
             {
-                return Json(new { success = false, message = ex.Message });
+                product.RevenuePercentage = totalRevenue > 0 ? (product.Revenue / totalRevenue) * 100 : 0;
             }
-        }*/
+
+            // Top customers by revenue
+            var topCustomers = currentSales
+                .GroupBy(s => new { s.CustomerName, s.CustomerEmail })
+                .Select(g => new TopCustomerData
+                {
+                    CustomerName = g.Key.CustomerName ?? "Unknown",
+                    CustomerEmail = g.Key.CustomerEmail ?? "",
+                    OrderCount = g.Count(),
+                    TotalSpent = g.Sum(s => s.TotalAmount)
+                })
+                .OrderByDescending(c => c.TotalSpent)
+                .Take(10)
+                .ToList();
+
+            // Customer segmentation
+            var customerOrderCounts = currentSales
+                .GroupBy(s => s.UserId)
+                .Select(g => g.Count())
+                .ToList();
+
+            int uniqueCustomers = customerOrderCounts.Count;
+            int oneTimeBuyers = customerOrderCounts.Count(c => c == 1);
+            int repeatCustomers = customerOrderCounts.Count(c => c >= 2 && c <= 5);
+            int loyalCustomers = customerOrderCounts.Count(c => c >= 6);
+
+            decimal oneTimeBuyerPct = uniqueCustomers > 0 ? (oneTimeBuyers * 100.0m / uniqueCustomers) : 0;
+            decimal repeatCustomerPct = uniqueCustomers > 0 ? (repeatCustomers * 100.0m / uniqueCustomers) : 0;
+            decimal loyalCustomerPct = uniqueCustomers > 0 ? (loyalCustomers * 100.0m / uniqueCustomers) : 0;
+            decimal avgOrdersPerCustomer = uniqueCustomers > 0 ? totalOrders / (decimal)uniqueCustomers : 0;
+
+            // Category breakdown
+            var categoryBreakdown = currentSales
+                .SelectMany(s => s.Items)
+                .GroupBy(i => i.Product.Category ?? "Uncategorized")
+                .Select(g => new CategoryData
+                {
+                    Category = g.Key,
+                    OrderCount = g.Select(i => i.SaleId).Distinct().Count(),
+                    Revenue = g.Sum(i => i.Price * i.Quantity),
+                    RevenuePercentage = 0
+                })
+                .OrderByDescending(c => c.Revenue)
+                .ToList();
+
+            // Calculate category percentages
+            foreach (var category in categoryBreakdown)
+            {
+                category.RevenuePercentage = totalRevenue > 0 ? (category.Revenue / totalRevenue) * 100 : 0;
+            }
+
+            // Revenue trend data (daily for 7/30 days, weekly for 90 days, monthly for year)
+            var revenueTrendLabels = new List<string>();
+            var revenueTrendData = new List<decimal>();
+            var ordersTrendData = new List<int>();
+
+            if (period == "7days" || period == "30days")
+            {
+                // Daily breakdown
+                int days = period == "7days" ? 7 : 30;
+                for (int i = days - 1; i >= 0; i--)
+                {
+                    var date = endDate.AddDays(-i).Date;
+                    var daySales = currentSales.Where(s => s.SaleDate.Date == date).ToList();
+
+                    revenueTrendLabels.Add(date.ToString("MMM dd"));
+                    revenueTrendData.Add(daySales.Sum(s => s.TotalAmount));
+                    ordersTrendData.Add(daySales.Count);
+                }
+            }
+            else if (period == "90days")
+            {
+                // Weekly breakdown
+                for (int i = 12; i >= 0; i--)
+                {
+                    var weekStart = endDate.AddDays(-i * 7).Date;
+                    var weekEnd = weekStart.AddDays(7);
+                    var weekSales = currentSales.Where(s => s.SaleDate >= weekStart && s.SaleDate < weekEnd).ToList();
+
+                    revenueTrendLabels.Add($"Week {13 - i}");
+                    revenueTrendData.Add(weekSales.Sum(s => s.TotalAmount));
+                    ordersTrendData.Add(weekSales.Count);
+                }
+            }
+            else // year
+            {
+                // Monthly breakdown
+                for (int month = 1; month <= 12; month++)
+                {
+                    var monthSales = currentSales.Where(s => s.SaleDate.Month == month).ToList();
+
+                    revenueTrendLabels.Add(new DateTime(endDate.Year, month, 1).ToString("MMM"));
+                    revenueTrendData.Add(monthSales.Sum(s => s.TotalAmount));
+                    ordersTrendData.Add(monthSales.Count);
+                }
+            }
+
+            // Peak order times (by hour of day)
+            var peakTimes = currentSales
+                .GroupBy(s => s.SaleDate.Hour)
+                .Select(g => new PeakTimeData
+                {
+                    TimeLabel = $"{g.Key:00}:00 - {g.Key:00}:59",
+                    OrderCount = g.Count()
+                })
+                .OrderByDescending(p => p.OrderCount)
+                .Take(5)
+                .ToList();
+
+            // Voucher performance
+            var voucherUsage = currentSales.Where(s => s.AppliedVoucherId.HasValue).ToList();
+            var voucherStats = new VoucherStatsData
+            {
+                TotalVouchersUsed = voucherUsage.Count,
+                TotalDiscountAmount = voucherUsage.Sum(s => s.DiscountAmount),
+                OrdersWithVouchers = voucherUsage.Count,
+                VoucherUsageRate = totalOrders > 0 ? (voucherUsage.Count * 100.0m / totalOrders) : 0,
+                AvgDiscountPerOrder = voucherUsage.Count > 0 ? voucherUsage.Sum(s => s.DiscountAmount) / voucherUsage.Count : 0
+            };
+
+            // Generate key insights
+            var insights = new List<string>();
+
+            // Revenue insights
+            if (revenueChange > 10)
+                insights.Add($"📈 Revenue grew by {revenueChange:N1}% compared to previous period - excellent growth!");
+            else if (revenueChange < -10)
+                insights.Add($"⚠️ Revenue declined by {Math.Abs(revenueChange):N1}% - consider promotional campaigns.");
+
+            // Customer insights
+            if (loyalCustomerPct > 20)
+                insights.Add($"🌟 {loyalCustomerPct:N1}% of customers are loyal buyers (6+ orders) - strong retention!");
+
+            if (oneTimeBuyerPct > 60)
+                insights.Add($"💡 {oneTimeBuyerPct:N1}% are one-time buyers - focus on retention strategies.");
+
+            // Product insights
+            if (topProducts.Any())
+            {
+                var topProduct = topProducts.First();
+                insights.Add($"🏆 '{topProduct.ProductName}' is your top seller, generating R{topProduct.Revenue:N2} ({topProduct.RevenuePercentage:N1}% of revenue).");
+            }
+
+            // AOV insights
+            if (avgOrderValue > 500)
+                insights.Add($"💰 Average order value is R{avgOrderValue:N2} - customers are buying premium products.");
+            else if (avgOrderValue < 200)
+                insights.Add($"💡 Average order value is R{avgOrderValue:N2} - consider upselling and product bundles.");
+
+            // Fulfillment insights
+            if (fulfillmentRate < 80)
+                insights.Add($"⚠️ Only {fulfillmentRate:N1}% of orders are delivered - improve fulfillment processes.");
+            else if (fulfillmentRate > 95)
+                insights.Add($"✅ {fulfillmentRate:N1}% fulfillment rate - excellent delivery performance!");
+
+            // Voucher insights
+            if (voucherStats.VoucherUsageRate > 30)
+                insights.Add($"🎟️ {voucherStats.VoucherUsageRate:N1}% of orders use vouchers - high promotional engagement.");
+
+            // Category insights
+            if (categoryBreakdown.Any())
+            {
+                var topCategory = categoryBreakdown.First();
+                insights.Add($"📦 '{topCategory.Category}' category dominates with {topCategory.RevenuePercentage:N1}% of total revenue.");
+            }
+
+            // Peak time insights
+            if (peakTimes.Any())
+            {
+                var peakTime = peakTimes.First();
+                insights.Add($"⏰ Most orders occur during {peakTime.TimeLabel} - optimize inventory and staffing for peak hours.");
+            }
+
+            // Build view model
+            var model = new SalesAnalyticsViewModel
+            {
+                Period = period,
+                StartDate = startDate,
+                EndDate = endDate,
+                TotalRevenue = totalRevenue,
+                RevenueChange = revenueChange,
+                TotalOrders = totalOrders,
+                OrdersChange = ordersChange,
+                AverageOrderValue = avgOrderValue,
+                AOVChange = aovChange,
+                FulfillmentRate = fulfillmentRate,
+                PendingOrders = pendingOrders,
+                ConfirmedOrders = confirmedOrders,
+                OutForDeliveryOrders = outForDeliveryOrders,
+                DeliveredOrders = deliveredOrders,
+                CancelledOrders = cancelledOrders,
+                TopProducts = topProducts,
+                TopCustomers = topCustomers,
+                UniqueCustomers = uniqueCustomers,
+                OneTimeBuyers = oneTimeBuyers,
+                RepeatCustomers = repeatCustomers,
+                LoyalCustomers = loyalCustomers,
+                OneTimeBuyerPercentage = oneTimeBuyerPct,
+                RepeatCustomerPercentage = repeatCustomerPct,
+                LoyalCustomerPercentage = loyalCustomerPct,
+                AvgOrdersPerCustomer = avgOrdersPerCustomer,
+                CategoryBreakdown = categoryBreakdown,
+                RevenueTrendLabels = revenueTrendLabels,
+                RevenueTrendData = revenueTrendData,
+                OrdersTrendData = ordersTrendData,
+                PeakOrderTimes = peakTimes,
+                VoucherStats = voucherStats,
+                KeyInsights = insights
+            };
+
+            return View(model);
+        }
+
     }
 }

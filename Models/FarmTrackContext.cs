@@ -78,6 +78,8 @@ namespace FarmTrack.Models
         public DbSet<DeliveryAssignment> DeliveryAssignments { get; set; }
         public DbSet<DeliveryLocation> DeliveryLocations { get; set; }
         public DbSet<ProductReview> ProductReviews { get; set; }
+        public DbSet<DiscountVoucher> DiscountVouchers { get; set; }
+        public DbSet<VoucherUsage> VoucherUsages { get; set; }
 
 
 

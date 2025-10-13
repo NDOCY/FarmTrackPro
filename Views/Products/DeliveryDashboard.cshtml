@@ -7,205 +7,539 @@
     var availableDeliveries = Model.Where(s => !s.AssignedDriverId.HasValue).ToList();
 }
 
+<style>
+    :root {
+        --color-earth: #8B7355;
+        --color-soil: #654321;
+        --color-foliage: #4CAF50;
+        --color-wheat: #F5DEB3;
+        --color-hay: #DAA520;
+        --color-danger: #FF6B6B;
+        --color-white: #FFFFFF;
+        --border-radius: 12px;
+        --card-shadow: 0 6px 18px rgba(0,0,0,0.1);
+    }
+
+    body {
+        background-color: #F9F7F4;
+    }
+
+    /* Dashboard Header */
+    .dashboard-header {
+        background: linear-gradient(135deg, var(--color-hay) 0%, #f0ad4e 100%);
+        border-radius: var(--border-radius);
+        padding: 30px;
+        margin-bottom: 30px;
+        color: white;
+        box-shadow: var(--card-shadow);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .dashboard-header::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        right: 0;
+        width: 300px;
+        height: 100%;
+        background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23FFFFFF" opacity="0.1"><path d="M18 18.5c.83 0 1.5-.67 1.5-1.5s-.67-1.5-1.5-1.5-1.5.67-1.5 1.5.67 1.5 1.5 1.5zm1.5-9H17V12h4.46L19.5 9.5zM6 18.5c.83 0 1.5-.67 1.5-1.5s-.67-1.5-1.5-1.5-1.5.67-1.5 1.5.67 1.5 1.5 1.5zM20 8l3 4v5h-2c0 1.66-1.34 3-3 3s-3-1.34-3-3H9c0 1.66-1.34 3-3 3s-3-1.34-3-3H1V6c0-1.11.89-2 2-2h14v4h3zM3 6v9h.76c.55-.61 1.35-1 2.24-1s1.69.39 2.24 1H15V6H3z"/></svg>');
+        background-repeat: no-repeat;
+        background-position: right center;
+        background-size: 250px;
+        opacity: 0.15;
+    }
+
+    .dashboard-header h1 {
+        font-size: 2.2rem;
+        font-weight: 700;
+        margin-bottom: 10px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .dashboard-header .lead {
+        font-size: 1.1rem;
+        opacity: 0.95;
+    }
+
+    .header-actions {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+
+    /* Status Card */
+    .status-card {
+        background: white;
+        border-radius: var(--border-radius);
+        box-shadow: var(--card-shadow);
+        overflow: hidden;
+        margin-bottom: 30px;
+    }
+
+    .status-card-header {
+        background: linear-gradient(135deg, var(--color-foliage), #45a049);
+        color: white;
+        padding: 20px 25px;
+    }
+
+    .status-card-header h5 {
+        margin: 0;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .status-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 15px;
+        padding: 25px;
+    }
+
+    .status-item {
+        border-left: 3px solid var(--color-foliage);
+        padding-left: 15px;
+    }
+
+    .status-item strong {
+        display: block;
+        color: var(--color-soil);
+        font-size: 0.85rem;
+        margin-bottom: 5px;
+    }
+
+    .status-item p {
+        margin: 0;
+        color: #333;
+        font-size: 1.05rem;
+    }
+
+    .badge-online {
+        background: var(--color-foliage);
+        padding: 5px 12px;
+        border-radius: 20px;
+        font-weight: 600;
+    }
+
+    /* Card Styles */
+    .delivery-card {
+        background: white;
+        border-radius: var(--border-radius);
+        box-shadow: var(--card-shadow);
+        overflow: hidden;
+        margin-bottom: 25px;
+    }
+
+    .card-header-custom {
+        padding: 20px 25px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        color: white;
+        font-weight: 600;
+    }
+
+    .card-header-custom h5 {
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .header-primary {
+        background: linear-gradient(135deg, #3498db, #2980b9);
+    }
+
+    .header-info {
+        background: linear-gradient(135deg, #17a2b8, #138496);
+    }
+
+    .count-badge {
+        background: rgba(255, 255, 255, 0.2);
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 0.9rem;
+    }
+
+    /* Table */
+    .modern-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .modern-table thead {
+        background: linear-gradient(135deg, var(--color-earth), var(--color-soil));
+        color: white;
+    }
+
+    .modern-table thead th {
+        padding: 15px 12px;
+        font-weight: 600;
+        text-transform: uppercase;
+        font-size: 0.8rem;
+        letter-spacing: 0.5px;
+    }
+
+    .modern-table tbody tr {
+        border-bottom: 1px solid #f0f0f0;
+        transition: all 0.2s;
+    }
+
+    .modern-table tbody tr:hover {
+        background-color: rgba(139, 115, 85, 0.05);
+    }
+
+    .modern-table td {
+        padding: 15px 12px;
+        font-size: 0.9rem;
+        vertical-align: middle;
+    }
+
+    /* Status Badges */
+    .badge {
+        padding: 5px 12px;
+        border-radius: 12px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        text-transform: uppercase;
+    }
+
+    .bg-warning { background-color: var(--color-hay) !important; color: white !important; }
+    .bg-info { background-color: #17a2b8 !important; }
+    .bg-primary { background-color: #3498db !important; }
+    .bg-success { background-color: var(--color-foliage) !important; }
+    .bg-secondary { background-color: #6c757d !important; }
+    .bg-danger { background-color: var(--color-danger) !important; }
+
+    /* Buttons */
+    .btn {
+        padding: 10px 20px;
+        border-radius: 8px;
+        font-weight: 600;
+        font-size: 0.9rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        border: none;
+        transition: all 0.3s ease;
+        text-decoration: none;
+    }
+
+    .btn-success {
+        background: linear-gradient(135deg, var(--color-foliage), #45a049);
+        color: white;
+        box-shadow: 0 4px 12px rgba(76, 175, 80, 0.3);
+    }
+
+    .btn-success:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 16px rgba(76, 175, 80, 0.4);
+    }
+
+    .btn-warning {
+        background: linear-gradient(135deg, var(--color-hay), #f0ad4e);
+        color: white;
+        box-shadow: 0 4px 12px rgba(218, 165, 32, 0.3);
+    }
+
+    .btn-primary {
+        background: linear-gradient(135deg, #3498db, #2980b9);
+        color: white;
+        box-shadow: 0 4px 12px rgba(52, 152, 219, 0.3);
+    }
+
+    .btn-info {
+        background: linear-gradient(135deg, #17a2b8, #138496);
+        color: white;
+        box-shadow: 0 4px 12px rgba(23, 162, 184, 0.3);
+    }
+
+    .btn-secondary {
+        background: linear-gradient(135deg, #9e9e9e, #757575);
+        color: white;
+        box-shadow: 0 4px 12px rgba(158, 158, 158, 0.3);
+    }
+
+    .btn-danger {
+        background: linear-gradient(135deg, var(--color-danger), #e74c3c);
+        color: white;
+    }
+
+    .btn-outline-primary {
+        background: white;
+        border: 2px solid #3498db;
+        color: #3498db;
+    }
+
+    .btn-outline-primary:hover {
+        background: #3498db;
+        color: white;
+    }
+
+    .btn-group-sm .btn {
+        padding: 6px 12px;
+        font-size: 0.8rem;
+    }
+
+    /* Empty State */
+    .empty-state {
+        text-align: center;
+        padding: 40px 20px;
+        color: #999;
+    }
+
+    /* Responsive */
+    @@media (max-width: 768px) {
+        .dashboard-header {
+            padding: 20px;
+        }
+
+        .dashboard-header h1 {
+            font-size: 1.8rem;
+        }
+
+        .header-actions {
+            width: 100%;
+        }
+
+        .header-actions .btn {
+            flex: 1;
+        }
+
+        .status-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .table-responsive {
+            overflow-x: auto;
+        }
+
+        .modern-table {
+            min-width: 800px;
+        }
+    }
+</style>
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
 <div class="container-fluid mt-4">
-    <div class="row">
-        <div class="col-12">
-            <!-- Header -->
-            <div class="d-flex justify-content-between align-items-center mb-4">
-                <div>
-                    <h1><i class="fas fa-truck"></i> Delivery Dashboard</h1>
-                    <p class="lead mb-0">Welcome, @Session["FullName"] - Manage your deliveries</p>
-                </div>
-                <div>
+    <!-- Header -->
+    <div class="dashboard-header">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <h1><i class="fas fa-truck"></i> Delivery Dashboard</h1>
+                <p class="lead mb-0">Welcome, @Session["FullName"] - Manage your deliveries</p>
+            </div>
+            <div class="col-md-4">
+                <div class="header-actions">
                     <button class="btn btn-success" onclick="startDeliveryMode()" id="deliveryModeBtn">
-                        <i class="fas fa-play"></i> Go Online as Driver
+                        <i class="fas fa-play"></i> Go Online
                     </button>
                     <a href="@Url.Action("SalesList")" class="btn btn-secondary">
-                        <i class="fas fa-arrow-left"></i> Back to Sales
+                        <i class="fas fa-arrow-left"></i> Back
                     </a>
                 </div>
             </div>
+        </div>
+    </div>
 
-            <!-- Driver Status Panel -->
-            <div class="card mb-4" id="driverStatusCard" style="display: none;">
-                <div class="card-header bg-success text-white">
-                    <h5 class="mb-0"><i class="fas fa-user-check"></i> You're Online as a Driver</h5>
-                </div>
-                <div class="card-body">
-                    <div class="row">
-                        <div class="col-md-6">
-                            <p><strong>Driver:</strong> @Session["FullName"]</p>
-                            <p><strong>Phone:</strong> @Session["Phone"]</p>
-                            <p><strong>Vehicle:</strong> @Session["VehicleType"] • @Session["VehicleNumber"]</p>
-                            <p><strong>Status:</strong> <span class="badge bg-success" id="onlineStatus">Online & Active</span></p>
-                        </div>
-                        <div class="col-md-6">
-                            <p><strong>Current Location:</strong> <span id="currentLocation">Getting location...</span></p>
-                            <p><strong>Last Update:</strong> <span id="locationTimestamp">Just now</span></p>
-                            <p><strong>Active Deliveries:</strong> <span id="activeDeliveriesCount">0</span></p>
-                            <button class="btn btn-warning btn-sm" onclick="stopDeliveryMode()">
-                                <i class="fas fa-stop"></i> Go Offline
-                            </button>
-                        </div>
-                    </div>
-                </div>
+    <!-- Driver Status Panel -->
+    <div class="status-card" id="driverStatusCard" style="display: none;">
+        <div class="status-card-header">
+            <h5><i class="fas fa-user-check"></i> You're Online as a Driver</h5>
+        </div>
+        <div class="status-grid">
+            <div class="status-item">
+                <strong>Driver</strong>
+                <p>@Session["FullName"]</p>
             </div>
-
-            <!-- My Assigned Deliveries -->
-            <div class="card mb-4">
-                <div class="card-header bg-primary text-white">
-                    <h5 class="mb-0">
-                        <i class="fas fa-list-check"></i> My Assigned Deliveries
-                        <span class="badge bg-light text-dark ms-2">@myAssignedDeliveries.Count</span>
-                    </h5>
-                </div>
-                <div class="card-body">
-                    @if (!myAssignedDeliveries.Any())
-                    {
-                        <p class="text-muted">You have no assigned deliveries.</p>
-                    }
-                    else
-                    {
-                        <div class="table-responsive">
-                            <table class="table table-striped">
-                                <thead>
-                                    <tr>
-                                        <th>Order #</th>
-                                        <th>Customer</th>
-                                        <th>Address</th>
-                                        <th>Status</th>
-                                        <th>Assigned Time</th>
-                                        <th>Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @foreach (var delivery in myAssignedDeliveries)
-                                    {
-                                        <tr>
-                                            <td><strong>#@delivery.SaleId</strong></td>
-                                            <td>@delivery.CustomerName</td>
-                                            <td><small>@delivery.DeliveryAddress</small></td>
-                                            <td>
-                                                <span class="badge bg-@GetStatusColor(delivery.Status)">
-                                                    @delivery.Status
-                                                </span>
-                                            </td>
-                                            <td>
-                                                <small>@delivery.LastLocationUpdate?.ToString("g")</small>
-                                            </td>
-                                            <td>
-                                                <div class="btn-group btn-group-sm">
-                                                    @if (delivery.Status == "Assigned to Driver")
-                                                    {
-                                                        <button class="btn btn-success" onclick="startDelivery(@delivery.SaleId)">
-                                                            <i class="fas fa-play"></i> Start Delivery
-                                                        </button>
-                                                    }
-                                                    else if (delivery.Status == "Out for Delivery")
-                                                    {
-                                                        <button class="btn btn-warning" onclick="pauseDelivery(@delivery.SaleId)">
-                                                            <i class="fas fa-pause"></i> Pause
-                                                        </button>
-                                                        <button class="btn btn-primary" onclick="completeDelivery(@delivery.SaleId)">
-                                                            <i class="fas fa-check"></i> Complete
-                                                        </button>
-                                                    }
-                                                    <a href="@Url.Action("LiveTrackingMap", new { id = delivery.SaleId })"
-                                                       class="btn btn-info" target="_blank">
-                                                        <i class="fas fa-map"></i> Track
-                                                    </a>
-                                                    <a href="tel:@delivery.CustomerPhone" class="btn btn-outline-primary">
-                                                        <i class="fas fa-phone"></i> Call
-                                                    </a>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    }
-                                </tbody>
-                            </table>
-                        </div>
-                    }
-                </div>
+            <div class="status-item">
+                <strong>Phone</strong>
+                <p>@Session["Phone"]</p>
             </div>
+            <div class="status-item">
+                <strong>Vehicle</strong>
+                <p>@Session["VehicleType"] • @Session["VehicleNumber"]</p>
+            </div>
+            <div class="status-item">
+                <strong>Status</strong>
+                <p><span class="badge badge-online" id="onlineStatus">Online & Active</span></p>
+            </div>
+            <div class="status-item">
+                <strong>Current Location</strong>
+                <p id="currentLocation">Getting location...</p>
+            </div>
+            <div class="status-item">
+                <strong>Last Update</strong>
+                <p id="locationTimestamp">Just now</p>
+            </div>
+            <div class="status-item">
+                <strong>Active Deliveries</strong>
+                <p><span id="activeDeliveriesCount">0</span></p>
+            </div>
+            <div class="status-item">
+                <strong>Actions</strong>
+                <p>
+                    <button class="btn btn-warning btn-sm" onclick="stopDeliveryMode()">
+                        <i class="fas fa-stop"></i> Go Offline
+                    </button>
+                </p>
+            </div>
+        </div>
+    </div>
 
-            <!-- Available Deliveries (for admins to assign to themselves) -->
-            @if (availableDeliveries.Any())
+    <!-- My Assigned Deliveries -->
+    <div class="delivery-card">
+        <div class="card-header-custom header-primary">
+            <h5>
+                <i class="fas fa-list-check"></i> My Assigned Deliveries
+            </h5>
+            <span class="count-badge">@myAssignedDeliveries.Count</span>
+        </div>
+        <div class="card-body p-0">
+            @if (!myAssignedDeliveries.Any())
             {
-                <div class="card mb-4">
-                    <div class="card-header bg-info text-white">
-                        <h5 class="mb-0"><i class="fas fa-list"></i> Available Deliveries</h5>
-                    </div>
-                    <div class="card-body">
-                        <div class="table-responsive">
-                            <table class="table table-striped">
-                                <thead>
-                                    <tr>
-                                        <th>Order #</th>
-                                        <th>Customer</th>
-                                        <th>Address</th>
-                                        <th>Status</th>
-                                        <th>Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @foreach (var delivery in availableDeliveries)
-                                    {
-                                        <tr>
-                                            <td><strong>#@delivery.SaleId</strong></td>
-                                            <td>@delivery.CustomerName</td>
-                                            <td><small>@delivery.DeliveryAddress</small></td>
-                                            <td><span class="badge bg-@GetStatusColor(delivery.Status)">@delivery.Status</span></td>
-                                            <td>
-                                                <button class="btn btn-success btn-sm" onclick="assignToMe(@delivery.SaleId)">
-                                                    <i class="fas fa-user-plus"></i> Assign to Me
+                <div class="empty-state">
+                    <p class="mb-0">You have no assigned deliveries.</p>
+                </div>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table class="modern-table">
+                        <thead>
+                            <tr>
+                                <th>Order #</th>
+                                <th>Customer</th>
+                                <th>Address</th>
+                                <th>Status</th>
+                                <th>Assigned Time</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var delivery in myAssignedDeliveries)
+                            {
+                                <tr>
+                                    <td><strong>#@delivery.SaleId</strong></td>
+                                    <td>@delivery.CustomerName</td>
+                                    <td><small>@delivery.DeliveryAddress</small></td>
+                                    <td>
+                                        <span class="badge bg-@GetStatusColor(delivery.Status)">
+                                            @delivery.Status
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <small>@delivery.LastLocationUpdate?.ToString("g")</small>
+                                    </td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm">
+                                            @if (delivery.Status == "Assigned to Driver")
+                                            {
+                                                <button class="btn btn-success" onclick="startDelivery(@delivery.SaleId)">
+                                                    <i class="fas fa-play"></i> Start
                                                 </button>
-                                            </td>
-                                        </tr>
-                                    }
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
+                                            }
+                                            else if (delivery.Status == "Out for Delivery")
+                                            {
+                                                <button class="btn btn-warning" onclick="pauseDelivery(@delivery.SaleId)">
+                                                    <i class="fas fa-pause"></i> Pause
+                                                </button>
+                                                <button class="btn btn-primary" onclick="completeDelivery(@delivery.SaleId)">
+                                                    <i class="fas fa-check"></i> Complete
+                                                </button>
+                                            }
+                                            <a href="@Url.Action("LiveTrackingMap", new { id = delivery.SaleId })"
+                                               class="btn btn-info" target="_blank">
+                                                <i class="fas fa-map"></i> Track
+                                            </a>
+                                            <a href="tel:@delivery.CustomerPhone" class="btn btn-outline-primary">
+                                                <i class="fas fa-phone"></i>
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
                 </div>
             }
         </div>
     </div>
+
+    <!-- Available Deliveries -->
+    @if (availableDeliveries.Any())
+    {
+        <div class="delivery-card">
+            <div class="card-header-custom header-info">
+                <h5><i class="fas fa-list"></i> Available Deliveries</h5>
+                <span class="count-badge">@availableDeliveries.Count</span>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="modern-table">
+                        <thead>
+                            <tr>
+                                <th>Order #</th>
+                                <th>Customer</th>
+                                <th>Address</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var delivery in availableDeliveries)
+                            {
+                                <tr>
+                                    <td><strong>#@delivery.SaleId</strong></td>
+                                    <td>@delivery.CustomerName</td>
+                                    <td><small>@delivery.DeliveryAddress</small></td>
+                                    <td><span class="badge bg-@GetStatusColor(delivery.Status)">@delivery.Status</span></td>
+                                    <td>
+                                        <button class="btn btn-success btn-sm" onclick="assignToMe(@delivery.SaleId)">
+                                            <i class="fas fa-user-plus"></i> Assign to Me
+                                        </button>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    }
 </div>
 
 @section Scripts {
     <script>
-    // FIXED: Delivery Dashboard JavaScript with real location tracking
-
+    // Delivery Dashboard JavaScript with location tracking
     let locationWatchId = null;
     let currentLatitude = null;
     let currentLongitude = null;
     let activeDeliveries = [];
     let locationUpdateInterval = null;
 
-    // Start delivery mode (go online as driver)
     function startDeliveryMode() {
         if (!navigator.geolocation) {
             alert('Geolocation is not supported by your browser');
             return;
         }
 
-        console.log('Requesting location permission...');
-
         navigator.geolocation.getCurrentPosition(
             function(position) {
-                console.log('Location permission granted:', position.coords);
-
                 currentLatitude = position.coords.latitude;
                 currentLongitude = position.coords.longitude;
 
-                // Notify server that driver is online
                 $.post('@Url.Action("GoOnlineAsDriver", "Products")', {
                     latitude: currentLatitude,
                     longitude: currentLongitude
                 })
                 .done(function(response) {
                     if (response.success) {
-                        console.log('Successfully went online as driver');
                         startLocationTracking();
                         $('#driverStatusCard').show();
                         $('#deliveryModeBtn').html('<i class="fas fa-stop"></i> Go Offline').removeClass('btn-success').addClass('btn-danger');
@@ -214,28 +548,10 @@
                     } else {
                         alert('Failed to go online: ' + response.message);
                     }
-                })
-                .fail(function() {
-                    alert('Failed to connect to server. Please try again.');
                 });
             },
             function(error) {
-                console.error('Geolocation error:', error);
-                let errorMessage = 'Location access denied. ';
-
-                switch(error.code) {
-                    case error.PERMISSION_DENIED:
-                        errorMessage += 'Please enable location permissions in your browser settings.';
-                        break;
-                    case error.POSITION_UNAVAILABLE:
-                        errorMessage += 'Location information is unavailable.';
-                        break;
-                    case error.TIMEOUT:
-                        errorMessage += 'Location request timed out.';
-                        break;
-                }
-
-                alert(errorMessage);
+                alert('Location access denied. Please enable location permissions.');
             },
             {
                 enableHighAccuracy: true,
@@ -245,16 +561,11 @@
         );
     }
 
-    // Start continuous location tracking
     function startLocationTracking() {
-        console.log('Starting continuous location tracking...');
-
         locationWatchId = navigator.geolocation.watchPosition(
             function(position) {
                 currentLatitude = position.coords.latitude;
                 currentLongitude = position.coords.longitude;
-
-                console.log('Location updated:', currentLatitude, currentLongitude);
                 updateLocationDisplay();
             },
             function(error) {
@@ -267,7 +578,6 @@
             }
         );
 
-        // Also set up periodic updates to server (every 5 seconds)
         locationUpdateInterval = setInterval(function() {
             if (currentLatitude && currentLongitude && activeDeliveries.length > 0) {
                 updateServerWithLocation();
@@ -275,28 +585,18 @@
         }, 5000);
     }
 
-    // Update server with current location
     function updateServerWithLocation() {
-        console.log('Sending location to server:', currentLatitude, currentLongitude);
-
         $.post('@Url.Action("UpdateDriverLocation", "Products")', {
             latitude: currentLatitude,
             longitude: currentLongitude
         })
         .done(function(response) {
             if (response.success) {
-                console.log('Location updated on server:', response.message);
                 $('#locationTimestamp').text(new Date().toLocaleTimeString());
-            } else {
-                console.warn('Failed to update location:', response.message);
             }
-        })
-        .fail(function() {
-            console.error('Failed to send location to server');
         });
     }
 
-    // Update location display
     function updateLocationDisplay() {
         if (currentLatitude && currentLongitude) {
             $('#currentLocation').text(`${currentLatitude.toFixed(6)}, ${currentLongitude.toFixed(6)}`);
@@ -304,80 +604,53 @@
         }
     }
 
-    // Stop delivery mode
     function stopDeliveryMode() {
-        if (!confirm('Are you sure you want to go offline? Your active deliveries will be paused.')) {
+        if (!confirm('Are you sure you want to go offline?')) {
             return;
         }
 
-        // Stop location tracking
         if (locationWatchId) {
             navigator.geolocation.clearWatch(locationWatchId);
-            locationWatchId = null;
         }
-
         if (locationUpdateInterval) {
             clearInterval(locationUpdateInterval);
-            locationUpdateInterval = null;
         }
 
-        // Notify server
         $.post('@Url.Action("GoOfflineAsDriver", "Products")')
             .done(function(response) {
                 if (response.success) {
-                    $('#driverStatusCard').hide();
-                    $('#deliveryModeBtn').html('<i class="fas fa-play"></i> Go Online as Driver').removeClass('btn-danger').addClass('btn-success');
-                    activeDeliveries = [];
-                    updateActiveDeliveriesCount();
                     location.reload();
                 }
             });
     }
 
-    // Start a specific delivery
     function startDelivery(saleId) {
         if (!currentLatitude || !currentLongitude) {
-            alert('Please wait for location to be acquired, or go online as driver first.');
+            alert('Please wait for location or go online first.');
             return;
         }
 
-        if (!confirm('Start this delivery? Your location will be tracked live for the customer.')) {
+        if (!confirm('Start this delivery?')) {
             return;
         }
-
-        console.log('Starting delivery:', saleId);
 
         $.post('@Url.Action("StartDelivery", "Products")', { saleId: saleId })
             .done(function(response) {
                 if (response.success) {
-                    console.log('Delivery started successfully');
-
-                    // Add to active deliveries
                     if (!activeDeliveries.includes(saleId)) {
                         activeDeliveries.push(saleId);
                         updateActiveDeliveriesCount();
                     }
-
-                    // Open tracking map in new tab
                     window.open('@Url.Action("LiveTrackingMap", "Products")' + '/' + saleId, '_blank');
-
-                    // Start sending location updates immediately
-                    updateServerWithLocation();
-
-                    // Reload page to show updated status
                     setTimeout(() => location.reload(), 1000);
                 } else {
                     alert('Error: ' + response.message);
                 }
-            })
-            .fail(function() {
-                alert('Failed to start delivery. Please try again.');
             });
     }
 
-    // Complete delivery
     function completeDelivery(saleId) {
-        if (!confirm('Mark this delivery as completed? The customer will be notified.')) {
+        if (!confirm('Mark this delivery as completed?')) {
             return;
         }
 
@@ -385,27 +658,19 @@
             .done(function(response) {
                 if (response.success) {
                     alert('Delivery marked as completed!');
-
-                    // Remove from active deliveries
                     activeDeliveries = activeDeliveries.filter(id => id !== saleId);
                     updateActiveDeliveriesCount();
-
                     location.reload();
                 } else {
                     alert('Error: ' + response.message);
                 }
-            })
-            .fail(function() {
-                alert('Failed to complete delivery. Please try again.');
             });
     }
 
-    // Pause delivery
     function pauseDelivery(saleId) {
-        alert('Pause functionality coming soon. For now, you can go offline to pause all deliveries.');
+        alert('Pause functionality coming soon.');
     }
 
-    // Assign delivery to me
     function assignToMe(saleId) {
         if (!confirm('Assign this delivery to yourself?')) {
             return;
@@ -419,24 +684,14 @@
                 } else {
                     alert('Error: ' + response.message);
                 }
-            })
-            .fail(function() {
-                alert('Failed to assign delivery. Please try again.');
             });
     }
 
-    // Load active deliveries
     function loadActiveDeliveries() {
-        console.log('Loading active deliveries...');
-
         $.get('@Url.Action("GetMyActiveDeliveries", "Products")')
             .done(function(deliveries) {
-                console.log('Active deliveries:', deliveries);
                 activeDeliveries = deliveries.map(d => d.saleId);
                 updateActiveDeliveriesCount();
-            })
-            .fail(function() {
-                console.error('Failed to load active deliveries');
             });
     }
 
@@ -444,18 +699,13 @@
         $('#activeDeliveriesCount').text(activeDeliveries.length);
     }
 
-    // Check if already online and restore state
     function checkDriverStatus() {
         $.get('@Url.Action("IsDriverOnline", "Products")')
             .done(function(isOnline) {
-                console.log('Driver online status:', isOnline);
-
                 if (isOnline) {
-                    // Driver is already online, restore state
                     $('#deliveryModeBtn').html('<i class="fas fa-stop"></i> Go Offline').removeClass('btn-success').addClass('btn-danger');
                     $('#driverStatusCard').show();
 
-                    // Try to get last known location
                     navigator.geolocation.getCurrentPosition(
                         function(position) {
                             currentLatitude = position.coords.latitude;
@@ -463,33 +713,21 @@
                             updateLocationDisplay();
                             startLocationTracking();
                             loadActiveDeliveries();
-                        },
-                        function(error) {
-                            console.warn('Could not get current location:', error);
                         }
                     );
                 }
-            })
-            .fail(function() {
-                console.error('Failed to check driver status');
             });
     }
 
-    // Handle Go Online/Offline button click
     $(document).ready(function() {
-        console.log('DeliveryDashboard initialized');
-
-        // Check if driver is already online
         checkDriverStatus();
 
-        // Refresh active deliveries every 30 seconds
         setInterval(function() {
             if (activeDeliveries.length > 0) {
                 loadActiveDeliveries();
             }
         }, 30000);
 
-        // Update delivery mode button handler
         $('#deliveryModeBtn').click(function() {
             if ($(this).hasClass('btn-success')) {
                 startDeliveryMode();
@@ -499,7 +737,6 @@
         });
     });
 
-    // Cleanup on page unload
     $(window).on('beforeunload', function() {
         if (locationWatchId) {
             navigator.geolocation.clearWatch(locationWatchId);

@@ -49,11 +49,11 @@
     <Reference Include="Azure.Core, Version=1.44.1.0, Culture=neutral, PublicKeyToken=92742159e12e44c8, processorArchitecture=MSIL">
       <HintPath>packages\Azure.Core.1.44.1\lib\net472\Azure.Core.dll</HintPath>
     </Reference>
-    <Reference Include="Azure.Storage.Blobs, Version=12.24.0.0, Culture=neutral, PublicKeyToken=92742159e12e44c8, processorArchitecture=MSIL">
-      <HintPath>packages\Azure.Storage.Blobs.12.24.0\lib\netstandard2.0\Azure.Storage.Blobs.dll</HintPath>
+    <Reference Include="Azure.Storage.Blobs, Version=12.25.1.0, Culture=neutral, PublicKeyToken=92742159e12e44c8, processorArchitecture=MSIL">
+      <HintPath>packages\Azure.Storage.Blobs.12.25.1\lib\netstandard2.0\Azure.Storage.Blobs.dll</HintPath>
     </Reference>
-    <Reference Include="Azure.Storage.Common, Version=12.23.0.0, Culture=neutral, PublicKeyToken=92742159e12e44c8, processorArchitecture=MSIL">
-      <HintPath>packages\Azure.Storage.Common.12.23.0\lib\netstandard2.0\Azure.Storage.Common.dll</HintPath>
+    <Reference Include="Azure.Storage.Common, Version=12.24.0.0, Culture=neutral, PublicKeyToken=92742159e12e44c8, processorArchitecture=MSIL">
+      <HintPath>packages\Azure.Storage.Common.12.24.0\lib\netstandard2.0\Azure.Storage.Common.dll</HintPath>
     </Reference>
     <Reference Include="BCrypt.Net-Next, Version=4.0.3.0, Culture=neutral, PublicKeyToken=1e11be04b6288443, processorArchitecture=MSIL">
       <HintPath>packages\BCrypt.Net-Next.4.0.3\lib\net472\BCrypt.Net-Next.dll</HintPath>
@@ -88,11 +88,11 @@
       <HintPath>packages\System.Diagnostics.DiagnosticSource.6.0.1\lib\net461\System.Diagnostics.DiagnosticSource.dll</HintPath>
     </Reference>
     <Reference Include="System.Drawing" />
-    <Reference Include="System.IO.Hashing, Version=6.0.0.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
-      <HintPath>packages\System.IO.Hashing.6.0.0\lib\net461\System.IO.Hashing.dll</HintPath>
+    <Reference Include="System.IO.Hashing, Version=8.0.0.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
+      <HintPath>packages\System.IO.Hashing.8.0.0\lib\net462\System.IO.Hashing.dll</HintPath>
     </Reference>
-    <Reference Include="System.Memory, Version=4.0.1.1, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
-      <HintPath>packages\System.Memory.4.5.4\lib\net461\System.Memory.dll</HintPath>
+    <Reference Include="System.Memory, Version=4.0.1.2, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
+      <HintPath>packages\System.Memory.4.5.5\lib\net461\System.Memory.dll</HintPath>
     </Reference>
     <Reference Include="System.Memory.Data, Version=6.0.0.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
       <HintPath>packages\System.Memory.Data.6.0.0\lib\net461\System.Memory.Data.dll</HintPath>
@@ -189,6 +189,7 @@
     <Compile Include="Controllers\ActivityLogsController.cs" />
     <Compile Include="Controllers\CropsController.cs" />
     <Compile Include="Controllers\DashboardController.cs" />
+    <Compile Include="Controllers\DiscountVouchersController.cs" />
     <Compile Include="Controllers\EmergencyController.cs" />
     <Compile Include="Controllers\EquipmentController.cs" />
     <Compile Include="Controllers\HealthCheckScheduleController.cs" />
@@ -229,6 +230,7 @@
     <Compile Include="Models\Crop.cs" />
     <Compile Include="Models\CropActivity.cs" />
     <Compile Include="Models\CropRequirements.cs" />
+    <Compile Include="Models\DiscountVoucher.cs" />
     <Compile Include="Models\EmergencyDashboardViewModel.cs" />
     <Compile Include="Models\EmergencyGuideline.cs" />
     <Compile Include="Models\EmergencyContact.cs" />
@@ -244,6 +246,7 @@
     <Compile Include="Models\PreparationTask.cs" />
     <Compile Include="Models\Product.cs" />
     <Compile Include="Models\Sale.cs" />
+    <Compile Include="Models\SalesAnalyticsViewModel.cs" />
     <Compile Include="Models\SalesListViewModel.cs" />
     <Compile Include="Models\SendHarvestToProductsViewModel.cs" />
     <Compile Include="Models\SendInventoryToProductsViewModel.cs" />
@@ -287,6 +290,7 @@
     <Compile Include="Models\WeightRecord.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Services\BlobService.cs" />
+    <Compile Include="Services\BlobStorageService.cs" />
     <Compile Include="Services\MockCropRequirementService.cs" />
     <Compile Include="Services\TrefleApiService.cs" />
   </ItemGroup>
@@ -474,6 +478,10 @@
     <Content Include="Views\Products\SalesList.cshtml" />
     <Content Include="Views\Products\DeliveryDashboard.cshtml" />
     <Content Include="Views\Products\LiveTrackingMap.cshtml" />
+    <Content Include="Views\DiscountVouchers\Edit.cshtml" />
+    <Content Include="Views\DiscountVouchers\Create.cshtml" />
+    <Content Include="Views\DiscountVouchers\Index.cshtml" />
+    <Content Include="Views\Products\SalesAnalytics.cshtml" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="App_Data\" />

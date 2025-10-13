@@ -8,327 +8,650 @@
     :root {
         --color-earth: #8B7355;
         --color-soil: #654321;
+        --color-foliage: #4CAF50;
         --color-wheat: #F5DEB3;
         --color-hay: #DAA520;
+        --color-danger: #FF6B6B;
+        --color-white: #FFFFFF;
+        --border-radius: 12px;
+        --card-shadow: 0 6px 18px rgba(0,0,0,0.1);
     }
 
+    body {
+        background-color: #F9F7F4;
+    }
+
+    /* Modern Store Header - Updated to match other pages */
     .store-header {
-        background: linear-gradient(135deg, var(--color-wheat) 0%, var(--color-hay) 100%);
-        border-radius: 15px;
-        padding: 30px;
+        background: linear-gradient(135deg, var(--color-earth) 0%, var(--color-soil) 100%);
+        border-radius: var(--border-radius);
+        padding: 30px 40px;
         margin-bottom: 30px;
+        box-shadow: var(--card-shadow);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .store-header::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        right: 0;
+        width: 300px;
+        height: 100%;
+        background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23F5DEB3" opacity="0.1"><path d="M7 18c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-.9-2-2-2zM1 2v2h2l3.6 7.59-1.35 2.45c-.16.28-.25.61-.25.96 0 1.1.9 2 2 2h12v-2H7.42c-.14 0-.25-.11-.25-.25l.03-.12.9-1.63h7.45c.75 0 1.41-.41 1.75-1.03l3.58-6.49c.08-.14.12-.31.12-.48 0-.55-.45-1-1-1H5.21l-.94-2H1zm16 16c-1.1 0-1.99.9-1.99 2s.89 2 1.99 2 2-.9 2-2-.9-2-2-2z"/></svg>');
+        background-repeat: no-repeat;
+        background-position: right center;
+        background-size: 250px;
+        opacity: 0.15;
+    }
+
+    .store-header h1 {
+        color: var(--color-white);
+        font-weight: 700;
+        margin-bottom: 10px;
+        font-size: 2.2rem;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .store-header .lead {
+        color: var(--color-wheat);
+        font-size: 1.1rem;
+        margin: 0;
+        opacity: 0.95;
+    }
+
+    .cart-btn {
+        background: linear-gradient(135deg, var(--color-foliage), #45a049);
+        color: white;
+        border: none;
+        padding: 12px 28px;
+        border-radius: 8px;
+        font-weight: 600;
+        transition: all 0.3s;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3);
+        text-decoration: none;
+    }
+
+    .cart-btn:hover {
+        background: linear-gradient(135deg, #45a049, var(--color-foliage));
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(76, 175, 80, 0.4);
+        color: white;
+        text-decoration: none;
+    }
+
+    .cart-badge {
+        background: var(--color-hay);
+        padding: 2px 8px;
+        border-radius: 12px;
+        font-size: 0.85rem;
+        font-weight: 700;
+    }
+
+    /* Advanced Filter Section */
+    .filter-section {
+        background: white;
+        padding: 25px;
+        border-radius: var(--border-radius);
+        box-shadow: var(--card-shadow);
+        margin-bottom: 30px;
+    }
+
+    .filter-section h4 {
+        color: var(--color-soil);
+        font-weight: 600;
+        margin-bottom: 20px;
+        font-size: 1.1rem;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .form-label {
+        font-weight: 600;
+        color: var(--color-soil);
+        font-size: 0.875rem;
+        margin-bottom: 8px;
+    }
+
+    .form-control, .form-select {
+        border: 2px solid #e0e0e0;
+        border-radius: 8px;
+        padding: 10px 15px;
+        transition: all 0.3s;
+    }
+
+    .form-control:focus, .form-select:focus {
+        border-color: var(--color-earth);
+        box-shadow: 0 0 0 3px rgba(139, 115, 85, 0.1);
+    }
+
+    .btn-primary {
+        background: linear-gradient(135deg, var(--color-foliage), #45a049);
+        border: none;
+        padding: 10px 24px;
+        font-weight: 600;
+        border-radius: 8px;
+        transition: all 0.3s;
+        color: white;
+        box-shadow: 0 4px 12px rgba(76, 175, 80, 0.3);
+    }
+
+    .btn-primary:hover {
+        background: linear-gradient(135deg, #45a049, var(--color-foliage));
+        transform: translateY(-2px);
+        box-shadow: 0 6px 16px rgba(76, 175, 80, 0.4);
+    }
+
+    .btn-secondary {
+        background: linear-gradient(135deg, #9e9e9e, #757575);
+        border: none;
+        padding: 10px 24px;
+        font-weight: 600;
+        border-radius: 8px;
+        color: white;
+    }
+
+    .btn-secondary:hover {
+        background: linear-gradient(135deg, #757575, #616161);
+    }
+
+    /* Collapsible Category Cards */
+    .category-card {
+        background: white;
+        border-radius: var(--border-radius);
+        box-shadow: var(--card-shadow);
+        margin-bottom: 25px;
+        overflow: hidden;
+        border: 2px solid transparent;
+        transition: all 0.3s ease;
+    }
+
+    .category-card:hover {
+        border-color: var(--color-earth);
+    }
+
+    .category-header {
+        background: linear-gradient(135deg, var(--color-wheat), #f0e5d8);
+        padding: 18px 25px;
+        cursor: pointer;
+        transition: all 0.3s;
+        border-bottom: 2px solid var(--color-earth);
+    }
+
+    .category-header:hover {
+        background: linear-gradient(135deg, #f0e5d8, var(--color-wheat));
+    }
+
+    .category-header h4 {
+        margin: 0;
+        font-weight: 600;
+        font-size: 1.15rem;
+        color: var(--color-soil);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    .category-info {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .category-badge {
+        background: linear-gradient(135deg, var(--color-earth), var(--color-soil));
+        color: white;
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: 600;
+    }
+
+    .collapse-icon {
+        transition: transform 0.3s;
         color: var(--color-soil);
     }
 
-    .product-card {
-        border: none;
-        border-radius: 12px;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-        transition: all 0.3s ease;
-        height: 100%;
+    .collapsed .collapse-icon {
+        transform: rotate(-90deg);
     }
 
-        .product-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
-        }
+    /* Compact Product Cards - FIXED DIMENSIONS */
+    .product-card {
+        border: 2px solid #f0f0f0;
+        border-radius: var(--border-radius);
+        box-shadow: var(--card-shadow);
+        transition: all 0.3s ease;
+        height: 420px;
+        background: white;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .product-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 12px 30px rgba(0,0,0,0.15);
+        border-color: var(--color-earth);
+    }
+
+    .product-image-container {
+        height: 200px;
+        width: 100%;
+        overflow: hidden;
+        background: #f8f9fa;
+        position: relative;
+    }
 
     .product-image {
-        height: 200px;
-        object-fit: cover;
-        border-radius: 8px 8px 0 0;
         width: 100%;
+        height: 100%;
+        object-fit: cover;
+        cursor: pointer;
+        transition: transform 0.3s;
+    }
+
+    .product-card:hover .product-image {
+        transform: scale(1.05);
+    }
+
+    .featured-badge {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        background: linear-gradient(135deg, var(--color-hay), #f0ad4e);
+        color: white;
+        padding: 4px 10px;
+        border-radius: 6px;
+        font-size: 0.7rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        z-index: 1;
+        box-shadow: 0 2px 8px rgba(218, 165, 32, 0.3);
     }
 
     .product-card-body {
-        padding: 20px;
+        padding: 16px;
         display: flex;
         flex-direction: column;
-        height: 100%;
+        flex: 1;
     }
 
     .product-title {
         font-weight: 700;
         color: var(--color-soil);
-        margin-bottom: 8px;
-        font-size: 1.1rem;
+        margin: 0 0 6px 0;
+        font-size: 1rem;
+        line-height: 1.3;
+        height: 2.6em;
+        overflow: hidden;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
     }
 
     .product-category {
         color: #6c757d;
-        font-size: 0.9rem;
-        margin-bottom: 10px;
+        font-size: 0.8rem;
+        margin-bottom: 8px;
+        display: flex;
+        align-items: center;
+        gap: 5px;
     }
 
     .product-price {
-        font-size: 1.3rem;
+        font-size: 1.4rem;
         font-weight: 700;
         color: var(--color-earth);
-        margin-bottom: 5px;
+        margin: 8px 0 4px 0;
     }
 
     .product-unit {
         color: #6c757d;
-        font-size: 0.9rem;
+        font-size: 0.85rem;
+        margin-bottom: 8px;
     }
 
     .stock-info {
-        font-size: 0.9rem;
-        margin-bottom: 15px;
+        font-size: 0.8rem;
+        padding: 6px 10px;
+        border-radius: 6px;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        margin-bottom: 10px;
     }
 
     .in-stock {
-        color: #28a745;
-        font-weight: 600;
+        background: rgba(76, 175, 80, 0.1);
+        color: var(--color-foliage);
     }
 
     .out-of-stock {
-        color: #dc3545;
-        font-weight: 600;
+        background: rgba(255, 107, 107, 0.1);
+        color: var(--color-danger);
     }
 
-    .btn-view-details {
-        background: var(--color-earth);
-        color: white;
-        border: none;
-        padding: 8px 15px;
-        border-radius: 6px;
-        font-weight: 600;
-        transition: all 0.3s;
-        text-decoration: none;
-        display: inline-block;
-        text-align: center;
+    /* Action Buttons - Compact */
+    .action-section {
+        margin-top: auto;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
     }
 
-        .btn-view-details:hover {
-            background: var(--color-hay);
-            color: white;
-            text-decoration: none;
-            transform: translateY(-2px);
-        }
-
-    .cart-indicator {
-        background: white;
-        padding: 15px;
-        border-radius: 10px;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        margin-bottom: 20px;
-    }
-
-    .filter-section {
-        background: white;
-        padding: 20px;
-        border-radius: 10px;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        margin-bottom: 30px;
-    }
-
-    .category-header {
-        background: linear-gradient(135deg, var(--color-earth) 0%, var(--color-soil) 100%);
-        color: white;
-        padding: 15px 20px;
-        border-radius: 10px 10px 0 0;
-        margin-bottom: 0;
-    }
-
-    .no-products {
-        text-align: center;
-        padding: 40px;
-        color: #6c757d;
+    .add-to-cart-form {
+        display: flex;
+        gap: 6px;
+        width: 100%;
     }
 
     .quantity-input {
-        max-width: 80px;
+        width: 60px;
+        text-align: center;
+        border: 2px solid #e0e0e0;
+        border-radius: 6px;
+        font-weight: 600;
+        padding: 8px 4px;
+        transition: all 0.3s;
     }
 
-    .action-buttons {
-        display: flex;
-        gap: 10px;
-        margin-top: auto;
+    .quantity-input:focus {
+        border-color: var(--color-earth);
+        box-shadow: 0 0 0 3px rgba(139, 115, 85, 0.1);
     }
 
     .btn-add-to-cart {
-        background: var(--color-earth);
+        background: linear-gradient(135deg, var(--color-foliage), #45a049);
         color: white;
         border: none;
-        padding: 8px 15px;
+        padding: 8px 16px;
         border-radius: 6px;
         font-weight: 600;
+        font-size: 0.875rem;
         transition: all 0.3s;
         flex: 1;
+        box-shadow: 0 2px 8px rgba(76, 175, 80, 0.3);
     }
 
-        .btn-add-to-cart:hover {
-            background: var(--color-hay);
-            transform: translateY(-2px);
+    .btn-add-to-cart:hover {
+        background: linear-gradient(135deg, #45a049, var(--color-foliage));
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(76, 175, 80, 0.4);
+    }
+
+    .btn-view-details {
+        background: linear-gradient(135deg, #9e9e9e, #757575);
+        color: white;
+        border: none;
+        padding: 8px 16px;
+        border-radius: 6px;
+        font-weight: 600;
+        font-size: 0.875rem;
+        text-decoration: none;
+        text-align: center;
+        transition: all 0.3s;
+        display: block;
+    }
+
+    .btn-view-details:hover {
+        background: linear-gradient(135deg, #757575, #616161);
+        color: white;
+        text-decoration: none;
+        transform: translateY(-1px);
+    }
+
+    .btn-out-of-stock {
+        background: #e0e0e0;
+        color: #999;
+        padding: 8px 16px;
+        border-radius: 6px;
+        font-weight: 600;
+        font-size: 0.875rem;
+        border: none;
+        cursor: not-allowed;
+    }
+
+    /* Empty State */
+    .no-products {
+        text-align: center;
+        padding: 60px 20px;
+        background: white;
+        border-radius: var(--border-radius);
+        box-shadow: var(--card-shadow);
+    }
+
+    .no-products i {
+        font-size: 4rem;
+        color: var(--color-wheat);
+        margin-bottom: 20px;
+    }
+
+    .no-products h4 {
+        color: var(--color-soil);
+        margin-bottom: 12px;
+        font-weight: 600;
+    }
+
+    .no-products p {
+        color: #6c757d;
+        margin-bottom: 25px;
+    }
+
+    /* Responsive */
+    @@media (max-width: 768px) {
+        .store-header {
+            padding: 20px;
         }
 
-        .btn-add-to-cart:disabled {
-            background: #6c757d;
-            cursor: not-allowed;
-            transform: none;
+        .store-header h1 {
+            font-size: 1.8rem;
         }
+
+        .product-card {
+            height: auto;
+            min-height: 400px;
+        }
+
+        .product-image-container {
+            height: 180px;
+        }
+    }
 </style>
 
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
 <div class="container-fluid mt-4">
-    <!-- Store Header -->
+    <!-- Modern Store Header -->
     <div class="store-header">
         <div class="row align-items-center">
-            <div class="col-md-8">
+            <div class="col-md-9">
                 <h1><i class="fas fa-store"></i> Farm Store</h1>
-                <p class="lead mb-0">Fresh farm products delivered to your doorstep</p>
+                <p class="lead">Premium farm products delivered fresh to your doorstep</p>
             </div>
-            <div class="col-md-4 text-end">
-                <div class="cart-indicator">
-                    <a href="@Url.Action("Cart")" class="btn btn-outline-success btn-lg">
-                        <i class="fas fa-shopping-cart"></i> View Cart
-                        @{
-                            var cart = Session["Cart"] as List<FarmTrack.Models.CartItem>;
-                            var itemCount = cart?.Sum(item => item.Quantity) ?? 0;
-                        }
-                        @if (itemCount > 0)
-                        {
-                            <span class="badge bg-danger ms-2">@itemCount</span>
-                        }
-                    </a>
-                </div>
+            <div class="col-md-3 text-end">
+                <a href="@Url.Action("Cart")" class="cart-btn">
+                    <i class="fas fa-shopping-cart"></i>
+                    <span>Cart</span>
+                    @{
+                        var cart = Session["Cart"] as List<FarmTrack.Models.CartItem>;
+                        var itemCount = cart?.Sum(item => item.Quantity) ?? 0;
+                    }
+                    @if (itemCount > 0)
+                    {
+                        <span class="cart-badge">@itemCount</span>
+                    }
+                </a>
             </div>
         </div>
     </div>
 
-    <!-- 🔍 Filters -->
+    <!-- Advanced Filters -->
     <div class="filter-section">
-        <h4><i class="fas fa-filter"></i> Filter Products</h4>
+        <h4><i class="fas fa-sliders-h"></i> Filter & Search Products</h4>
         @using (Html.BeginForm("Store", "Products", FormMethod.Get, new { @class = "row g-3" }))
         {
             <div class="col-md-3">
                 <label class="form-label">Product Type</label>
-                @Html.TextBox("typeFilter", Model.TypeFilter, new { @class = "form-control", placeholder = "Crop, Livestock, Inventory" })
+                <select name="typeFilter" class="form-select">
+                    <option value="">All Types</option>
+                    <option value="Crop" @(Model.TypeFilter == "Crop" ? "selected" : "")>Crops</option>
+                    <option value="Livestock" @(Model.TypeFilter == "Livestock" ? "selected" : "")>Livestock</option>
+                    <option value="Inventory" @(Model.TypeFilter == "Inventory" ? "selected" : "")>Inventory</option>
+                </select>
             </div>
             <div class="col-md-3">
                 <label class="form-label">Category</label>
-                @Html.TextBox("categoryFilter", Model.CategoryFilter, new { @class = "form-control", placeholder = "Vegetables, Fruits, Dairy" })
+                @Html.TextBox("categoryFilter", Model.CategoryFilter, new { @class = "form-control", placeholder = "e.g., Vegetables, Dairy" })
             </div>
-            <div class="col-md-6">
+            <div class="col-md-2">
+                <label class="form-label">Availability</label>
+                <select name="availabilityFilter" class="form-select">
+                    <option value="">All Products</option>
+                    <option value="available">In Stock Only</option>
+                    <option value="featured">Featured Only</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Sort By</label>
+                <select name="sortBy" class="form-select">
+                    <option value="">Default</option>
+                    <option value="price_asc">Price: Low to High</option>
+                    <option value="price_desc">Price: High to Low</option>
+                    <option value="name">Name A-Z</option>
+                </select>
+            </div>
+            <div class="col-md-2">
                 <label class="form-label">&nbsp;</label>
                 <div class="d-flex gap-2">
-                    <button type="submit" class="btn btn-primary">
-                        <i class="fas fa-search"></i> Apply Filters
+                    <button type="submit" class="btn btn-primary flex-fill">
+                        <i class="fas fa-search"></i> Apply
                     </button>
-                    <a href="@Url.Action("Store")" class="btn btn-secondary">Clear</a>
+                    <a href="@Url.Action("Store")" class="btn btn-secondary">
+                        <i class="fas fa-redo"></i>
+                    </a>
                 </div>
             </div>
         }
     </div>
 
-    <!-- 🛒 Product Listing -->
+    <!-- Product Listing by Category -->
     @if (!Model.Categories.Any())
     {
         <div class="no-products">
-            <i class="fas fa-box-open fa-3x mb-3"></i>
+            <i class="fas fa-box-open"></i>
             <h4>No products found</h4>
             <p class="text-muted">Try adjusting your filters or check back later for new products.</p>
-            <a href="@Url.Action("Store")" class="btn btn-primary">View All Products</a>
+            <a href="@Url.Action("Store")" class="btn btn-primary">
+                <i class="fas fa-redo"></i> View All Products
+            </a>
         </div>
     }
     else
     {
         foreach (var category in Model.Categories)
         {
-            <div class="card mb-4">
-                <div class="category-header">
-                    <h4 class="mb-0">
-                        <i class="fas fa-tag"></i> @category.Category
-                        <span class="badge bg-light text-dark ms-2">@category.Items.Count products</span>
+            <div class="category-card">
+                <div class="category-header" data-bs-toggle="collapse" data-bs-target="#category-@category.Category.Replace(" ", "-")" aria-expanded="true">
+                    <h4>
+                        <div class="category-info">
+                            <i class="fas fa-tag"></i>
+                            <span>@category.Category</span>
+                            <span class="category-badge">@category.Items.Count products</span>
+                        </div>
+                        <i class="fas fa-chevron-down collapse-icon"></i>
                     </h4>
                 </div>
-                <div class="card-body">
-                    <div class="row">
-                        @foreach (var product in category.Items)
-                        {
-                            <div class="col-xl-3 col-lg-4 col-md-6 mb-4">
-                                <div class="card product-card">
-                                    <!-- Product Image -->
-                                    <img src="@(string.IsNullOrEmpty(product.ImageUrl) ? "/Content/images/placeholder-product.jpg" : product.ImageUrl)"
-                                         alt="@product.Name"
-                                         class="product-image"
-                                         onclick="window.location.href='@Url.Action("Details", new { id = product.Id })'"
-                                         style="cursor: pointer;">
-
-                                    <div class="product-card-body">
-                                        <!-- Product Info -->
-                                        <div>
-                                            <h5 class="product-title">@product.Name</h5>
-                                            <div class="product-category">
-                                                <i class="fas fa-tag"></i> @product.ProductType
+                <div id="category-@category.Category.Replace(" ", "-")" class="collapse show">
+                    <div class="card-body p-4">
+                        <div class="row g-4">
+                            @foreach (var product in category.Items)
+                            {
+                                if (product.PricePerUnit.HasValue && product.PricePerUnit.Value > 0)
+                                {
+                                    <div class="col-xl-3 col-lg-4 col-md-6">
+                                        <div class="card product-card">
+                                            <!-- Product Image -->
+                                            <div class="product-image-container">
                                                 @if (product.IsFeatured)
                                                 {
-                                                    <span class="badge bg-warning ms-1">Featured</span>
+                                                    <span class="featured-badge">
+                                                        <i class="fas fa-star"></i> Featured
+                                                    </span>
                                                 }
+                                                <img src="@(string.IsNullOrEmpty(product.ImageUrl) ? "/Content/images/placeholder-product.jpg" : product.ImageUrl)"
+                                                     alt="@product.Name"
+                                                     class="product-image"
+                                                     onclick="window.location.href='@Url.Action("Details", new { id = product.Id })'">
                                             </div>
 
-                                            <!-- Price -->
-                                            <div class="product-price">
-                                                R@(product.PricePerUnit?.ToString("F2") ?? "0.00")
-                                            </div>
-                                            <div class="product-unit">per @product.Unit</div>
+                                            <div class="product-card-body">
+                                                <!-- Product Info -->
+                                                <h5 class="product-title">@product.Name</h5>
 
-                                            <!-- Stock Information -->
-                                            <div class="stock-info">
-                                                @if (product.IsAvailable && product.Quantity > 0)
-                                                {
-                                                    <span class="in-stock">
+                                                <div class="product-category">
+                                                    <i class="fas fa-cube"></i> @product.ProductType
+                                                </div>
+
+                                                <!-- Price -->
+                                                <div class="product-price">
+                                                    R@(product.PricePerUnit?.ToString("F2") ?? "0.00")
+                                                </div>
+                                                <div class="product-unit">per @product.Unit</div>
+
+                                                <!-- Stock Information -->
+                                                <div class="stock-info @(product.IsAvailable && product.Quantity > 0 ? "in-stock" : "out-of-stock")">
+                                                    @if (product.IsAvailable && product.Quantity > 0)
+                                                    {
                                                         <i class="fas fa-check-circle"></i>
-                                                        @product.Quantity @product.Unit available
-                                                    </span>
-                                                }
-                                                else
-                                                {
-                                                    <span class="out-of-stock">
-                                                        <i class="fas fa-times-circle"></i> Out of Stock
-                                                    </span>
-                                                }
+                                                        <span>@product.Quantity in stock</span>
+                                                    }
+                                                    else
+                                                    {
+                                                        <i class="fas fa-times-circle"></i>
+                                                        <span>Out of Stock</span>
+                                                    }
+                                                </div>
+
+                                                <!-- Action Buttons -->
+                                                <div class="action-section">
+                                                    @if (product.IsAvailable && product.Quantity > 0)
+                                                    {
+                                                        using (Html.BeginForm("AddToCart", "Products", FormMethod.Post, new { @class = "add-to-cart-form" }))
+                                                        {
+                                                            @Html.Hidden("productId", product.Id)
+                                                            <input type="number" name="quantity" value="1" min="1" max="@product.Quantity"
+                                                                   class="form-control quantity-input" required>
+                                                            <button type="submit" class="btn-add-to-cart">
+                                                                <i class="fas fa-cart-plus"></i> Add
+                                                            </button>
+                                                        }
+                                                    }
+                                                    else
+                                                    {
+                                                        <button class="btn-out-of-stock" disabled>
+                                                            <i class="fas fa-times-circle"></i> Out of Stock
+                                                        </button>
+                                                    }
+
+                                                    <a href="@Url.Action("Details", new { id = product.Id })" class="btn-view-details">
+                                                        <i class="fas fa-eye"></i> View Details
+                                                    </a>
+                                                </div>
                                             </div>
-
-                                            <!-- Product Description (Truncated) -->
-                                            @if (!string.IsNullOrEmpty(product.Description))
-                                            {
-                                                <p class="product-description small text-muted mb-3">
-                                                    @(product.Description.Length > 100 ? product.Description.Substring(0, 100) + "..." : product.Description)
-                                                </p>
-                                            }
                                         </div>
-
-                                        <!-- Action Buttons -->
-                                        <div class="action-buttons">
-                                            @if (product.IsAvailable && product.Quantity > 0)
-                                            {
-                                                using (Html.BeginForm("AddToCart", "Products", FormMethod.Post, new { @class = "d-flex gap-2 w-100" }))
-                                                {
-                                                    @Html.Hidden("productId", product.Id)
-                                                    <input type="number" name="quantity" value="1" min="1" max="@product.Quantity"
-                                                           class="form-control quantity-input" required>
-                                                    <button type="submit" class="btn btn-add-to-cart">
-                                                        <i class="fas fa-cart-plus"></i> Add
-                                                    </button>
-                                                }
-                                            }
-                                            else
-                                            {
-                                                <button class="btn btn-secondary w-100" disabled>
-                                                    <i class="fas fa-times-circle"></i> Out of Stock
-                                                </button>
-                                            }
-                                        </div>
-
-                                        <!-- View Details Button -->
-                                        <a href="@Url.Action("Details", new { id = product.Id })" class="btn-view-details mt-2">
-                                            <i class="fas fa-eye"></i> View Details
-                                        </a>
                                     </div>
-                                </div>
-                            </div>
-                        }
+                                }
+                            }
+                        </div>
                     </div>
                 </div>
             </div>
@@ -338,9 +661,9 @@
 
 @section Scripts {
     <script>
-        // Add to cart with quantity validation
-        $(document).ready(function() {
-            $('form').submit(function(e) {
+        $(document).ready(function () {
+            // Add to cart validation
+            $('.add-to-cart-form').submit(function (e) {
                 var quantityInput = $(this).find('input[name="quantity"]');
                 var maxQuantity = parseInt(quantityInput.attr('max'));
                 var quantity = parseInt(quantityInput.val());
@@ -360,37 +683,10 @@
                 return true;
             });
 
-            // Image click navigation
-            $('.product-image').click(function() {
-                var productId = $(this).closest('.product-card').find('input[name="productId"]').val();
-                if (productId) {
-                    window.location.href = '@Url.Action("Details", "Products")' + '/' + productId;
-                }
+            // Handle collapse icon rotation
+            $('.category-header').on('click', function () {
+                $(this).toggleClass('collapsed');
             });
         });
-
-        // Quick add to cart with feedback
-        function quickAddToCart(productId, maxQuantity) {
-            var quantity = 1;
-            if (quantity > maxQuantity) {
-                alert('Only ' + maxQuantity + ' items available in stock.');
-                return;
-            }
-
-            $.post('@Url.Action("AddToCart", "Products")', { productId: productId, quantity: quantity })
-                .done(function(response) {
-                    if (response.success) {
-                        // Show success message
-                        alert('Product added to cart!');
-                        // Update cart count
-                        location.reload();
-                    } else {
-                        alert('Error: ' + response.message);
-                    }
-                })
-                .fail(function() {
-                    alert('Error adding product to cart.');
-                });
-        }
     </script>
 }

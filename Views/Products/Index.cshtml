@@ -1,90 +1,483 @@
 ﻿@model IEnumerable<FarmTrack.Models.Product>
 
 @{
-    ViewBag.Title = "Index";
+    ViewBag.Title = "Products";
 }
 
-<h2>Index</h2>
+<style>
+    :root {
+        --color-earth: #8B7355;
+        --color-soil: #654321;
+        --color-foliage: #4CAF50;
+        --color-wheat: #F5DEB3;
+        --color-hay: #DAA520;
+        --color-danger: #FF6B6B;
+        --color-white: #FFFFFF;
+        --color-bib: #b17474;
+        --border-radius: 12px;
+        --card-shadow: 0 6px 18px rgba(0,0,0,0.1);
+    }
 
-<p>
-    @Html.ActionLink("Create New", "Create")
-</p>
-<div>
-    @Html.ActionLink("Sales", "SalesList")
+    body {
+        background-color: #F9F7F4;
+    }
+
+    /* Dashboard Header */
+    .dashboard-header {
+        background: linear-gradient(135deg, var(--color-earth) 0%, var(--color-soil) 100%);
+        border-radius: var(--border-radius);
+        padding: 30px;
+        margin-bottom: 30px;
+        position: relative;
+        overflow: hidden;
+        box-shadow: var(--card-shadow);
+    }
+
+        .dashboard-header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 250px;
+            height: 100%;
+            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23F5DEB3" opacity="0.1"><path d="M20 6h-2.18c.11-.31.18-.65.18-1a2.996 2.996 0 0 0-5.5-1.65l-.5.67-.5-.68C10.96 2.54 10.05 2 9 2 7.34 2 6 3.34 6 5c0 .35.07.69.18 1H4c-1.11 0-1.99.89-1.99 2L2 19c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V8c0-1.11-.89-2-2-2zm-5-2c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zM9 4c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zm11 15H4v-2h16v2zm0-5H4V8h5.08L7 10.83 8.62 12 11 8.76l1-1.36 1 1.36L15.38 12 17 10.83 14.92 8H20v6z"/></svg>');
+            background-repeat: no-repeat;
+            background-position: right center;
+            background-size: 180px;
+            opacity: 0.2;
+        }
+
+        .dashboard-header h1 {
+            color: var(--color-white);
+            font-weight: 700;
+            margin-bottom: 10px;
+            font-size: 2.2rem;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+            .dashboard-header h1 i {
+                font-size: 2rem;
+            }
+
+        .dashboard-header p {
+            color: var(--color-wheat);
+            font-size: 1.1rem;
+            margin: 0;
+        }
+
+    /* Action Buttons */
+    .action-bar {
+        display: flex;
+        gap: 15px;
+        margin-bottom: 25px;
+        flex-wrap: wrap;
+    }
+
+    .btn {
+        padding: 12px 24px;
+        border-radius: 8px;
+        font-weight: 600;
+        font-size: 0.95rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        border: none;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        text-decoration: none;
+    }
+
+    .btn-primary {
+        background: linear-gradient(135deg, var(--color-foliage), #45a049);
+        color: white;
+        box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3);
+    }
+
+        .btn-primary:hover {
+            background: linear-gradient(135deg, #45a049, var(--color-foliage));
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(76, 175, 80, 0.4);
+            color: white;
+        }
+
+    .btn-info {
+        background: linear-gradient(135deg, var(--color-earth), var(--color-soil));
+        color: white;
+        box-shadow: 0 4px 15px rgba(139, 115, 85, 0.3);
+    }
+
+        .btn-info:hover {
+            background: linear-gradient(135deg, var(--color-soil), var(--color-earth));
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(139, 115, 85, 0.4);
+            color: white;
+        }
+
+    /* Table Container */
+    .table-container {
+        background-color: var(--color-white);
+        border-radius: var(--border-radius);
+        overflow: hidden;
+        box-shadow: var(--card-shadow);
+        position: relative;
+    }
+
+        .table-container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, var(--color-earth), var(--color-foliage));
+        }
+
+    /* Modern Table */
+    .modern-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 0;
+        background-color: transparent;
+    }
+
+        .modern-table thead {
+            background: linear-gradient(135deg, var(--color-earth), var(--color-soil));
+            color: var(--color-white);
+        }
+
+            .modern-table thead th {
+                padding: 18px 15px;
+                font-weight: 700;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+                font-size: 0.85rem;
+                border: none;
+                position: relative;
+                white-space: nowrap;
+            }
+
+                .modern-table thead th::after {
+                    content: '';
+                    position: absolute;
+                    right: 0;
+                    top: 25%;
+                    height: 50%;
+                    width: 1px;
+                    background-color: rgba(255, 255, 255, 0.2);
+                }
+
+                .modern-table thead th:last-child::after {
+                    display: none;
+                }
+
+        .modern-table tbody tr {
+            transition: all 0.2s ease;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+        }
+
+            .modern-table tbody tr:nth-child(even) {
+                background-color: rgba(245, 222, 179, 0.03);
+            }
+
+            .modern-table tbody tr:hover {
+                background-color: rgba(139, 115, 85, 0.08);
+                transform: scale(1.01);
+                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            }
+
+        .modern-table td {
+            padding: 15px;
+            border: none;
+            color: #333;
+            font-size: 0.9rem;
+            vertical-align: middle;
+        }
+
+    /* Type Badges */
+    .type-badge {
+        display: inline-block;
+        padding: 4px 10px;
+        border-radius: 12px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .type-harvest {
+        background-color: #e8f5e9;
+        color: var(--color-foliage);
+    }
+
+    .type-inventory {
+        background-color: #fff3e0;
+        color: var(--color-hay);
+    }
+
+    .type-livestock {
+        background-color: #fce4ec;
+        color: #c2185b;
+    }
+
+    /* Price Styling */
+    .price {
+        font-weight: 700;
+        color: var(--color-foliage);
+        font-size: 1rem;
+    }
+
+        .price::before {
+            content: 'R ';
+            font-size: 0.85rem;
+            opacity: 0.7;
+        }
+
+    /* Quantity Styling */
+    .quantity {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        font-weight: 600;
+    }
+
+        .quantity i {
+            color: var(--color-earth);
+            font-size: 0.9rem;
+        }
+
+    /* Action Links */
+    .action-links {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+
+    .action-link {
+        color: var(--color-earth);
+        text-decoration: none;
+        font-weight: 600;
+        font-size: 0.85rem;
+        padding: 4px 8px;
+        border-radius: 4px;
+        transition: all 0.2s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+    }
+
+        .action-link:hover {
+            background-color: var(--color-wheat);
+            color: var(--color-soil);
+            text-decoration: none;
+        }
+
+        .action-link.edit {
+            color: var(--color-hay);
+        }
+
+            .action-link.edit:hover {
+                background-color: #fff3e0;
+                color: #f57c00;
+            }
+
+        .action-link.delete {
+            color: var(--color-danger);
+        }
+
+            .action-link.delete:hover {
+                background-color: #ffebee;
+                color: #c62828;
+            }
+
+    /* Empty State */
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        background-color: white;
+        border-radius: var(--border-radius);
+        box-shadow: var(--card-shadow);
+    }
+
+        .empty-state i {
+            font-size: 4rem;
+            color: var(--color-wheat);
+            margin-bottom: 20px;
+        }
+
+        .empty-state h3 {
+            color: var(--color-soil);
+            margin-bottom: 15px;
+            font-weight: 600;
+        }
+
+        .empty-state p {
+            color: #777;
+            margin-bottom: 25px;
+            max-width: 400px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+    /* Responsive */
+    @@media (max-width: 992px) {
+        .table-container {
+            overflow-x: auto;
+        }
+
+        .modern-table {
+            min-width: 1000px;
+        }
+    }
+
+    @@media (max-width: 768px) {
+        .dashboard-header {
+            padding: 20px;
+        }
+
+            .dashboard-header h1 {
+                font-size: 1.8rem;
+            }
+
+        .action-bar {
+            flex-direction: column;
+        }
+
+        .btn {
+            width: 100%;
+            justify-content: center;
+        }
+    }
+
+    /* Date Styling */
+    .date-cell {
+        font-family: 'Courier New', monospace;
+        color: #666;
+        font-size: 0.85rem;
+    }
+</style>
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
+<!-- Dashboard Header -->
+<div class="dashboard-header">
+    <h1><i class="fas fa-box-open"></i>Products Inventory</h1>
+    <p>Manage and track all your farm products ready for sale</p>
 </div>
-<table class="table">
-    <tr>
-        <th>
-            @Html.DisplayNameFor(model => model.HarvestOutcome.QualityGrade)
-        </th>
-        <th>
-            @Html.DisplayNameFor(model => model.Inventory.ItemName)
-        </th>
-        <th>
-            @Html.DisplayNameFor(model => model.Livestock.Type)
-        </th>
-        <th>
-            @Html.DisplayNameFor(model => model.Name)
-        </th>
-        <th>
-            @Html.DisplayNameFor(model => model.ProductType)
-        </th>
-        <th>
-            @Html.DisplayNameFor(model => model.Category)
-        </th>
-        <th>
-            @Html.DisplayNameFor(model => model.Unit)
-        </th>
-        <th>
-            @Html.DisplayNameFor(model => model.Quantity)
-        </th>
-        <th>
-            @Html.DisplayNameFor(model => model.PricePerUnit)
-        </th>
-        <th>
-            @Html.DisplayNameFor(model => model.CreatedAt)
-        </th>
-        <th></th>
-    </tr>
 
-@foreach (var item in Model) {
-    <tr>
-        <td>
-            @Html.DisplayFor(modelItem => item.HarvestOutcome.QualityGrade)
-        </td>
-        <td>
-            @Html.DisplayFor(modelItem => item.Inventory.ItemName)
-        </td>
-        <td>
-            @Html.DisplayFor(modelItem => item.Livestock.Type)
-        </td>
-        <td>
-            @Html.DisplayFor(modelItem => item.Name)
-        </td>
-        <td>
-            @Html.DisplayFor(modelItem => item.ProductType)
-        </td>
-        <td>
-            @Html.DisplayFor(modelItem => item.Category)
-        </td>
-        <td>
-            @Html.DisplayFor(modelItem => item.Unit)
-        </td>
-        <td>
-            @Html.DisplayFor(modelItem => item.Quantity)
-        </td>
-        <td>
-            @Html.DisplayFor(modelItem => item.PricePerUnit)
-        </td>
-        <td>
-            @Html.DisplayFor(modelItem => item.CreatedAt)
-        </td>
-        <td>
-            @Html.ActionLink("Edit", "Edit", new { id=item.Id }) |
-            @Html.ActionLink("Details", "Details", new { id=item.Id }) |
-            @Html.ActionLink("Delete", "Delete", new { id=item.Id })
-        </td>
-    </tr>
+<!-- Action Buttons -->
+<div class="action-bar">
+    <a href="@Url.Action("Create")" class="btn btn-primary">
+        <i class="fas fa-plus-circle"></i> Create New Product
+    </a>
+    <a href="@Url.Action("SalesList")" class="btn btn-info">
+        <i class="fas fa-shopping-cart"></i> View Sales
+    </a>
+    <a href="@Url.Action("Index", "DiscountVouchers")" class="btn btn-info">
+        <i class="fas fa-shopping-coupon"></i> Vouchers
+    </a>
+</div>
+
+@if (!Model.Any())
+{
+    <!-- Empty State -->
+    <div class="empty-state">
+        <i class="fas fa-box-open"></i>
+        <h3>No Products Found</h3>
+        <p>Start adding products to your inventory by creating new items or transferring from harvest, livestock, or inventory.</p>
+        <a href="@Url.Action("Create")" class="btn btn-primary">
+            <i class="fas fa-plus-circle"></i> Create First Product
+        </a>
+    </div>
+}
+else
+{
+    <!-- Table Container -->
+    <div class="table-container">
+        <table class="modern-table">
+            <thead>
+                <tr>
+                    <th><i class="fas fa-star"></i> Quality</th>
+                    <th><i class="fas fa-boxes"></i> Inventory</th>
+                    <th><i class="fas fa-horse"></i> Livestock</th>
+                    <th><i class="fas fa-tag"></i> Name</th>
+                    <th><i class="fas fa-cube"></i> Type</th>
+                    <th><i class="fas fa-list"></i> Category</th>
+                    <th><i class="fas fa-ruler"></i> Unit</th>
+                    <th><i class="fas fa-layer-group"></i> Quantity</th>
+                    <th><i class="fas fa-dollar-sign"></i> Price</th>
+                    <th><i class="fas fa-calendar"></i> Created</th>
+                    <th><i class="fas fa-cogs"></i> Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in Model)
+                {
+                    <tr class="clickable-row" data-href="@Url.Action("Details", "Products", new { id = item.Id })">
+                        <td>
+                            @(item.HarvestOutcome != null ? item.HarvestOutcome.QualityGrade : "-")
+                        </td>
+                        <td>
+                            @(item.Inventory != null ? item.Inventory.ItemName : "-")
+                        </td>
+                        <td>
+                            @(item.Livestock != null ? item.Livestock.Type : "-")
+                        </td>
+                        <td><strong>@item.Name</strong></td>
+                        <td>
+                            @{
+                                var typeClass = "type-harvest";
+                                if (item.ProductType?.Contains("Inventory") == true)
+                                {
+                                    typeClass = "type-inventory";
+                                }
+                                if (item.ProductType?.Contains("Livestock") == true)
+                                {
+                                    typeClass = "type-livestock";
+                                }
+                            }
+                            <span class="type-badge @typeClass">@item.ProductType</span>
+                        </td>
+                        <td>@item.Category</td>
+                        <td>@item.Unit</td>
+                        <td>
+                            <span class="quantity">
+                                <i class="fas fa-cubes"></i>
+                                @item.Quantity
+                            </span>
+                        </td>
+                        <td>
+                            <span class="price">@item.PricePerUnit</span>
+                        </td>
+                        <td class="date-cell">
+                            @item.CreatedAt.ToString("MMM dd, yyyy")
+                        </td>
+                        <td>
+                            <div class="action-links">
+                                @Html.ActionLink("Details", "Details", new { id = item.Id }, new { @class = "action-link" })
+                                @Html.ActionLink("Edit", "Edit", new { id = item.Id }, new { @class = "action-link edit" })
+                                @Html.ActionLink("Delete", "Delete", new { id = item.Id }, new { @class = "action-link delete" })
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
 }
 
-</table>
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        let rows = document.querySelectorAll(".clickable-row");
+        rows.forEach(row => {
+            row.addEventListener("click", function () {
+                let url = this.getAttribute("data-href");
+                if (url) {
+                    window.location.href = url;
+                }
+            });
+        });
+    });
+
+</script>

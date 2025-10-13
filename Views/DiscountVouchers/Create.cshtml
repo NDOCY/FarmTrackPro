@@ -1,0 +1,641 @@
+﻿@model FarmTrack.Models.DiscountVoucher
+
+@{
+    ViewBag.Title = "Create Discount Voucher";
+}
+
+<style>
+    :root {
+        --color-earth: #8B7355;
+        --color-soil: #654321;
+        --color-foliage: #4CAF50;
+        --color-wheat: #F5DEB3;
+        --color-hay: #DAA520;
+        --color-danger: #FF6B6B;
+        --color-white: #FFFFFF;
+        --border-radius: 12px;
+        --card-shadow: 0 6px 18px rgba(0,0,0,0.1);
+    }
+
+    body {
+        background-color: #F9F7F4;
+    }
+
+    /* Dashboard Header */
+    .dashboard-header {
+        background: linear-gradient(135deg, var(--color-earth) 0%, var(--color-soil) 100%);
+        border-radius: var(--border-radius);
+        padding: 30px;
+        margin-bottom: 30px;
+        position: relative;
+        overflow: hidden;
+        box-shadow: var(--card-shadow);
+    }
+
+    .dashboard-header::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        right: 0;
+        width: 250px;
+        height: 100%;
+        background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23F5DEB3" opacity="0.1"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>');
+        background-repeat: no-repeat;
+        background-position: right center;
+        background-size: 180px;
+        opacity: 0.2;
+    }
+
+    .dashboard-header h1 {
+        color: var(--color-white);
+        font-weight: 700;
+        margin-bottom: 10px;
+        font-size: 2.2rem;
+        display: flex;
+        align-items: center;
+        gap: 15px;
+    }
+
+    .dashboard-header h1 i {
+        font-size: 2rem;
+    }
+
+    .dashboard-header p {
+        color: var(--color-wheat);
+        font-size: 1.1rem;
+        margin: 0;
+    }
+
+    /* Form Card */
+    .form-card {
+        background-color: var(--color-white);
+        border-radius: var(--border-radius);
+        overflow: hidden;
+        box-shadow: var(--card-shadow);
+        margin-bottom: 30px;
+    }
+
+    .form-card-header {
+        background: linear-gradient(135deg, var(--color-foliage), #45a049);
+        color: var(--color-white);
+        padding: 20px 25px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .form-card-header h5 {
+        margin: 0;
+        font-weight: 700;
+        font-size: 1.2rem;
+    }
+
+    .form-card-body {
+        padding: 30px;
+    }
+
+    /* Section Headers */
+    .section-header {
+        border-bottom: 2px solid var(--color-wheat);
+        padding-bottom: 10px;
+        margin-bottom: 20px;
+        margin-top: 30px;
+        color: var(--color-soil);
+        font-weight: 600;
+        font-size: 1.1rem;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .section-header:first-of-type {
+        margin-top: 0;
+    }
+
+    /* Form Groups */
+    .form-group {
+        margin-bottom: 20px;
+    }
+
+    .form-label {
+        font-weight: 600;
+        color: var(--color-soil);
+        margin-bottom: 8px;
+        display: block;
+        font-size: 0.95rem;
+    }
+
+    .form-control {
+        width: 100%;
+        padding: 12px 15px;
+        border: 2px solid #e0e0e0;
+        border-radius: 8px;
+        font-size: 0.95rem;
+        transition: all 0.3s ease;
+        background-color: #fafafa;
+    }
+
+    .form-control:focus {
+        outline: none;
+        border-color: var(--color-foliage);
+        background-color: var(--color-white);
+        box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.1);
+    }
+
+    .form-control:disabled {
+        background-color: #f5f5f5;
+        cursor: not-allowed;
+    }
+
+    textarea.form-control {
+        resize: vertical;
+        min-height: 100px;
+    }
+
+    /* Input Groups */
+    .input-group {
+        display: flex;
+        align-items: stretch;
+    }
+
+    .input-group-text {
+        background: linear-gradient(135deg, var(--color-earth), var(--color-soil));
+        color: var(--color-white);
+        padding: 12px 15px;
+        border: 2px solid var(--color-earth);
+        border-right: none;
+        border-radius: 8px 0 0 8px;
+        font-weight: 600;
+        min-width: 50px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .input-group .form-control {
+        border-radius: 0 8px 8px 0;
+        border-left: none;
+    }
+
+    /* Form Text */
+    .form-text {
+        font-size: 0.85rem;
+        color: #666;
+        margin-top: 5px;
+        display: block;
+    }
+
+    /* Validation Messages */
+    .text-danger {
+        color: var(--color-danger);
+        font-size: 0.85rem;
+        margin-top: 5px;
+        display: block;
+    }
+
+    .field-validation-error {
+        color: var(--color-danger);
+        font-size: 0.85rem;
+        margin-top: 5px;
+        display: block;
+    }
+
+    .input-validation-error {
+        border-color: var(--color-danger) !important;
+    }
+
+    /* Switches */
+    .form-check {
+        padding-left: 2.5rem;
+        margin-bottom: 15px;
+    }
+
+    .form-check-input {
+        width: 50px;
+        height: 26px;
+        margin-left: -2.5rem;
+        cursor: pointer;
+        background-color: #ccc;
+        border: none;
+        border-radius: 13px;
+        position: relative;
+        transition: all 0.3s ease;
+    }
+
+    .form-check-input:checked {
+        background-color: var(--color-foliage);
+    }
+
+    .form-check-input:focus {
+        box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.25);
+    }
+
+    .form-check-label {
+        font-weight: 600;
+        color: var(--color-soil);
+        margin-bottom: 5px;
+    }
+
+    /* Buttons */
+    .btn {
+        padding: 12px 30px;
+        border-radius: 8px;
+        font-weight: 600;
+        font-size: 0.95rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        border: none;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        text-decoration: none;
+    }
+
+    .btn-success {
+        background: linear-gradient(135deg, var(--color-foliage), #45a049);
+        color: white;
+        box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3);
+    }
+
+    .btn-success:hover {
+        background: linear-gradient(135deg, #45a049, var(--color-foliage));
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(76, 175, 80, 0.4);
+        color: white;
+    }
+
+    .btn-secondary {
+        background: linear-gradient(135deg, #9e9e9e, #757575);
+        color: white;
+        box-shadow: 0 4px 15px rgba(158, 158, 158, 0.3);
+    }
+
+    .btn-secondary:hover {
+        background: linear-gradient(135deg, #757575, #616161);
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(158, 158, 158, 0.4);
+        color: white;
+    }
+
+    /* Action Bar */
+    .action-bar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: 30px;
+        padding-top: 20px;
+        border-top: 2px solid #f0f0f0;
+    }
+
+    /* Info Box */
+    .info-box {
+        background: linear-gradient(135deg, #e3f2fd, #bbdefb);
+        border-left: 4px solid #2196F3;
+        padding: 15px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+        display: flex;
+        align-items: start;
+        gap: 12px;
+    }
+
+    .info-box i {
+        color: #2196F3;
+        font-size: 1.3rem;
+        margin-top: 2px;
+    }
+
+    .info-box-content {
+        flex: 1;
+    }
+
+    .info-box-content strong {
+        display: block;
+        color: #1976D2;
+        margin-bottom: 5px;
+        font-size: 1rem;
+    }
+
+    .info-box-content p {
+        margin: 0;
+        color: #555;
+        font-size: 0.9rem;
+        line-height: 1.5;
+    }
+
+    /* Responsive */
+    @@media (max-width: 768px) {
+        .dashboard-header {
+            padding: 20px;
+        }
+
+        .dashboard-header h1 {
+            font-size: 1.8rem;
+        }
+
+        .form-card-body {
+            padding: 20px;
+        }
+
+        .action-bar {
+            flex-direction: column-reverse;
+            gap: 15px;
+        }
+
+        .action-bar .btn {
+            width: 100%;
+            justify-content: center;
+        }
+    }
+</style>
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
+<div class="container-fluid mt-4">
+    <!-- Dashboard Header -->
+    <div class="dashboard-header">
+        <h1><i class="fas fa-plus-circle"></i> Create Discount Voucher</h1>
+        <p>Create a new promotional voucher to reward your customers</p>
+    </div>
+
+    <!-- Form Card -->
+    <div class="form-card">
+        <div class="form-card-header">
+            <i class="fas fa-tag"></i>
+            <h5>Voucher Details</h5>
+        </div>
+        <div class="form-card-body">
+            @using (Html.BeginForm("Create", "DiscountVouchers", FormMethod.Post, new { @class = "voucher-form" }))
+            {
+                @Html.AntiForgeryToken()
+
+                <!-- Info Box -->
+                <div class="info-box">
+                    <i class="fas fa-info-circle"></i>
+                    <div class="info-box-content">
+                        <strong>Creating a Voucher</strong>
+                        <p>Fill in the details below to create a discount voucher. You can leave the code field blank to auto-generate a unique code.</p>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <!-- Basic Information Section -->
+                        <h5 class="section-header">
+                            <i class="fas fa-info-circle"></i> Basic Information
+                        </h5>
+
+                        <div class="form-group">
+                            @Html.LabelFor(model => model.Code, new { @class = "form-label" })
+                            @Html.TextBoxFor(model => model.Code, new { @class = "form-control", placeholder = "e.g., SAVE20 (leave blank to auto-generate)" })
+                            @Html.ValidationMessageFor(model => model.Code, "", new { @class = "text-danger" })
+                            <small class="form-text">Leave empty to automatically generate a random 8-character code</small>
+                        </div>
+
+                        <div class="form-group">
+                            @Html.LabelFor(model => model.Description, new { @class = "form-label" })
+                            @Html.TextAreaFor(model => model.Description, new { @class = "form-control", rows = "3", placeholder = "e.g., Summer sale discount for all products" })
+                            @Html.ValidationMessageFor(model => model.Description, "", new { @class = "text-danger" })
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    @Html.LabelFor(model => model.VoucherType, "Discount Type", new { @class = "form-label" })
+                                    @Html.DropDownListFor(model => model.VoucherType,
+                                        new SelectList(Enum.GetValues(typeof(FarmTrack.Models.VoucherType))),
+                                        "Select Discount Type",
+                                        new { @class = "form-control", id = "voucherType" })
+                                    @Html.ValidationMessageFor(model => model.VoucherType, "", new { @class = "text-danger" })
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    @Html.LabelFor(model => model.DiscountValue, "Discount Amount", new { @class = "form-label" })
+                                    <div class="input-group">
+                                        <span class="input-group-text" id="discountPrefix">R</span>
+                                        @Html.TextBoxFor(model => model.DiscountValue, new { @class = "form-control", type = "number", step = "0.01", min = "0", placeholder = "0.00" })
+                                    </div>
+                                    @Html.ValidationMessageFor(model => model.DiscountValue, "", new { @class = "text-danger" })
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <!-- Validity & Limits Section -->
+                        <h5 class="section-header">
+                            <i class="fas fa-calendar-alt"></i> Validity & Limits
+                        </h5>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    @Html.LabelFor(model => model.ValidFrom, "Valid From", new { @class = "form-label" })
+                                    @Html.TextBoxFor(model => model.ValidFrom, "{0:yyyy-MM-dd}", new { @class = "form-control", type = "date", id = "ValidFrom" })
+                                    @Html.ValidationMessageFor(model => model.ValidFrom, "", new { @class = "text-danger" })
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    @Html.LabelFor(model => model.ValidTo, "Valid Until", new { @class = "form-label" })
+                                    @Html.TextBoxFor(model => model.ValidTo, "{0:yyyy-MM-dd}", new { @class = "form-control", type = "date", id = "ValidTo" })
+                                    @Html.ValidationMessageFor(model => model.ValidTo, "", new { @class = "text-danger" })
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    @Html.LabelFor(model => model.UsageLimit, "Usage Limit", new { @class = "form-label" })
+                                    @Html.TextBoxFor(model => model.UsageLimit, new { @class = "form-control", type = "number", min = "0", value = "0" })
+                                    @Html.ValidationMessageFor(model => model.UsageLimit, "", new { @class = "text-danger" })
+                                    <small class="form-text">0 = unlimited usage</small>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    @Html.LabelFor(model => model.MinimumOrderAmount, "Minimum Order (R)", new { @class = "form-label" })
+                                    <div class="input-group">
+                                        <span class="input-group-text">R</span>
+                                        @Html.TextBoxFor(model => model.MinimumOrderAmount, new { @class = "form-control", type = "number", step = "0.01", min = "0", placeholder = "0.00" })
+                                    </div>
+                                    @Html.ValidationMessageFor(model => model.MinimumOrderAmount, "", new { @class = "text-danger" })
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-group" id="maxDiscountGroup" style="display: none;">
+                            @Html.LabelFor(model => model.MaximumDiscount, "Maximum Discount (R)", new { @class = "form-label" })
+                            <div class="input-group">
+                                <span class="input-group-text">R</span>
+                                @Html.TextBoxFor(model => model.MaximumDiscount, new { @class = "form-control", type = "number", step = "0.01", min = "0", placeholder = "0.00" })
+                            </div>
+                            @Html.ValidationMessageFor(model => model.MaximumDiscount, "", new { @class = "text-danger" })
+                            <small class="form-text">Maximum discount amount for percentage vouchers</small>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Applicability Settings Section -->
+                <h5 class="section-header">
+                    <i class="fas fa-filter"></i> Applicability Settings
+                </h5>
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            @Html.LabelFor(model => model.Applicability, "Applies To", new { @class = "form-label" })
+                            @Html.DropDownListFor(model => model.Applicability,
+                                new SelectList(Enum.GetValues(typeof(FarmTrack.Models.VoucherApplicability))),
+                                "Select Applicability",
+                                new { @class = "form-control", id = "applicability" })
+                            @Html.ValidationMessageFor(model => model.Applicability, "", new { @class = "text-danger" })
+                        </div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <div class="form-group" id="categoryGroup" style="display: none;">
+                            @Html.LabelFor(model => model.ApplicableCategory, "Category", new { @class = "form-label" })
+                            @Html.DropDownListFor(model => model.ApplicableCategory,
+                                new SelectList(ViewBag.Categories),
+                                "Select Category",
+                                new { @class = "form-control" })
+                            @Html.ValidationMessageFor(model => model.ApplicableCategory, "", new { @class = "text-danger" })
+                        </div>
+
+                        <div class="form-group" id="productGroup" style="display: none;">
+                            @Html.LabelFor(model => model.ApplicableProductId, "Product", new { @class = "form-label" })
+                            @Html.DropDownList("ApplicableProductId", null, "Select Product", new { @class = "form-control" })
+                            @Html.ValidationMessageFor(model => model.ApplicableProductId, "", new { @class = "text-danger" })
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Additional Settings Section -->
+                <h5 class="section-header">
+                    <i class="fas fa-sliders-h"></i> Additional Settings
+                </h5>
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-check form-switch">
+                            @Html.CheckBoxFor(model => model.IsSingleUse, new { @class = "form-check-input", id = "IsSingleUse" })
+                            @Html.LabelFor(model => model.IsSingleUse, new { @class = "form-check-label", @for = "IsSingleUse" })
+                            <small class="form-text d-block">If enabled, each customer can use this voucher only once</small>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <div class="form-check form-switch">
+                            @Html.CheckBoxFor(model => model.IsActive, new { @class = "form-check-input", id = "IsActive", @checked = "checked" })
+                            @Html.LabelFor(model => model.IsActive, new { @class = "form-check-label", @for = "IsActive" })
+                            <small class="form-text d-block">Inactive vouchers cannot be used by customers</small>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="action-bar">
+                    <a href="@Url.Action("Index", "DiscountVouchers")" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left"></i> Back to List
+                    </a>
+                    <button type="submit" class="btn btn-success">
+                        <i class="fas fa-save"></i> Create Voucher
+                    </button>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @Scripts.Render("~/bundles/jqueryval")
+    <script>
+        $(document).ready(function () {
+            // Update discount prefix based on voucher type
+            $('#voucherType').change(function () {
+                var type = $(this).val();
+                var prefix = $('#discountPrefix');
+                var maxDiscountGroup = $('#maxDiscountGroup');
+
+                if (type === '1') { // FixedAmount
+                    prefix.text('R');
+                    maxDiscountGroup.slideUp();
+                } else if (type === '2') { // Percentage
+                    prefix.text('%');
+                    maxDiscountGroup.slideDown();
+                } else {
+                    prefix.text('R');
+                    maxDiscountGroup.slideUp();
+                }
+            });
+
+            // Show/hide applicability fields
+            $('#applicability').change(function () {
+                var applicability = $(this).val();
+                $('#categoryGroup').hide();
+                $('#productGroup').hide();
+
+                if (applicability === '2') { // SpecificCategory
+                    $('#categoryGroup').slideDown();
+                } else if (applicability === '3') { // SpecificProduct
+                    $('#productGroup').slideDown();
+                }
+            });
+
+            // Set default dates
+            var today = new Date().toISOString().split('T')[0];
+            var nextMonth = new Date();
+            nextMonth.setMonth(nextMonth.getMonth() + 1);
+            var nextMonthStr = nextMonth.toISOString().split('T')[0];
+
+            if (!$('#ValidFrom').val()) {
+                $('#ValidFrom').val(today);
+            }
+            if (!$('#ValidTo').val()) {
+                $('#ValidTo').val(nextMonthStr);
+            }
+
+            // Form validation
+            $('.voucher-form').submit(function (e) {
+                var voucherType = $('#voucherType').val();
+                var discountValue = parseFloat($('#DiscountValue').val());
+
+                if (!voucherType) {
+                    alert('Please select a discount type');
+                    e.preventDefault();
+                    return false;
+                }
+
+                if (!discountValue || discountValue <= 0) {
+                    alert('Please enter a valid discount amount');
+                    e.preventDefault();
+                    return false;
+                }
+
+                if (voucherType === '2' && discountValue > 100) { // Percentage
+                    alert('Percentage discount cannot exceed 100%');
+                    e.preventDefault();
+                    return false;
+                }
+
+                var validFrom = new Date($('#ValidFrom').val());
+                var validTo = new Date($('#ValidTo').val());
+
+                if (validTo <= validFrom) {
+                    alert('Valid To date must be after Valid From date');
+                    e.preventDefault();
+                    return false;
+                }
+
+                return true;
+            });
+
+            // Initialize if values are pre-populated
+            $('#voucherType').trigger('change');
+            $('#applicability').trigger('change');
+        });
+    </script>
+}

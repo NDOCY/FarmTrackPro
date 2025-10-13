@@ -4,162 +4,503 @@
     ViewBag.Title = "Sales Management";
 }
 
+<style>
+    :root {
+        --color-earth: #8B7355;
+        --color-soil: #654321;
+        --color-foliage: #4CAF50;
+        --color-wheat: #F5DEB3;
+        --color-hay: #DAA520;
+        --color-danger: #FF6B6B;
+        --color-white: #FFFFFF;
+        --border-radius: 12px;
+        --card-shadow: 0 6px 18px rgba(0,0,0,0.1);
+    }
+
+    body {
+        background-color: #F9F7F4;
+    }
+
+    /* Dashboard Header */
+    .dashboard-header {
+        background: linear-gradient(135deg, var(--color-earth) 0%, var(--color-soil) 100%);
+        border-radius: var(--border-radius);
+        padding: 30px;
+        margin-bottom: 30px;
+        position: relative;
+        overflow: hidden;
+        box-shadow: var(--card-shadow);
+    }
+
+    .dashboard-header::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        right: 0;
+        width: 250px;
+        height: 100%;
+        background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23F5DEB3" opacity="0.1"><path d="M7 18c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-.9-2-2-2zM1 2v2h2l3.6 7.59-1.35 2.45c-.16.28-.25.61-.25.96 0 1.1.9 2 2 2h12v-2H7.42c-.14 0-.25-.11-.25-.25l.03-.12.9-1.63h7.45c.75 0 1.41-.41 1.75-1.03l3.58-6.49c.08-.14.12-.31.12-.48 0-.55-.45-1-1-1H5.21l-.94-2H1zm16 16c-1.1 0-1.99.9-1.99 2s.89 2 1.99 2 2-.9 2-2-.9-2-2-2z"/></svg>');
+        background-repeat: no-repeat;
+        background-position: right center;
+        background-size: 180px;
+        opacity: 0.2;
+    }
+
+    .dashboard-header h1 {
+        color: var(--color-white);
+        font-weight: 700;
+        margin-bottom: 10px;
+        font-size: 2rem;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .dashboard-header .lead {
+        color: var(--color-wheat);
+        font-size: 1rem;
+        margin: 0;
+    }
+
+    .header-actions {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+
+    /* Stats Cards */
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 20px;
+        margin-bottom: 30px;
+    }
+
+    .stat-card {
+        background: white;
+        border-radius: var(--border-radius);
+        padding: 25px;
+        box-shadow: var(--card-shadow);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        transition: transform 0.3s, box-shadow 0.3s;
+        border-left: 4px solid;
+    }
+
+    .stat-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+    }
+
+    .stat-card.primary { border-left-color: #3498db; }
+    .stat-card.success { border-left-color: var(--color-foliage); }
+    .stat-card.warning { border-left-color: var(--color-hay); }
+    .stat-card.info { border-left-color: #17a2b8; }
+
+    .stat-info h4 {
+        font-size: 1.8rem;
+        font-weight: 700;
+        margin: 0 0 5px 0;
+        color: var(--color-soil);
+    }
+
+    .stat-info p {
+        margin: 0;
+        color: #666;
+        font-weight: 500;
+    }
+
+    .stat-icon {
+        font-size: 2.5rem;
+        opacity: 0.2;
+    }
+
+    .stat-card.primary .stat-icon { color: #3498db; }
+    .stat-card.success .stat-icon { color: var(--color-foliage); }
+    .stat-card.warning .stat-icon { color: var(--color-hay); }
+    .stat-card.info .stat-icon { color: #17a2b8; }
+
+    /* Filter Card */
+    .filter-card {
+        background: white;
+        border-radius: var(--border-radius);
+        padding: 25px;
+        box-shadow: var(--card-shadow);
+        margin-bottom: 25px;
+    }
+
+    .filter-card h5 {
+        color: var(--color-soil);
+        font-weight: 600;
+        margin-bottom: 20px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .form-label {
+        font-weight: 600;
+        color: var(--color-soil);
+        font-size: 0.85rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 8px;
+    }
+
+    .form-control, .form-select {
+        border: 2px solid #e0e0e0;
+        border-radius: 8px;
+        padding: 8px 12px;
+        transition: all 0.3s;
+    }
+
+    .form-control:focus, .form-select:focus {
+        border-color: var(--color-earth);
+        box-shadow: 0 0 0 3px rgba(139, 115, 85, 0.1);
+    }
+
+    /* Buttons */
+    .btn {
+        padding: 10px 20px;
+        border-radius: 8px;
+        font-weight: 600;
+        font-size: 0.9rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        border: none;
+        transition: all 0.3s ease;
+        text-decoration: none;
+    }
+
+    .btn-primary {
+        background: linear-gradient(135deg, var(--color-foliage), #45a049);
+        color: white;
+        box-shadow: 0 4px 12px rgba(76, 175, 80, 0.3);
+    }
+
+    .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 16px rgba(76, 175, 80, 0.4);
+    }
+
+    .btn-secondary {
+        background: linear-gradient(135deg, #9e9e9e, #757575);
+        color: white;
+        box-shadow: 0 4px 12px rgba(158, 158, 158, 0.3);
+    }
+
+    .btn-warning {
+        background: linear-gradient(135deg, var(--color-hay), #f0ad4e);
+        color: white;
+        box-shadow: 0 4px 12px rgba(218, 165, 32, 0.3);
+    }
+
+    .btn-outline-success {
+        background: white;
+        border: 2px solid var(--color-foliage);
+        color: var(--color-foliage);
+    }
+
+    .btn-outline-success:hover {
+        background: var(--color-foliage);
+        color: white;
+    }
+
+    /* Table Container */
+    .table-card {
+        background: white;
+        border-radius: var(--border-radius);
+        box-shadow: var(--card-shadow);
+        overflow: hidden;
+    }
+
+    .table-card-header {
+        background: linear-gradient(135deg, var(--color-earth), var(--color-soil));
+        color: white;
+        padding: 20px 25px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .table-card-header h5 {
+        margin: 0;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .bulk-actions {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+    }
+
+    .table-responsive {
+        max-height: 700px;
+        overflow-y: auto;
+    }
+
+    .modern-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 0;
+    }
+
+    .modern-table thead {
+        position: sticky;
+        top: 0;
+        background: linear-gradient(135deg, var(--color-earth), var(--color-soil));
+        color: white;
+        z-index: 10;
+    }
+
+    .modern-table thead th {
+        padding: 15px 12px;
+        font-weight: 600;
+        text-transform: uppercase;
+        font-size: 0.8rem;
+        letter-spacing: 0.5px;
+        border: none;
+    }
+
+    .modern-table tbody tr {
+        border-bottom: 1px solid #f0f0f0;
+        transition: all 0.2s;
+    }
+
+    .modern-table tbody tr:hover {
+        background-color: rgba(139, 115, 85, 0.05);
+    }
+
+    .modern-table td {
+        padding: 12px;
+        font-size: 0.85rem;
+        vertical-align: middle;
+    }
+
+    /* Status Badges */
+    .badge {
+        padding: 4px 10px;
+        border-radius: 12px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .bg-warning { background-color: var(--color-hay) !important; color: white !important; }
+    .bg-info { background-color: #17a2b8 !important; color: white !important; }
+    .bg-primary { background-color: #3498db !important; color: white !important; }
+    .bg-success { background-color: var(--color-foliage) !important; color: white !important; }
+    .bg-secondary { background-color: #6c757d !important; color: white !important; }
+    .bg-danger { background-color: var(--color-danger) !important; color: white !important; }
+
+    /* Empty State */
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+    }
+
+    .empty-state i {
+        font-size: 4rem;
+        color: var(--color-wheat);
+        margin-bottom: 20px;
+    }
+
+    .empty-state h4 {
+        color: var(--color-soil);
+        margin-bottom: 10px;
+    }
+
+    /* Dropdown */
+    .dropdown-menu {
+        border-radius: 8px;
+        box-shadow: var(--card-shadow);
+        border: none;
+    }
+
+    .dropdown-item {
+        padding: 10px 20px;
+        transition: all 0.2s;
+    }
+
+    .dropdown-item:hover {
+        background-color: var(--color-wheat);
+        color: var(--color-soil);
+    }
+
+    /* Button Groups */
+    .btn-group-sm .btn {
+        padding: 6px 12px;
+        font-size: 0.8rem;
+    }
+
+    @@media (max-width: 768px) {
+        .dashboard-header {
+            padding: 20px;
+        }
+
+        .header-actions {
+            width: 100%;
+        }
+
+        .header-actions .btn {
+            flex: 1;
+        }
+
+        .stats-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .table-responsive {
+            max-height: none;
+        }
+    }
+</style>
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
 <div class="container-fluid mt-4">
     <!-- Header -->
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <div>
-            <h1><i class="fas fa-chart-line"></i> Sales Management</h1>
-            <p class="lead mb-0">Manage and track all customer orders</p>
-        </div>
-        <div>
-            <a href="@Url.Action("ExportSales", new { status = Model.Filter.Status, startDate = Model.Filter.StartDate, endDate = Model.Filter.EndDate })"
-               class="btn btn-outline-success">
-                <i class="fas fa-file-export"></i> Export CSV
-            </a>
-            <a href="@Url.Action("DeliveryDashboard")" class="btn btn-warning">
-                <i class="fas fa-truck"></i> Delivery Dashboard
-            </a>
-            <a href="@Url.Action("AdminDashboard", "Dashboard")" class="btn btn-secondary">
-                <i class="fas fa-tachometer-alt"></i> Dashboard
-            </a>
+    <div class="dashboard-header">
+        <div class="row align-items-center">
+            <div class="col-md-6">
+                <h1><i class="fas fa-chart-line"></i> Sales Management</h1>
+                <p class="lead">Manage and track all customer orders</p>
+            </div>
+            <div class="col-md-6">
+                <div class="header-actions">
+                    <a href="@Url.Action("ExportSales", new { status = Model.Filter.Status, startDate = Model.Filter.StartDate, endDate = Model.Filter.EndDate })"
+                       class="btn btn-outline-success">
+                        <i class="fas fa-file-export"></i> Export CSV
+                    </a>
+                    <a href="@Url.Action("SalesAnalytics")" class="btn btn-warning">
+                        <i class="fas fa-file"></i> Sales Analysis
+                    </a>
+                    <a href="@Url.Action("DeliveryDashboard")" class="btn btn-warning">
+                        <i class="fas fa-truck"></i> Delivery
+                    </a>
+                    <a href="@Url.Action("AdminDashboard", "Dashboard")" class="btn btn-secondary">
+                        <i class="fas fa-tachometer-alt"></i> Dashboard
+                    </a>
+                </div>
+            </div>
         </div>
     </div>
 
     <!-- Statistics Cards -->
-    <div class="row mb-4">
-        <div class="col-md-3">
-            <div class="card text-white bg-primary">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between">
-                        <div>
-                            <h4>@Model.Stats.TotalOrders</h4>
-                            <p class="mb-0">Total Orders</p>
-                        </div>
-                        <div class="align-self-center">
-                            <i class="fas fa-shopping-bag fa-2x"></i>
-                        </div>
-                    </div>
-                </div>
+    <div class="stats-grid">
+        <div class="stat-card primary">
+            <div class="stat-info">
+                <h4>@Model.Stats.TotalOrders</h4>
+                <p>Total Orders</p>
+            </div>
+            <div class="stat-icon">
+                <i class="fas fa-shopping-bag"></i>
             </div>
         </div>
-        <div class="col-md-3">
-            <div class="card text-white bg-success">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between">
-                        <div>
-                            <h4>R@(Model.Stats.TotalRevenue.ToString("N2"))</h4>
-                            <p class="mb-0">Total Revenue</p>
-                        </div>
-                        <div class="align-self-center">
-                            <i class="fas fa-money-bill-wave fa-2x"></i>
-                        </div>
-                    </div>
-                </div>
+        <div class="stat-card success">
+            <div class="stat-info">
+                <h4>R@(Model.Stats.TotalRevenue.ToString("N2"))</h4>
+                <p>Total Revenue</p>
+            </div>
+            <div class="stat-icon">
+                <i class="fas fa-money-bill-wave"></i>
             </div>
         </div>
-        <div class="col-md-3">
-            <div class="card text-white bg-warning">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between">
-                        <div>
-                            <h4>@Model.Stats.PendingOrders</h4>
-                            <p class="mb-0">Pending Orders</p>
-                        </div>
-                        <div class="align-self-center">
-                            <i class="fas fa-clock fa-2x"></i>
-                        </div>
-                    </div>
-                </div>
+        <div class="stat-card warning">
+            <div class="stat-info">
+                <h4>@Model.Stats.PendingOrders</h4>
+                <p>Pending Orders</p>
+            </div>
+            <div class="stat-icon">
+                <i class="fas fa-clock"></i>
             </div>
         </div>
-        <div class="col-md-3">
-            <div class="card text-white bg-info">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between">
-                        <div>
-                            <h4>@Model.Stats.DeliveredOrders</h4>
-                            <p class="mb-0">Delivered Orders</p>
-                        </div>
-                        <div class="align-self-center">
-                            <i class="fas fa-check-circle fa-2x"></i>
-                        </div>
-                    </div>
-                </div>
+        <div class="stat-card info">
+            <div class="stat-info">
+                <h4>@Model.Stats.DeliveredOrders</h4>
+                <p>Delivered Orders</p>
+            </div>
+            <div class="stat-icon">
+                <i class="fas fa-check-circle"></i>
             </div>
         </div>
     </div>
 
     <!-- Filters -->
-    <div class="card mb-4">
-        <div class="card-header">
-            <h5 class="mb-0"><i class="fas fa-filter"></i> Filters</h5>
-        </div>
-        <div class="card-body">
-            @using (Html.BeginForm("SalesList", "Products", FormMethod.Get))
-            {
-                <div class="row g-3">
-                    <div class="col-md-2">
-                        <label class="form-label">Status</label>
-                        @Html.DropDownList("status", new SelectList(new[]
-                        {
-                            new { Value = "All", Text = "All Statuses" },
-                            new { Value = "Pending", Text = "Pending" },
-                            new { Value = "Confirmed", Text = "Confirmed" },
-                            new { Value = "Assigned to Driver", Text = "Assigned" },
-                            new { Value = "Out for Delivery", Text = "Out for Delivery" },
-                            new { Value = "Delivered", Text = "Delivered" },
-                            new { Value = "Cancelled", Text = "Cancelled" }
-                        }, "Value", "Text", Model.Filter.Status), new { @class = "form-select" })
-                    </div>
-                    <div class="col-md-2">
-                        <label class="form-label">Payment Status</label>
-                        @Html.DropDownList("paymentStatus", new SelectList(new[]
-                        {
-                            new { Value = "All", Text = "All Payments" },
-                            new { Value = "Pending", Text = "Pending" },
-                            new { Value = "Completed", Text = "Completed" },
-                            new { Value = "Failed", Text = "Failed" }
-                        }, "Value", "Text", Model.Filter.PaymentStatus), new { @class = "form-select" })
-                    </div>
-                    <div class="col-md-2">
-                        <label class="form-label">Driver Status</label>
-                        <select name="driverStatus" class="form-select">
-                            <option value="">All Drivers</option>
-                            <option value="assigned" @(ViewBag.DriverStatus == "assigned" ? "selected" : "")>Assigned</option>
-                            <option value="unassigned" @(ViewBag.DriverStatus == "unassigned" ? "selected" : "")>Unassigned</option>
-                            <option value="active" @(ViewBag.DriverStatus == "active" ? "selected" : "")>Active Delivery</option>
-                        </select>
-                    </div>
-                    <div class="col-md-2">
-                        <label class="form-label">Start Date</label>
-                        <input type="date" name="startDate" value="@(Model.Filter.StartDate?.ToString("yyyy-MM-dd"))" class="form-control">
-                    </div>
-                    <div class="col-md-2">
-                        <label class="form-label">End Date</label>
-                        <input type="date" name="endDate" value="@(Model.Filter.EndDate?.ToString("yyyy-MM-dd"))" class="form-control">
-                    </div>
-                    <div class="col-md-2">
-                        <label class="form-label">Search</label>
-                        <input type="text" name="searchTerm" value="@Model.Filter.SearchTerm" class="form-control" placeholder="Order ID, Customer...">
-                    </div>
-                    <div class="col-md-12">
-                        <button type="submit" class="btn btn-primary">
-                            <i class="fas fa-search"></i> Apply Filters
-                        </button>
-                        <a href="@Url.Action("SalesList")" class="btn btn-secondary">Clear</a>
-                    </div>
+    <div class="filter-card">
+        <h5><i class="fas fa-filter"></i> Filters</h5>
+        @using (Html.BeginForm("SalesList", "Products", FormMethod.Get))
+        {
+            <div class="row g-3">
+                <div class="col-md-2">
+                    <label class="form-label">Status</label>
+                    @Html.DropDownList("status", new SelectList(new[]
+                    {
+                        new { Value = "All", Text = "All Statuses" },
+                        new { Value = "Pending", Text = "Pending" },
+                        new { Value = "Confirmed", Text = "Confirmed" },
+                        new { Value = "Assigned to Driver", Text = "Assigned" },
+                        new { Value = "Out for Delivery", Text = "Out for Delivery" },
+                        new { Value = "Delivered", Text = "Delivered" },
+                        new { Value = "Cancelled", Text = "Cancelled" }
+                    }, "Value", "Text", Model.Filter.Status), new { @class = "form-select" })
                 </div>
-            }
-        </div>
+                <div class="col-md-2">
+                    <label class="form-label">Payment Status</label>
+                    @Html.DropDownList("paymentStatus", new SelectList(new[]
+                    {
+                        new { Value = "All", Text = "All Payments" },
+                        new { Value = "Pending", Text = "Pending" },
+                        new { Value = "Completed", Text = "Completed" },
+                        new { Value = "Failed", Text = "Failed" }
+                    }, "Value", "Text", Model.Filter.PaymentStatus), new { @class = "form-select" })
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Driver Status</label>
+                    <select name="driverStatus" class="form-select">
+                        <option value="">All Drivers</option>
+                        <option value="assigned" @(ViewBag.DriverStatus == "assigned" ? "selected" : "")>Assigned</option>
+                        <option value="unassigned" @(ViewBag.DriverStatus == "unassigned" ? "selected" : "")>Unassigned</option>
+                        <option value="active" @(ViewBag.DriverStatus == "active" ? "selected" : "")>Active Delivery</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Start Date</label>
+                    <input type="date" name="startDate" value="@(Model.Filter.StartDate?.ToString("yyyy-MM-dd"))" class="form-control">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">End Date</label>
+                    <input type="date" name="endDate" value="@(Model.Filter.EndDate?.ToString("yyyy-MM-dd"))" class="form-control">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Search</label>
+                    <input type="text" name="searchTerm" value="@Model.Filter.SearchTerm" class="form-control" placeholder="Order ID, Customer...">
+                </div>
+                <div class="col-md-12">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-search"></i> Apply Filters
+                    </button>
+                    <a href="@Url.Action("SalesList")" class="btn btn-secondary">
+                        <i class="fas fa-redo"></i> Clear
+                    </a>
+                </div>
+            </div>
+        }
     </div>
 
     <!-- Sales Table -->
-    <div class="card">
-        <div class="card-header d-flex justify-content-between align-items-center">
-            <h5 class="mb-0"><i class="fas fa-list"></i> Orders (@Model.Sales.Count found)</h5>
+    <div class="table-card">
+        <div class="table-card-header">
+            <h5><i class="fas fa-list"></i> Orders (@Model.Sales.Count found)</h5>
 
             <!-- Bulk Actions -->
-            <div class="d-flex gap-2">
+            <div class="bulk-actions">
                 <select id="bulkAction" class="form-select form-select-sm" style="width: auto;">
                     <option value="">Bulk Actions</option>
                     <option value="Confirmed">Mark as Confirmed</option>
@@ -167,14 +508,14 @@
                     <option value="Out for Delivery">Mark as Out for Delivery</option>
                     <option value="Delivered">Mark as Delivered</option>
                 </select>
-                <button id="applyBulkAction" class="btn btn-sm btn-outline-primary">Apply</button>
+                <button id="applyBulkAction" class="btn btn-sm btn-primary">Apply</button>
             </div>
         </div>
-        <div class="card-body">
+        <div class="card-body p-0">
             @if (!Model.Sales.Any())
             {
-                <div class="text-center py-5">
-                    <i class="fas fa-box-open fa-3x text-muted mb-3"></i>
+                <div class="empty-state">
+                    <i class="fas fa-box-open"></i>
                     <h4>No orders found</h4>
                     <p class="text-muted">Try adjusting your filters</p>
                 </div>
@@ -182,8 +523,8 @@
             else
             {
                 <div class="table-responsive">
-                    <table class="table table-striped table-hover">
-                        <thead class="table-dark">
+                    <table class="modern-table">
+                        <thead>
                             <tr>
                                 <th width="30">
                                     <input type="checkbox" id="selectAll">
@@ -194,7 +535,7 @@
                                 <th>Amount</th>
                                 <th>Status</th>
                                 <th>Assigned Driver</th>
-                                <th>Delivery Status</th>
+                                <th>Delivery</th>
                                 <th>Payment</th>
                                 <th>Items</th>
                                 <th>User</th>
@@ -226,7 +567,7 @@
                                         <small>@sale.CustomerPhone</small>
                                     </td>
                                     <td>
-                                        <strong>R@sale.TotalAmount.ToString("N2")</strong>
+                                        <strong>R @sale.TotalAmount.ToString("N2")</strong>
                                         <br>
                                         <small class="text-muted">@sale.PaymentMethod</small>
                                     </td>
@@ -267,7 +608,7 @@
                                     <td>
                                         @if (sale.IsActiveDelivery)
                                         {
-                                            <span class="badge bg-success">LIVE TRACKING</span>
+                                            <span class="badge bg-success">LIVE</span>
                                         }
                                         else if (!string.IsNullOrEmpty(sale.DeliveryDriver))
                                         {
@@ -296,13 +637,11 @@
                                     </td>
                                     <td>
                                         <div class="btn-group btn-group-sm">
-                                            <!-- Order Management Button -->
                                             <a href="@Url.Action("OrderManagement", new { id = sale.SaleId })"
                                                class="btn btn-primary" title="Manage Order">
                                                 <i class="fas fa-cog"></i> Manage
                                             </a>
 
-                                            <!-- Quick Status Dropdown -->
                                             <div class="dropdown">
                                                 <button class="btn btn-outline-secondary dropdown-toggle" type="button"
                                                         data-bs-toggle="dropdown" title="Quick Actions">
@@ -318,7 +657,6 @@
                                                 </ul>
                                             </div>
 
-                                            <!-- Live Tracking Button -->
                                             @if (sale.IsActiveDelivery)
                                             {
                                                 <a href="@Url.Action("LiveTrackingMap", new { id = sale.SaleId })"
@@ -391,20 +729,7 @@
                     }
                 });
             }
-        }
-
-        // Assign to current user
-        function assignToMe(orderId) {
-            if (confirm('Assign this delivery to yourself?')) {
-                $.post('@Url.Action("AssignDeliveryToMe", "Products")', { saleId: orderId })
-                    .done(function(response) {
-                        if (response.success) {
-                            location.reload();
-                        } else {
-                            alert('Error: ' + response.message);
-                        }
-                    });
-            }
+            return false;
         }
 
         // Auto-refresh every 2 minutes

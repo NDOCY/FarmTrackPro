@@ -8,163 +8,435 @@
     :root {
         --color-earth: #8B7355;
         --color-soil: #654321;
+        --color-foliage: #4CAF50;
         --color-wheat: #F5DEB3;
         --color-hay: #DAA520;
+        --color-danger: #FF6B6B;
+        --color-white: #FFFFFF;
         --border-radius: 12px;
         --card-shadow: 0 6px 18px rgba(0,0,0,0.1);
     }
 
-    .page-header {
-        margin-bottom: 30px;
-        padding-bottom: 15px;
-        border-bottom: 2px solid var(--color-wheat);
+    body {
+        background-color: #F9F7F4;
     }
 
-    .form-container {
-        background-color: white;
+    /* Page Header */
+    .page-header {
+        background: linear-gradient(135deg, var(--color-earth) 0%, var(--color-soil) 100%);
         border-radius: var(--border-radius);
-        box-shadow: var(--card-shadow);
         padding: 30px;
         margin-bottom: 30px;
+        position: relative;
+        overflow: hidden;
+        box-shadow: var(--card-shadow);
     }
 
-    .form-group {
-        margin-bottom: 20px;
+    .page-header::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        right: 0;
+        width: 250px;
+        height: 100%;
+        background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23F5DEB3" opacity="0.1"><path d="M20 6h-2.18c.11-.31.18-.65.18-1a2.996 2.996 0 0 0-5.5-1.65l-.5.67-.5-.68C10.96 2.54 10.05 2 9 2 7.34 2 6 3.34 6 5c0 .35.07.69.18 1H4c-1.11 0-1.99.89-1.99 2L2 19c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V8c0-1.11-.89-2-2-2zm-5-2c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zM9 4c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zm11 15H4v-2h16v2zm0-5H4V8h5.08L7 10.83 8.62 12 11 8.76l1-1.36 1 1.36L15.38 12 17 10.83 14.92 8H20v6z"/></svg>');
+        background-repeat: no-repeat;
+        background-position: right center;
+        background-size: 180px;
+        opacity: 0.2;
     }
 
-    .control-label {
-        font-weight: 600;
+    .page-header h1 {
+        color: var(--color-white);
+        font-weight: 700;
+        margin-bottom: 10px;
+        font-size: 2rem;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .page-header h1 i {
+        font-size: 1.8rem;
+    }
+
+    .page-header .lead {
+        color: var(--color-wheat);
+        font-size: 1rem;
+        margin: 0;
+    }
+
+    /* Form Container */
+    .form-container {
+        background: white;
+        border-radius: var(--border-radius);
+        padding: 30px;
+        box-shadow: var(--card-shadow);
+    }
+
+    /* Product Source Info */
+    .product-source-info {
+        background: linear-gradient(135deg, rgba(76, 175, 80, 0.1), rgba(76, 175, 80, 0.05));
+        border-left: 4px solid var(--color-foliage);
+        padding: 20px;
+        border-radius: 8px;
+        margin-bottom: 30px;
+    }
+
+    .product-source-info h6 {
         color: var(--color-soil);
-    }
-
-    .form-control {
-        border-radius: 6px;
-        border: 1px solid #ddd;
-        padding: 10px 15px;
-        transition: border-color 0.3s;
-    }
-
-        .form-control:focus {
-            border-color: var(--color-earth);
-            box-shadow: 0 0 0 0.2rem rgba(139, 115, 85, 0.25);
-        }
-
-    .btn-primary {
-        background-color: var(--color-earth);
-        border-color: var(--color-earth);
-        color: white;
-        padding: 10px 25px;
-        border-radius: 6px;
         font-weight: 600;
-        transition: all 0.3s;
+        margin-bottom: 10px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
     }
 
-        .btn-primary:hover {
-            background-color: var(--color-hay);
-            border-color: var(--color-hay);
-            color: white;
-        }
-
-    .btn-secondary {
-        background-color: #f8f8f8;
-        border-color: #ddd;
-        color: var(--color-soil);
-        padding: 10px 25px;
-        border-radius: 6px;
-        font-weight: 600;
-        transition: all 0.3s;
+    .product-source-info p {
+        margin: 5px 0;
+        color: #333;
     }
 
-        .btn-secondary:hover {
-            background-color: var(--color-wheat);
-            border-color: var(--color-wheat);
-            color: var(--color-soil);
-        }
-
-    .section-divider {
-        border-top: 1px solid #eee;
-        margin: 25px 0;
-    }
-
-    .text-danger {
-        color: #dc3545;
-        font-size: 0.9rem;
-        margin-top: 5px;
-    }
-
+    /* Form Sections */
     .form-section {
         margin-bottom: 30px;
     }
 
     .form-section-title {
         color: var(--color-soil);
+        font-size: 1.3rem;
         font-weight: 600;
-        margin-bottom: 15px;
+        margin-bottom: 20px;
         padding-bottom: 10px;
-        border-bottom: 1px solid var(--color-wheat);
+        border-bottom: 2px solid var(--color-wheat);
+        display: flex;
+        align-items: center;
+        gap: 10px;
     }
 
-    .image-preview {
-        max-width: 200px;
-        max-height: 200px;
-        border: 2px dashed #ddd;
-        border-radius: 8px;
-        padding: 10px;
-        margin-top: 10px;
-        display: none;
+    .section-divider {
+        height: 2px;
+        background: linear-gradient(90deg, var(--color-wheat), transparent);
+        margin: 30px 0;
     }
 
-    .product-source-info {
-        background-color: #f8f9fa;
-        padding: 15px;
-        border-radius: 6px;
-        border-left: 4px solid var(--color-earth);
+    /* Form Groups */
+    .form-group {
         margin-bottom: 20px;
     }
 
+    .control-label {
+        display: block;
+        color: var(--color-soil);
+        font-weight: 600;
+        font-size: 0.9rem;
+        margin-bottom: 8px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .form-control {
+        width: 100%;
+        padding: 10px 15px;
+        border: 2px solid #e0e0e0;
+        border-radius: 8px;
+        font-size: 0.95rem;
+        transition: all 0.3s ease;
+        background: white;
+    }
+
+    .form-control:focus {
+        border-color: var(--color-earth);
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(139, 115, 85, 0.1);
+    }
+
+    textarea.form-control {
+        resize: vertical;
+        min-height: 100px;
+    }
+
+    .form-text {
+        display: block;
+        margin-top: 5px;
+        color: #666;
+        font-size: 0.85rem;
+    }
+
+    .text-danger {
+        color: var(--color-danger);
+        font-size: 0.85rem;
+        display: block;
+        margin-top: 5px;
+    }
+
+    /* Input Group */
+    .input-group {
+        display: flex;
+        width: 100%;
+    }
+
+    .input-group-prepend {
+        display: flex;
+    }
+
+    .input-group-text {
+        background: var(--color-wheat);
+        color: var(--color-soil);
+        border: 2px solid #e0e0e0;
+        border-right: none;
+        padding: 10px 15px;
+        font-weight: 600;
+        border-radius: 8px 0 0 8px;
+    }
+
+    .input-group .form-control {
+        border-radius: 0 8px 8px 0;
+    }
+
+    /* Image Upload Area */
+    .image-upload-area {
+        border: 2px dashed #ddd;
+        border-radius: 8px;
+        padding: 30px;
+        text-align: center;
+        background-color: #fafafa;
+        transition: all 0.3s;
+        cursor: pointer;
+    }
+
+    .image-upload-area:hover {
+        border-color: var(--color-earth);
+        background-color: rgba(139, 115, 85, 0.05);
+    }
+
+    .image-upload-area.dragover {
+        border-color: var(--color-foliage);
+        background-color: rgba(76, 175, 80, 0.05);
+    }
+
+    .upload-icon {
+        font-size: 48px;
+        color: var(--color-earth);
+        margin-bottom: 10px;
+    }
+
+    .upload-icon i {
+        opacity: 0.7;
+    }
+
+    .image-upload-area p {
+        margin: 10px 0 5px;
+        color: var(--color-soil);
+        font-weight: 500;
+    }
+
+    .image-preview-container {
+        position: relative;
+        display: inline-block;
+        width: 100%;
+        text-align: center;
+    }
+
+    .image-preview {
+        max-width: 100%;
+        max-height: 300px;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+
+    .remove-image {
+        position: absolute;
+        top: -10px;
+        right: -10px;
+        background: var(--color-danger);
+        color: white;
+        border: none;
+        border-radius: 50%;
+        width: 35px;
+        height: 35px;
+        font-size: 16px;
+        cursor: pointer;
+        display: none;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+        transition: all 0.2s;
+    }
+
+    .remove-image:hover {
+        background: #c62828;
+        transform: scale(1.1);
+    }
+
+    .image-preview-container:hover .remove-image {
+        display: block;
+    }
+
+    #noImage {
+        padding: 40px;
+        background: rgba(245, 222, 179, 0.1);
+        border-radius: 8px;
+        color: #999;
+    }
+
+    #noImage i {
+        color: var(--color-wheat);
+    }
+
+    .upload-progress {
+        display: none;
+        margin-top: 15px;
+    }
+
+    .progress {
+        height: 8px;
+        background-color: #e0e0e0;
+        border-radius: 4px;
+        overflow: hidden;
+        margin-bottom: 5px;
+    }
+
+    .progress-bar {
+        height: 100%;
+        background: linear-gradient(90deg, var(--color-foliage), #45a049);
+        transition: width 0.3s ease;
+    }
+
+    /* Checkbox Group */
     .checkbox-group {
         display: flex;
-        gap: 20px;
-        padding: 10px 0;
+        gap: 30px;
+        margin-bottom: 15px;
     }
 
     .checkbox-container {
         display: flex;
         align-items: center;
-        gap: 8px;
+        gap: 10px;
     }
 
-        .checkbox-container input[type="checkbox"] {
-            accent-color: var(--color-earth);
+    .form-check-input {
+        width: 20px;
+        height: 20px;
+        cursor: pointer;
+        accent-color: var(--color-foliage);
+    }
+
+    .form-check-label {
+        cursor: pointer;
+        margin: 0;
+        color: #333;
+        font-size: 0.95rem;
+    }
+
+    /* Buttons */
+    .btn {
+        padding: 12px 24px;
+        border-radius: 8px;
+        font-weight: 600;
+        font-size: 0.95rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        border: none;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        text-decoration: none;
+    }
+
+    .btn-primary {
+        background: linear-gradient(135deg, var(--color-foliage), #45a049);
+        color: white;
+        box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3);
+    }
+
+    .btn-primary:hover:not(:disabled) {
+        background: linear-gradient(135deg, #45a049, var(--color-foliage));
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(76, 175, 80, 0.4);
+        color: white;
+    }
+
+    .btn-primary:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+
+    .btn-secondary {
+        background: linear-gradient(135deg, #9e9e9e, #757575);
+        color: white;
+        box-shadow: 0 4px 15px rgba(158, 158, 158, 0.3);
+    }
+
+    .btn-secondary:hover {
+        background: linear-gradient(135deg, #757575, #616161);
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(158, 158, 158, 0.4);
+        color: white;
+    }
+
+    .btn-info {
+        background: linear-gradient(135deg, var(--color-earth), var(--color-soil));
+        color: white;
+        box-shadow: 0 4px 15px rgba(139, 115, 85, 0.3);
+    }
+
+    .btn-info:hover {
+        background: linear-gradient(135deg, var(--color-soil), var(--color-earth));
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(139, 115, 85, 0.4);
+        color: white;
+    }
+
+    .btn i {
+        font-size: 1.1rem;
+    }
+
+    /* Responsive */
+    @@media (max-width: 768px) {
+        .page-header {
+            padding: 20px;
         }
 
-    .form-text {
-        font-size: 0.85rem;
-        color: #6c757d;
-        margin-top: 5px;
-    }
+        .page-header h1 {
+            font-size: 1.5rem;
+        }
 
-    .input-group-prepend {
-        background-color: #e9ecef;
-        border: 1px solid #ced4da;
-        border-right: none;
-        padding: 0.375rem 0.75rem;
-        border-radius: 0.375rem 0 0 0.375rem;
+        .form-container {
+            padding: 20px;
+        }
+
+        .checkbox-group {
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .d-flex {
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .btn {
+            width: 100%;
+            justify-content: center;
+        }
     }
 </style>
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 
 <div class="container-fluid mt-4">
     <div class="page-header">
         <h1><i class="fas fa-edit"></i> Edit Product</h1>
-        <p class="lead">Complete product information for store listing</p>
+        <p class="lead">Update product information for store listing</p>
     </div>
 
     <div class="form-container">
-        @using (Html.BeginForm("Edit", "Products", FormMethod.Post, new { enctype = "multipart/form-data" }))
+        @using (Html.BeginForm("Edit", "Products", FormMethod.Post, new { enctype = "multipart/form-data", id = "productForm" }))
         {
             @Html.AntiForgeryToken()
             @Html.HiddenFor(model => model.Id)
             @Html.HiddenFor(model => model.CreatedAt)
+            @Html.HiddenFor(model => model.ImageUrl, new { id = "imageUrl" })
 
             <!-- Product Source Information -->
             if (Model.HarvestOutcomeId.HasValue || Model.LivestockId.HasValue || Model.InventoryId.HasValue)
@@ -189,7 +461,7 @@
 
             <!-- Basic Information Section -->
             <div class="form-section">
-                <h4 class="form-section-title">Basic Information</h4>
+                <h4 class="form-section-title"><i class="fas fa-info-circle"></i> Basic Information</h4>
 
                 <div class="row">
                     <div class="col-md-6">
@@ -257,7 +529,7 @@
 
             <!-- Pricing & Inventory Section -->
             <div class="form-section">
-                <h4 class="form-section-title">Pricing & Inventory</h4>
+                <h4 class="form-section-title"><i class="fas fa-dollar-sign"></i> Pricing & Inventory</h4>
 
                 <div class="row">
                     <div class="col-md-4">
@@ -296,29 +568,40 @@
 
             <!-- Product Image Section -->
             <div class="form-section">
-                <h4 class="form-section-title">Product Image</h4>
+                <h4 class="form-section-title"><i class="fas fa-image"></i> Product Image</h4>
 
                 <div class="row">
                     <div class="col-md-6">
                         <div class="form-group">
-                            @Html.LabelFor(model => model.ImageUrl, htmlAttributes: new { @class = "control-label" })
-                            @Html.EditorFor(model => model.ImageUrl, new { htmlAttributes = new { @class = "form-control", placeholder = "https://example.com/image.jpg", id = "imageUrl" } })
-                            @Html.ValidationMessageFor(model => model.ImageUrl, "", new { @class = "text-danger" })
-                            <small class="form-text">Enter image URL or upload an image below</small>
-                        </div>
-
-                        <!-- Image Upload (Optional - you can implement file upload later) -->
-                        <div class="form-group">
-                            <label class="control-label">Upload Image</label>
-                            <input type="file" class="form-control" id="imageUpload" accept="image/*" />
-                            <small class="form-text">Supported formats: JPG, PNG, GIF (Max 5MB)</small>
+                            <label class="control-label">Upload New Image</label>
+                            <div class="image-upload-area" id="imageUploadArea">
+                                <div class="upload-icon">
+                                    <i class="fas fa-cloud-upload-alt"></i>
+                                </div>
+                                <p>Click to browse or drag & drop an image</p>
+                                <small class="text-muted">Supported formats: JPG, PNG, GIF (Max 5MB)</small>
+                                <input type="file" name="imageFile" id="imageFile" accept="image/*" style="display: none;" />
+                                <div class="upload-progress" id="uploadProgress">
+                                    <div class="progress">
+                                        <div class="progress-bar" role="progressbar" style="width: 0%"></div>
+                                    </div>
+                                    <small>Uploading...</small>
+                                </div>
+                            </div>
+                            @Html.ValidationMessage("imageFile", "", new { @class = "text-danger" })
                         </div>
                     </div>
                     <div class="col-md-6">
                         <div class="form-group">
                             <label class="control-label">Image Preview</label>
-                            <div>
-                                <img id="imagePreview" class="image-preview" src="@(string.IsNullOrEmpty(Model.ImageUrl) ? "/Content/images/placeholder-product.jpg" : Model.ImageUrl)" alt="Product image preview" />
+                            <div class="image-preview-container">
+                                <img id="imagePreview" class="image-preview"
+                                     src="@(string.IsNullOrEmpty(Model.ImageUrl) ? "/Content/images/placeholder-product.jpg" : Model.ImageUrl)"
+                                     alt="Product image preview"
+                                     style="@(string.IsNullOrEmpty(Model.ImageUrl) ? "display:none;" : "")" />
+                                <button type="button" class="remove-image" id="removeImage" title="Remove image">
+                                    <i class="fas fa-times"></i>
+                                </button>
                                 <div id="noImage" class="text-muted" style="@(string.IsNullOrEmpty(Model.ImageUrl) ? "" : "display:none;")">
                                     <i class="fas fa-image fa-3x mb-2"></i>
                                     <p>No image available</p>
@@ -333,16 +616,16 @@
 
             <!-- Product Settings Section -->
             <div class="form-section">
-                <h4 class="form-section-title">Product Settings</h4>
+                <h4 class="form-section-title"><i class="fas fa-cog"></i> Product Settings</h4>
 
                 <div class="checkbox-group">
                     <div class="checkbox-container">
                         @Html.CheckBoxFor(model => model.IsAvailable, new { @class = "form-check-input" })
-                        @Html.LabelFor(model => model.IsAvailable, "Available for Sale", new { @class = "form-check-label control-label" })
+                        @Html.LabelFor(model => model.IsAvailable, "Available for Sale", new { @class = "form-check-label" })
                     </div>
                     <div class="checkbox-container">
                         @Html.CheckBoxFor(model => model.IsFeatured, new { @class = "form-check-input" })
-                        @Html.LabelFor(model => model.IsFeatured, "Featured Product", new { @class = "form-check-label control-label" })
+                        @Html.LabelFor(model => model.IsFeatured, "Featured Product", new { @class = "form-check-label" })
                     </div>
                 </div>
                 <small class="form-text">
@@ -355,7 +638,7 @@
 
             <!-- Source References (Read-only) -->
             <div class="form-section">
-                <h4 class="form-section-title">Source References</h4>
+                <h4 class="form-section-title"><i class="fas fa-link"></i> Source References</h4>
                 <div class="row">
                     <div class="col-md-4">
                         <div class="form-group">
@@ -387,11 +670,11 @@
                     <a href="@Url.Action("Index")" class="btn btn-secondary">
                         <i class="fas fa-arrow-left"></i> Back to List
                     </a>
-                    <div>
+                    <div style="display: flex; gap: 10px;">
                         <a href="@Url.Action("Details", new { id = Model.Id })" class="btn btn-info">
                             <i class="fas fa-eye"></i> View Details
                         </a>
-                        <button type="submit" class="btn btn-primary">
+                        <button type="submit" class="btn btn-primary" id="submitBtn">
                             <i class="fas fa-save"></i> Update Product
                         </button>
                     </div>
@@ -403,82 +686,100 @@
 
 @section Scripts {
     @Scripts.Render("~/bundles/jqueryval")
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/js/all.min.js"></script>
-
     <script>
         $(document).ready(function () {
-            // Image URL preview
-            function updateImagePreview() {
-                var imageUrl = $('#imageUrl').val();
-                var preview = $('#imagePreview');
-                var noImage = $('#noImage');
-
-                if (imageUrl && imageUrl.trim() !== '') {
-                    preview.attr('src', imageUrl).show();
-                    noImage.hide();
-                } else {
-                    preview.hide();
-                    noImage.show();
-                }
-            }
-
-            // Initial preview
-            updateImagePreview();
-
-            // Update preview when URL changes
-            $('#imageUrl').on('input', function () {
-                updateImagePreview();
+            // Image upload area click handler
+            $('#imageUploadArea').click(function () {
+                $('#imageFile').click();
             });
 
-            // File upload preview (basic implementation)
-            $('#imageUpload').change(function () {
-                var file = this.files[0];
-                if (file) {
+            // File input change handler
+            $('#imageFile').change(function (e) {
+                if (this.files && this.files[0]) {
+                    var file = this.files[0];
+
+                    // Validate file
+                    if (!validateFile(file)) {
+                        return;
+                    }
+
+                    // Show preview
                     var reader = new FileReader();
                     reader.onload = function (e) {
                         $('#imagePreview').attr('src', e.target.result).show();
                         $('#noImage').hide();
-                        // You can implement actual file upload here
+                        $('#removeImage').show();
                     }
                     reader.readAsDataURL(file);
                 }
             });
 
-            // Auto-format price input
-            $('#PricePerUnit').on('blur', function () {
-                var value = parseFloat($(this).val());
-                if (!isNaN(value) && value >= 0) {
-                    $(this).val(value.toFixed(2));
+            // Drag and drop functionality
+            $('#imageUploadArea').on('dragover', function (e) {
+                e.preventDefault();
+                e.stopPropagation();
+                $(this).addClass('dragover');
+            });
+
+            $('#imageUploadArea').on('dragleave', function (e) {
+                e.preventDefault();
+                e.stopPropagation();
+                $(this).removeClass('dragover');
+            });
+
+            $('#imageUploadArea').on('drop', function (e) {
+                e.preventDefault();
+                e.stopPropagation();
+                $(this).removeClass('dragover');
+
+                var files = e.originalEvent.dataTransfer.files;
+                if (files.length > 0) {
+                    var file = files[0];
+
+                    if (!validateFile(file)) {
+                        return;
+                    }
+
+                    // Create a new FileList object and set it to the file input
+                    var dataTransfer = new DataTransfer();
+                    dataTransfer.items.add(file);
+                    $('#imageFile')[0].files = dataTransfer.files;
+
+                    // Trigger change event
+                    $('#imageFile').trigger('change');
                 }
             });
 
-            // Show/hide source fields based on product type
-            function toggleSourceFields() {
-                var productType = $('#ProductType').val();
-                $('.source-field').hide();
+            // Remove image handler
+            $('#removeImage').click(function (e) {
+                e.stopPropagation();
+                $('#imageFile').val('');
+                $('#imagePreview').hide();
+                $('#noImage').show();
+                $('#removeImage').hide();
+                $('#imageUrl').val(''); // Clear the image URL
+            });
 
-                if (productType === 'Crop') {
-                    $('#HarvestOutcomeId').closest('.form-group').show();
-                } else if (productType === 'Livestock') {
-                    $('#LivestockId').closest('.form-group').show();
-                } else if (productType === 'Inventory') {
-                    $('#InventoryId').closest('.form-group').show();
+            // File validation
+            function validateFile(file) {
+                var maxSize = 5 * 1024 * 1024; // 5MB
+                var allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/bmp'];
+
+                if (file.size > maxSize) {
+                    alert('File size must be less than 5MB');
+                    return false;
                 }
+
+                if (!allowedTypes.includes(file.type)) {
+                    alert('Please select a valid image file (JPG, PNG, GIF, BMP)');
+                    return false;
+                }
+
+                return true;
             }
 
-            // Add source-field class to relevant elements
-            $('#HarvestOutcomeId, #LivestockId, #InventoryId').closest('.form-group').addClass('source-field');
-
-            // Initial toggle
-            toggleSourceFields();
-
-            // Toggle on product type change
-            $('#ProductType').change(function () {
-                toggleSourceFields();
-            });
-
-            // Form validation
-            $('form').submit(function () {
+            // Form submission
+            $('#productForm').submit(function () {
                 // Update last updated timestamp
                 $('input[name="LastUpdated"]').val(new Date().toISOString());
 
@@ -489,8 +790,16 @@
                     return false;
                 }
 
+                // Show loading state
+                $('#submitBtn').prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Updating...');
+
                 return true;
             });
+
+            // Show remove button if image exists
+            if ($('#imagePreview').attr('src') && !$('#imagePreview').attr('src').includes('placeholder-product.jpg')) {
+                $('#removeImage').show();
+            }
         });
     </script>
 }

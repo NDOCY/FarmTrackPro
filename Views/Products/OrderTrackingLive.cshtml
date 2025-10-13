@@ -4,91 +4,620 @@
     ViewBag.Title = "Live Order Tracking";
 }
 
+<style>
+    :root {
+        --color-earth: #8B7355;
+        --color-soil: #654321;
+        --color-foliage: #4CAF50;
+        --color-wheat: #F5DEB3;
+        --color-hay: #DAA520;
+        --color-danger: #FF6B6B;
+        --color-white: #FFFFFF;
+        --border-radius: 12px;
+        --card-shadow: 0 6px 18px rgba(0,0,0,0.1);
+    }
+
+    body {
+        background-color: #F9F7F4;
+    }
+
+    /* Header Section */
+    .page-header {
+        background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
+        border-radius: var(--border-radius);
+        padding: 30px;
+        margin-bottom: 30px;
+        box-shadow: var(--card-shadow);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .page-header::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        right: 0;
+        width: 300px;
+        height: 100%;
+        background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23FFFFFF" opacity="0.1"><path d="M18 18.5c.83 0 1.5-.67 1.5-1.5s-.67-1.5-1.5-1.5-1.5.67-1.5 1.5.67 1.5 1.5 1.5zm1.5-9H17V12h4.46L19.5 9.5zM6 18.5c.83 0 1.5-.67 1.5-1.5s-.67-1.5-1.5-1.5-1.5.67-1.5 1.5.67 1.5 1.5 1.5z"/></svg>');
+        background-repeat: no-repeat;
+        background-position: right center;
+        background-size: 250px;
+        opacity: 0.15;
+    }
+
+    .header-content {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        color: white;
+    }
+
+    .header-left h1 {
+        color: white;
+        font-weight: 700;
+        margin-bottom: 5px;
+        font-size: 2rem;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .header-left p {
+        color: rgba(255, 255, 255, 0.95);
+        margin: 0;
+        font-size: 1.1rem;
+    }
+
+    .header-right {
+        text-align: right;
+    }
+
+    /* Auto Refresh Toggle */
+    .refresh-toggle {
+        background: rgba(255, 255, 255, 0.2);
+        padding: 10px 15px;
+        border-radius: 8px;
+        margin-bottom: 8px;
+    }
+
+    .form-check {
+        margin: 0;
+    }
+
+    .form-check-input {
+        width: 50px;
+        height: 26px;
+        cursor: pointer;
+        background-color: rgba(255, 255, 255, 0.3);
+        border: none;
+        border-radius: 13px;
+    }
+
+    .form-check-input:checked {
+        background-color: var(--color-foliage);
+    }
+
+    .form-check-label {
+        color: white;
+        font-weight: 600;
+        margin-left: 10px;
+    }
+
+    .last-update {
+        color: rgba(255, 255, 255, 0.9);
+        font-size: 0.85rem;
+    }
+
+    /* Status Card */
+    .status-card {
+        background-color: var(--color-white);
+        border-radius: var(--border-radius);
+        overflow: hidden;
+        box-shadow: var(--card-shadow);
+        margin-bottom: 30px;
+    }
+
+    .status-card-header {
+        background: linear-gradient(135deg, #17a2b8, #138496);
+        color: var(--color-white);
+        padding: 20px 25px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .status-card-header h4 {
+        margin: 0;
+        font-weight: 700;
+        font-size: 1.2rem;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .live-badge {
+        background: rgba(255, 255, 255, 0.95);
+        color: #17a2b8;
+        padding: 8px 16px;
+        border-radius: 20px;
+        font-weight: 700;
+        font-size: 0.9rem;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .live-indicator {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background-color: var(--color-foliage);
+        animation: blink 2s infinite;
+    }
+
+    @@keyframes blink {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.3; }
+    }
+
+    .status-card-body {
+        padding: 30px;
+    }
+
+    .status-display {
+        display: flex;
+        align-items: center;
+        gap: 30px;
+    }
+
+    .status-info {
+        flex: 1;
+    }
+
+    .status-info h3 {
+        color: var(--color-soil);
+        font-weight: 700;
+        font-size: 1.8rem;
+        margin-bottom: 10px;
+    }
+
+    .status-info p {
+        color: #666;
+        margin: 0;
+        line-height: 1.6;
+    }
+
+    .delivery-estimate {
+        background: linear-gradient(135deg, #e8f5e9, #c8e6c9);
+        border-left: 4px solid var(--color-foliage);
+        padding: 20px;
+        border-radius: 8px;
+        min-width: 250px;
+    }
+
+    .delivery-estimate small {
+        color: #666;
+        font-size: 0.85rem;
+        display: block;
+        margin-bottom: 8px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .delivery-estimate h5 {
+        color: var(--color-foliage);
+        font-weight: 700;
+        font-size: 1.2rem;
+        margin: 0;
+    }
+
+    /* Timeline Card */
+    .timeline-card {
+        background-color: var(--color-white);
+        border-radius: var(--border-radius);
+        overflow: hidden;
+        box-shadow: var(--card-shadow);
+        margin-bottom: 30px;
+    }
+
+    .timeline-card-header {
+        background: linear-gradient(135deg, var(--color-foliage), #45a049);
+        color: var(--color-white);
+        padding: 20px 25px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .timeline-card-header h4 {
+        margin: 0;
+        font-weight: 700;
+        font-size: 1.2rem;
+    }
+
+    .timeline-card-body {
+        padding: 40px 30px;
+    }
+
+    /* Tracking Timeline */
+    .tracking-timeline {
+        position: relative;
+        padding: 20px 0;
+    }
+
+    .tracking-step {
+        position: relative;
+        padding: 0 0 40px 0;
+        margin-left: 50px;
+        border-left: 4px solid #e0e0e0;
+    }
+
+    .tracking-step:last-child {
+        padding-bottom: 0;
+        border-left-color: transparent;
+    }
+
+    .tracking-step.completed {
+        border-left-color: var(--color-foliage);
+    }
+
+    .tracking-step.current {
+        border-left-color: #17a2b8;
+    }
+
+    .tracking-icon {
+        position: absolute;
+        left: -50px;
+        top: 0;
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2rem;
+        background: linear-gradient(135deg, #e0e0e0, #bdbdbd);
+        color: #757575;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        z-index: 2;
+        transition: all 0.3s ease;
+    }
+
+    .tracking-step.completed .tracking-icon {
+        background: linear-gradient(135deg, var(--color-foliage), #45a049);
+        color: white;
+    }
+
+    .tracking-step.current .tracking-icon {
+        background: linear-gradient(135deg, #17a2b8, #138496);
+        color: white;
+        animation: pulse 2s infinite;
+        box-shadow: 0 4px 20px rgba(23, 162, 184, 0.4);
+    }
+
+    @@keyframes pulse {
+        0%, 100% { transform: scale(1); }
+        50% { transform: scale(1.1); }
+    }
+
+    .tracking-content {
+        margin-left: 50px;
+        background-color: #fafafa;
+        padding: 20px;
+        border-radius: 8px;
+        transition: all 0.3s ease;
+    }
+
+    .tracking-step.completed .tracking-content {
+        background-color: #e8f5e9;
+        border-left: 4px solid var(--color-foliage);
+    }
+
+    .tracking-step.current .tracking-content {
+        background-color: #e1f5fe;
+        border-left: 4px solid #17a2b8;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    }
+
+    .tracking-content h5 {
+        margin: 0 0 8px 0;
+        color: var(--color-soil);
+        font-weight: 700;
+        font-size: 1.1rem;
+    }
+
+    .tracking-content p {
+        margin: 0 0 5px 0;
+        color: #666;
+        line-height: 1.5;
+    }
+
+    .tracking-content small {
+        color: #999;
+        font-size: 0.85rem;
+    }
+
+    .tracking-content .active-indicator {
+        margin-top: 10px;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        color: #17a2b8;
+        font-weight: 600;
+        font-size: 0.9rem;
+    }
+
+    /* Loading State */
+    .loading-state {
+        text-align: center;
+        padding: 60px 20px;
+    }
+
+    .spinner-border {
+        width: 3rem;
+        height: 3rem;
+        border-width: 0.3em;
+    }
+
+    /* Details Card */
+    .details-card {
+        background-color: var(--color-white);
+        border-radius: var(--border-radius);
+        overflow: hidden;
+        box-shadow: var(--card-shadow);
+        margin-bottom: 30px;
+    }
+
+    .details-card-header {
+        background: linear-gradient(135deg, var(--color-earth), var(--color-soil));
+        color: var(--color-white);
+        padding: 20px 25px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .details-card-header h5 {
+        margin: 0;
+        font-weight: 700;
+        font-size: 1.1rem;
+    }
+
+    .details-card-body {
+        padding: 25px;
+    }
+
+    .detail-row {
+        margin-bottom: 15px;
+    }
+
+    .detail-row strong {
+        color: var(--color-soil);
+        font-weight: 600;
+        display: inline-block;
+        min-width: 160px;
+    }
+
+    .detail-row span {
+        color: #333;
+    }
+
+    /* Action Buttons */
+    .action-bar {
+        display: flex;
+        justify-content: center;
+        gap: 15px;
+        flex-wrap: wrap;
+        margin-top: 30px;
+    }
+
+    .btn {
+        padding: 12px 30px;
+        border-radius: 8px;
+        font-weight: 600;
+        font-size: 0.95rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        border: none;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        text-decoration: none;
+    }
+
+    .btn-primary {
+        background: linear-gradient(135deg, var(--color-foliage), #45a049);
+        color: white;
+        box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3);
+    }
+
+    .btn-primary:hover {
+        background: linear-gradient(135deg, #45a049, var(--color-foliage));
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(76, 175, 80, 0.4);
+        color: white;
+    }
+
+    .btn-outline-primary {
+        background: white;
+        border: 2px solid #17a2b8;
+        color: #17a2b8;
+    }
+
+    .btn-outline-primary:hover {
+        background: #17a2b8;
+        color: white;
+    }
+
+    .btn-outline-info {
+        background: white;
+        border: 2px solid #17a2b8;
+        color: #17a2b8;
+    }
+
+    .btn-outline-info:hover {
+        background: #17a2b8;
+        color: white;
+    }
+
+    /* Responsive */
+    @@media (max-width: 768px) {
+        .header-content {
+            flex-direction: column;
+            gap: 20px;
+            text-align: center;
+        }
+
+        .header-left h1 {
+            font-size: 1.6rem;
+        }
+
+        .header-right {
+            text-align: center;
+            width: 100%;
+        }
+
+        .status-display {
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .delivery-estimate {
+            width: 100%;
+        }
+
+        .tracking-step {
+            margin-left: 40px;
+        }
+
+        .tracking-icon {
+            left: -40px;
+            width: 60px;
+            height: 60px;
+            font-size: 1.5rem;
+        }
+
+        .tracking-content {
+            margin-left: 40px;
+            padding: 15px;
+        }
+
+        .action-bar {
+            flex-direction: column;
+        }
+
+        .action-bar .btn {
+            width: 100%;
+            justify-content: center;
+        }
+    }
+</style>
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
 <div class="container mt-4">
     <div class="row justify-content-center">
         <div class="col-md-10">
             <!-- Header with Auto-Refresh -->
-            <div class="d-flex justify-content-between align-items-center mb-4">
-                <div>
-                    <h1><i class="fas fa-shipping-fast"></i> Live Order Tracking</h1>
-                    <p class="lead mb-0">Order #@Model.SaleId - @Model.TrackingNumber</p>
-                </div>
-                <div class="text-end">
-                    <div class="form-check form-switch">
-                        <input class="form-check-input" type="checkbox" id="autoRefresh" checked>
-                        <label class="form-check-label" for="autoRefresh">Auto-Refresh</label>
+            <div class="page-header">
+                <div class="header-content">
+                    <div class="header-left">
+                        <h1><i class="fas fa-shipping-fast"></i> Live Order Tracking</h1>
+                        <p>Order #@Model.SaleId • @Model.TrackingNumber</p>
                     </div>
-                    <small class="text-muted" id="lastUpdate">Last updated: Just now</small>
+                    <div class="header-right">
+                        <div class="refresh-toggle">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="autoRefresh" checked>
+                                <label class="form-check-label" for="autoRefresh">Auto-Refresh</label>
+                            </div>
+                        </div>
+                        <small class="last-update" id="lastUpdate">Last updated: Just now</small>
+                    </div>
                 </div>
             </div>
 
             <!-- Current Status Card -->
-            <div class="card mb-4" id="statusCard">
-                <div class="card-header bg-info text-white d-flex justify-content-between">
-                    <h4 class="mb-0"><i class="fas fa-map-marker-alt"></i> Current Status</h4>
-                    <span class="badge bg-light text-dark fs-6" id="liveBadge">
-                        <i class="fas fa-circle text-success blink"></i> LIVE
-                    </span>
+            <div class="status-card" id="statusCard">
+                <div class="status-card-header">
+                    <h4><i class="fas fa-map-marker-alt"></i> Current Status</h4>
+                    <div class="live-badge" id="liveBadge">
+                        <div class="live-indicator"></div>
+                        <span>LIVE</span>
+                    </div>
                 </div>
-                <div class="card-body">
-                    <div class="row align-items-center">
-                        <div class="col-md-8">
+                <div class="status-card-body">
+                    <div class="status-display">
+                        <div class="status-info">
                             <h3 id="currentStatus">@Model.Status</h3>
-                            <p class="mb-0" id="statusDescription">Loading latest update...</p>
+                            <p id="statusDescription">Loading latest update...</p>
                         </div>
-                        <div class="col-md-4 text-end">
-                            <div class="bg-light p-3 rounded">
-                                <small class="text-muted">Estimated Delivery</small>
-                                <h5 id="estimatedDelivery">@Model.EstimatedDelivery?.ToString("ddd, MMM dd 'at' HH:mm")</h5>
-                            </div>
+                        <div class="delivery-estimate">
+                            <small><i class="fas fa-clock"></i> Estimated Delivery</small>
+                            <h5 id="estimatedDelivery">@Model.EstimatedDelivery?.ToString("ddd, MMM dd 'at' HH:mm")</h5>
                         </div>
                     </div>
                 </div>
             </div>
 
             <!-- Live Tracking Timeline -->
-            <div class="card">
-                <div class="card-header bg-success text-white">
-                    <h4 class="mb-0"><i class="fas fa-road"></i> Delivery Journey</h4>
+            <div class="timeline-card">
+                <div class="timeline-card-header">
+                    <i class="fas fa-road"></i>
+                    <h4>Delivery Journey</h4>
                 </div>
-                <div class="card-body">
+                <div class="timeline-card-body">
                     <div id="trackingTimeline">
                         <!-- Timeline will be loaded via AJAX -->
-                        <div class="text-center py-4">
+                        <div class="loading-state">
                             <div class="spinner-border text-success" role="status">
                                 <span class="visually-hidden">Loading...</span>
                             </div>
-                            <p class="mt-2">Loading tracking information...</p>
+                            <p class="mt-3">Loading tracking information...</p>
                         </div>
                     </div>
                 </div>
             </div>
 
             <!-- Order Details -->
-            <div class="card mt-4">
-                <div class="card-header">
-                    <h5 class="mb-0"><i class="fas fa-list"></i> Order Details</h5>
+            <div class="details-card">
+                <div class="details-card-header">
+                    <i class="fas fa-list"></i>
+                    <h5>Order Details</h5>
                 </div>
-                <div class="card-body">
+                <div class="details-card-body">
                     <div class="row">
                         <div class="col-md-6">
-                            <p><strong>Customer:</strong> @Model.CustomerName</p>
-                            <p><strong>Delivery Address:</strong> @Model.DeliveryAddress</p>
+                            <div class="detail-row">
+                                <strong><i class="fas fa-user"></i> Customer:</strong>
+                                <span>@Model.CustomerName</span>
+                            </div>
+                            <div class="detail-row">
+                                <strong><i class="fas fa-map-marker-alt"></i> Delivery Address:</strong>
+                                <span>@Model.DeliveryAddress</span>
+                            </div>
                         </div>
                         <div class="col-md-6">
-                            <p><strong>Contact:</strong> @Model.CustomerPhone / @Model.CustomerEmail</p>
-                            <p><strong>Total Amount:</strong> R@(Model.TotalAmount.ToString("F2"))</p>
+                            <div class="detail-row">
+                                <strong><i class="fas fa-phone"></i> Contact:</strong>
+                                <span>@Model.CustomerPhone</span>
+                            </div>
+                            <div class="detail-row">
+                                <strong><i class="fas fa-dollar-sign"></i> Total Amount:</strong>
+                                <span style="color: var(--color-foliage); font-weight: 700; font-size: 1.1rem;">R@(Model.TotalAmount.ToString("F2"))</span>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
 
             <!-- Action Buttons -->
-            <div class="text-center mt-4">
+            <div class="action-bar">
                 <button onclick="refreshStatus()" class="btn btn-outline-primary">
                     <i class="fas fa-sync-alt"></i> Refresh Now
                 </button>
-                <a href="@Url.Action("Store")" class="btn btn-primary">
+                <a href="@Url.Action("Store", "Products")" class="btn btn-primary">
                     <i class="fas fa-store"></i> Continue Shopping
                 </a>
                 <button onclick="window.print()" class="btn btn-outline-info">
@@ -124,8 +653,15 @@
                 updateUI(data);
                 $('#lastUpdate').text('Last updated: ' + new Date().toLocaleTimeString());
             })
-            .fail(function() {
-                $('#currentStatus').html('<span class="text-danger">Error loading status</span>');
+            .fail(function(xhr) {
+                console.error('Error loading tracking data:', xhr);
+                $('#currentStatus').html('<span style="color: var(--color-danger);">Error loading status</span>');
+                $('#trackingTimeline').html(
+                    '<div class="loading-state">' +
+                    '<i class="fas fa-exclamation-triangle fa-3x" style="color: var(--color-danger);"></i>' +
+                    '<p class="mt-3">Unable to load tracking information. Please try again.</p>' +
+                    '</div>'
+                );
             });
     }
 
@@ -145,23 +681,26 @@
         }
 
         // Build timeline
-        let timelineHtml = '';
+        let timelineHtml = '<div class="tracking-timeline">';
         data.updates.forEach((update, index) => {
             const isCurrent = update.isCurrent;
+            const isCompleted = !isCurrent && index > 0;
+
             timelineHtml += `
-                <div class="tracking-step ${isCurrent ? 'current' : 'completed'}">
+                <div class="tracking-step ${isCurrent ? 'current' : isCompleted ? 'completed' : ''}">
                     <div class="tracking-icon">
                         <i class="fas fa-${getStatusIcon(update.status)}"></i>
                     </div>
                     <div class="tracking-content">
                         <h5>${update.status}</h5>
-                        <p class="mb-1">${update.notes || ''}</p>
-                        <small class="text-muted">${update.time}</small>
-                        ${isCurrent ? '<br><small class="text-info"><i class="fas fa-spinner fa-spin"></i> Active</small>' : ''}
+                        <p>${update.notes || 'Processing...'}</p>
+                        <small><i class="fas fa-clock"></i> ${update.time}</small>
+                        ${isCurrent ? '<div class="active-indicator"><i class="fas fa-spinner fa-spin"></i> <span>Active</span></div>' : ''}
                     </div>
                 </div>
             `;
         });
+        timelineHtml += '</div>';
 
         $('#trackingTimeline').html(timelineHtml);
     }
@@ -170,7 +709,9 @@
         const icons = {
             'Pending': 'clock',
             'Confirmed': 'check-circle',
+            'Order Confirmed': 'check-circle',
             'Preparing': 'box',
+            'Assigned to Driver': 'user-check',
             'Shipped': 'shipping-fast',
             'Out for Delivery': 'truck',
             'Delivered': 'home'
@@ -179,11 +720,20 @@
     }
 
     function refreshStatus() {
+        // Add spinning animation to refresh button
+        var btn = event.target.closest('button');
+        var icon = btn.querySelector('i');
+        icon.classList.add('fa-spin');
+
         loadTrackingData();
+
+        setTimeout(function() {
+            icon.classList.remove('fa-spin');
+        }, 1000);
     }
 
     function startAutoRefresh() {
-        refreshInterval = setInterval(refreshStatus, 10000); // Refresh every 10 seconds
+        refreshInterval = setInterval(loadTrackingData, 10000); // Refresh every 10 seconds
         $('#liveBadge').show();
     }
 
@@ -191,95 +741,5 @@
         clearInterval(refreshInterval);
         $('#liveBadge').hide();
     }
-
-    // Blink animation for live indicator
-    setInterval(function() {
-        $('.blink').fadeTo(500, 0.3).fadeTo(500, 1);
-    }, 1000);
     </script>
-
-    <style>
-        .blink {
-            animation: blink 2s infinite;
-        }
-
-        @@keyframes blink {
-            0% {
-                opacity: 1;
-            }
-
-            50% {
-                opacity: 0.3;
-            }
-
-            100% {
-                opacity: 1;
-            }
-        }
-
-        /* Keep your existing tracking timeline styles */
-        .tracking-timeline {
-            position: relative;
-            padding-left: 30px;
-        }
-
-        .tracking-step {
-            position: relative;
-            padding: 20px 0;
-            border-left: 3px solid #dee2e6;
-            margin-left: 20px;
-        }
-
-            .tracking-step.completed {
-                border-left-color: #28a745;
-            }
-
-            .tracking-step.current {
-                border-left-color: #17a2b8;
-            }
-
-        .tracking-icon {
-            position: absolute;
-            left: -40px;
-            top: 20px;
-            width: 60px;
-            height: 60px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 24px;
-            background: #dee2e6;
-            color: #6c757d;
-        }
-
-        .tracking-step.completed .tracking-icon {
-            background: #28a745;
-            color: white;
-        }
-
-        .tracking-step.current .tracking-icon {
-            background: #17a2b8;
-            color: white;
-            animation: pulse 2s infinite;
-        }
-
-        .tracking-content {
-            margin-left: 40px;
-        }
-
-        @@keyframes pulse {
-            0% {
-                transform: scale(1);
-            }
-
-            50% {
-                transform: scale(1.1);
-            }
-
-            100% {
-                transform: scale(1);
-            }
-        }
-    </style>
 }

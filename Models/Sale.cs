@@ -50,6 +50,14 @@ namespace FarmTrack.Models
         public decimal? CurrentLongitude { get; set; }
         public DateTime? LastLocationUpdate { get; set; }
         public bool IsActiveDelivery { get; set; }
+        // Discount Voucher Properties
+        public int? AppliedVoucherId { get; set; }
+        public string AppliedVoucherCode { get; set; }
+        public decimal DiscountAmount { get; set; }
+        public decimal Subtotal { get; set; } // Total before discount
+
+        [ForeignKey("AppliedVoucherId")]
+        public virtual DiscountVoucher AppliedVoucher { get; set; }
 
         [ForeignKey("AssignedDriverId")]
         public virtual User AssignedDriver { get; set; }

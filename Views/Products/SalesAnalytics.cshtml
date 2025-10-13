@@ -1,0 +1,602 @@
+﻿@model FarmTrack.Models.SalesAnalyticsViewModel
+
+@{
+    ViewBag.Title = "Sales Analytics";
+}
+
+<style>
+    :root {
+        --color-earth: #8B7355;
+        --color-soil: #654321;
+        --color-foliage: #4CAF50;
+        --color-wheat: #F5DEB3;
+        --color-hay: #DAA520;
+        --color-danger: #FF6B6B;
+        --color-white: #FFFFFF;
+        --border-radius: 12px;
+        --card-shadow: 0 6px 18px rgba(0,0,0,0.1);
+    }
+
+    body {
+        background-color: #F9F7F4;
+    }
+
+    .analytics-header {
+        background: linear-gradient(135deg, var(--color-earth) 0%, var(--color-soil) 100%);
+        border-radius: var(--border-radius);
+        padding: 30px;
+        margin-bottom: 30px;
+        box-shadow: var(--card-shadow);
+        color: white;
+    }
+
+        .analytics-header h1 {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 10px;
+        }
+
+    .period-selector {
+        background: white;
+        border-radius: var(--border-radius);
+        padding: 20px;
+        margin-bottom: 25px;
+        box-shadow: var(--card-shadow);
+    }
+
+    .metric-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 20px;
+        margin-bottom: 30px;
+    }
+
+    .metric-card {
+        background: white;
+        border-radius: var(--border-radius);
+        padding: 25px;
+        box-shadow: var(--card-shadow);
+        position: relative;
+        overflow: hidden;
+        transition: transform 0.3s;
+    }
+
+        .metric-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .metric-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            opacity: 0.1;
+            transform: translate(30%, -30%);
+        }
+
+        .metric-card.revenue::before {
+            background: #4CAF50;
+        }
+
+        .metric-card.orders::before {
+            background: #2196F3;
+        }
+
+        .metric-card.customers::before {
+            background: #FF9800;
+        }
+
+        .metric-card.conversion::before {
+            background: #9C27B0;
+        }
+
+        .metric-card h6 {
+            color: #666;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+
+    .metric-value {
+        font-size: 2rem;
+        font-weight: 700;
+        color: var(--color-soil);
+        margin-bottom: 10px;
+    }
+
+    .metric-change {
+        font-size: 0.9rem;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+    }
+
+        .metric-change.positive {
+            color: #4CAF50;
+        }
+
+        .metric-change.negative {
+            color: #FF5252;
+        }
+
+    .chart-card {
+        background: white;
+        border-radius: var(--border-radius);
+        padding: 25px;
+        box-shadow: var(--card-shadow);
+        margin-bottom: 25px;
+    }
+
+        .chart-card h5 {
+            color: var(--color-soil);
+            font-weight: 600;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+    .insight-card {
+        background: linear-gradient(135deg, #e3f2fd, #bbdefb);
+        border-left: 4px solid #2196F3;
+        border-radius: var(--border-radius);
+        padding: 20px;
+        margin-bottom: 20px;
+    }
+
+        .insight-card h6 {
+            color: #1976D2;
+            font-weight: 600;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .insight-card ul {
+            margin: 0;
+            padding-left: 20px;
+            color: #555;
+        }
+
+    .table-condensed {
+        font-size: 0.9rem;
+    }
+
+        .table-condensed th {
+            background: var(--color-wheat);
+            color: var(--color-soil);
+            font-weight: 600;
+            padding: 12px;
+        }
+
+        .table-condensed td {
+            padding: 10px 12px;
+            vertical-align: middle;
+        }
+
+    .progress-thin {
+        height: 8px;
+        border-radius: 4px;
+    }
+
+    .btn-group .btn {
+        padding: 8px 20px;
+    }
+
+    .trend-indicator {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 4px 10px;
+        border-radius: 12px;
+        font-size: 0.85rem;
+        font-weight: 600;
+    }
+
+        .trend-indicator.up {
+            background: rgba(76, 175, 80, 0.1);
+            color: #4CAF50;
+        }
+
+        .trend-indicator.down {
+            background: rgba(255, 82, 82, 0.1);
+            color: #FF5252;
+        }
+
+    .stat-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 12px 0;
+        border-bottom: 1px solid #f0f0f0;
+    }
+
+        .stat-row:last-child {
+            border-bottom: none;
+        }
+
+    .stat-label {
+        color: #666;
+        font-weight: 500;
+    }
+
+    .stat-value {
+        font-weight: 700;
+        color: var(--color-soil);
+    }
+</style>
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
+<div class="container-fluid mt-4">
+    <!-- Header -->
+    <div class="analytics-header">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <h1><i class="fas fa-chart-pie"></i> Sales Analytics</h1>
+                <p class="mb-0">Comprehensive insights into your farm's sales performance</p>
+            </div>
+            <div class="col-md-4 text-end">
+                <a href="@Url.Action("SalesList", "Products")" class="btn btn-light">
+                    <i class="fas fa-arrow-left"></i> Back to Sales
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Period Selector -->
+    <div class="period-selector">
+        <div class="row align-items-center">
+            <div class="col-md-6">
+                <div class="btn-group" role="group">
+                    <a href="@Url.Action("SalesAnalytics", new { period = "7days" })"
+                       class="btn @(Model.Period == "7days" ? "btn-primary" : "btn-outline-secondary")">
+                        Last 7 Days
+                    </a>
+                    <a href="@Url.Action("SalesAnalytics", new { period = "30days" })"
+                       class="btn @(Model.Period == "30days" ? "btn-primary" : "btn-outline-secondary")">
+                        Last 30 Days
+                    </a>
+                    <a href="@Url.Action("SalesAnalytics", new { period = "90days" })"
+                       class="btn @(Model.Period == "90days" ? "btn-primary" : "btn-outline-secondary")">
+                        Last 90 Days
+                    </a>
+                    <a href="@Url.Action("SalesAnalytics", new { period = "year" })"
+                       class="btn @(Model.Period == "year" ? "btn-primary" : "btn-outline-secondary")">
+                        This Year
+                    </a>
+                </div>
+            </div>
+            <div class="col-md-6 text-end">
+                <span class="text-muted">
+                    <i class="fas fa-calendar"></i>
+                    @Model.StartDate.ToString("MMM dd, yyyy") - @Model.EndDate.ToString("MMM dd, yyyy")
+                </span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Key Metrics -->
+    <div class="metric-grid">
+        <div class="metric-card revenue">
+            <h6>Total Revenue</h6>
+            <div class="metric-value">R @Model.TotalRevenue.ToString("N2")</div>
+            <div class="metric-change @(Model.RevenueChange >= 0 ? "positive" : "negative")">
+                <i class="fas fa-arrow-@(Model.RevenueChange >= 0 ? "up" : "down")"></i>
+                @Math.Abs(Model.RevenueChange).ToString("N1")% vs previous period
+            </div>
+        </div>
+
+        <div class="metric-card orders">
+            <h6>Total Orders</h6>
+            <div class="metric-value">@Model.TotalOrders</div>
+            <div class="metric-change @(Model.OrdersChange >= 0 ? "positive" : "negative")">
+                <i class="fas fa-arrow-@(Model.OrdersChange >= 0 ? "up" : "down")"></i>
+                @Math.Abs(Model.OrdersChange).ToString("N1")% vs previous period
+            </div>
+        </div>
+
+        <div class="metric-card customers">
+            <h6>Average Order Value</h6>
+            <div class="metric-value">R @Model.AverageOrderValue.ToString("N2")</div>
+            <div class="metric-change @(Model.AOVChange >= 0 ? "positive" : "negative")">
+                <i class="fas fa-arrow-@(Model.AOVChange >= 0 ? "up" : "down")"></i>
+                @Math.Abs(Model.AOVChange).ToString("N1")% vs previous period
+            </div>
+        </div>
+
+        <div class="metric-card conversion">
+            <h6>Order Fulfillment Rate</h6>
+            <div class="metric-value">@Model.FulfillmentRate.ToString("N1")%</div>
+            <div class="metric-change @(Model.FulfillmentRate >= 90 ? "positive" : "negative")">
+                @Model.DeliveredOrders delivered of @Model.TotalOrders total
+            </div>
+        </div>
+    </div>
+
+    <!-- Two Column Layout -->
+    <div class="row">
+        <!-- Left Column -->
+        <div class="col-lg-8">
+            <!-- Revenue Trend Chart -->
+            <div class="chart-card">
+                <h5><i class="fas fa-chart-line"></i> Revenue Trend</h5>
+                <canvas id="revenueTrendChart" height="80"></canvas>
+            </div>
+
+            <!-- Top Performing Products -->
+            <div class="chart-card">
+                <h5><i class="fas fa-trophy"></i> Top Performing Products</h5>
+                <div class="table-responsive">
+                    <table class="table table-condensed">
+                        <thead>
+                            <tr>
+                                <th>Rank</th>
+                                <th>Product</th>
+                                <th>Category</th>
+                                <th>Units Sold</th>
+                                <th>Revenue</th>
+                                <th>Contribution</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @for (int i = 0; i < Model.TopProducts.Count; i++)
+                            {
+                                var product = Model.TopProducts[i];
+                                <tr>
+                                    <td>
+                                        @if (i < 3)
+                                        {
+                                            <span class="badge" style="background: @(i == 0 ? "#FFD700" : i == 1 ? "#C0C0C0" : "#CD7F32")">
+                                                @(i + 1)
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span>@(i + 1)</span>
+                                        }
+                                    </td>
+                                    <td><strong>@product.ProductName</strong></td>
+                                    <td><span class="badge bg-secondary">@product.Category</span></td>
+                                    <td>@product.UnitsSold units</td>
+                                    <td><strong>R @product.Revenue.ToString("N2")</strong></td>
+                                    <td>
+                                        <div class="d-flex align-items-center gap-2">
+                                            <div class="progress progress-thin" style="width: 100px;">
+                                                <div class="progress-bar bg-success" style="width: @product.RevenuePercentage%"></div>
+                                            </div>
+                                            <span>@product.RevenuePercentage.ToString("N1")%</span>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Customer Behavior Analysis -->
+            <div class="chart-card">
+                <h5><i class="fas fa-users"></i> Customer Behavior Analysis</h5>
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6 class="text-muted mb-3">Top Customers by Revenue</h6>
+                        <div class="table-responsive">
+                            <table class="table table-sm">
+                                <thead>
+                                    <tr>
+                                        <th>Customer</th>
+                                        <th>Orders</th>
+                                        <th>Total Spent</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var customer in Model.TopCustomers.Take(5))
+                                    {
+                                        <tr>
+                                            <td>@customer.CustomerName</td>
+                                            <td>@customer.OrderCount</td>
+                                            <td><strong>R @customer.TotalSpent.ToString("N2")</strong></td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <h6 class="text-muted mb-3">Customer Segments</h6>
+                        <div class="stat-row">
+                            <span class="stat-label">One-time buyers</span>
+                            <span class="stat-value">@Model.OneTimeBuyers (@Model.OneTimeBuyerPercentage.ToString("N1")%)</span>
+                        </div>
+                        <div class="stat-row">
+                            <span class="stat-label">Repeat customers (2-5 orders)</span>
+                            <span class="stat-value">@Model.RepeatCustomers (@Model.RepeatCustomerPercentage.ToString("N1")%)</span>
+                        </div>
+                        <div class="stat-row">
+                            <span class="stat-label">Loyal customers (6+ orders)</span>
+                            <span class="stat-value">@Model.LoyalCustomers (@Model.LoyalCustomerPercentage.ToString("N1")%)</span>
+                        </div>
+                        <div class="stat-row">
+                            <span class="stat-label">Average orders per customer</span>
+                            <span class="stat-value">@Model.AvgOrdersPerCustomer.ToString("N1")</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Column -->
+        <div class="col-lg-4">
+            <!-- Key Insights -->
+            <div class="insight-card">
+                <h6><i class="fas fa-lightbulb"></i> Key Insights</h6>
+                <ul>
+                    @foreach (var insight in Model.KeyInsights)
+                    {
+                        <li>@insight</li>
+                    }
+                </ul>
+            </div>
+
+            <!-- Sales by Category -->
+            <div class="chart-card">
+                <h5><i class="fas fa-chart-pie"></i> Sales by Category</h5>
+                <canvas id="categoryChart" height="200"></canvas>
+                <div class="mt-3">
+                    @foreach (var category in Model.CategoryBreakdown.Take(5))
+                    {
+                        <div class="stat-row">
+                            <span class="stat-label">@category.Category</span>
+                            <span class="stat-value">R @category.Revenue.ToString("N0")</span>
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <!-- Order Status Breakdown -->
+            <div class="chart-card">
+                <h5><i class="fas fa-tasks"></i> Order Status</h5>
+                <div class="stat-row">
+                    <span class="stat-label">Pending</span>
+                    <span class="stat-value">@Model.PendingOrders</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">Confirmed</span>
+                    <span class="stat-value">@Model.ConfirmedOrders</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">Out for Delivery</span>
+                    <span class="stat-value">@Model.OutForDeliveryOrders</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">Delivered</span>
+                    <span class="stat-value">@Model.DeliveredOrders</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">Cancelled</span>
+                    <span class="stat-value text-danger">@Model.CancelledOrders</span>
+                </div>
+            </div>
+
+            <!-- Peak Times -->
+            <div class="chart-card">
+                <h5><i class="fas fa-clock"></i> Peak Order Times</h5>
+                @foreach (var time in Model.PeakOrderTimes)
+                {
+                    <div class="stat-row">
+                        <span class="stat-label">@time.TimeLabel</span>
+                        <div class="d-flex align-items-center gap-2">
+                            <div class="progress progress-thin" style="width: 100px;">
+                                <div class="progress-bar bg-primary" style="width: @((time.OrderCount * 100.0 / Model.PeakOrderTimes.Max(t => t.OrderCount)))%"></div>
+                            </div>
+                            <span class="stat-value">@time.OrderCount</span>
+                        </div>
+                    </div>
+                }
+            </div>
+
+            <!-- Voucher Performance -->
+            @if (Model.VoucherStats.TotalVouchersUsed > 0)
+            {
+                <div class="chart-card">
+                    <h5><i class="fas fa-ticket-alt"></i> Voucher Performance</h5>
+                    <div class="stat-row">
+                        <span class="stat-label">Vouchers Used</span>
+                        <span class="stat-value">@Model.VoucherStats.TotalVouchersUsed</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">Total Discounts Given</span>
+                        <span class="stat-value text-danger">R @Model.VoucherStats.TotalDiscountAmount.ToString("N2")</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">Orders with Vouchers</span>
+                        <span class="stat-value">@Model.VoucherStats.OrdersWithVouchers (@Model.VoucherStats.VoucherUsageRate.ToString("N1")%)</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">Avg Discount per Order</span>
+                        <span class="stat-value">R @Model.VoucherStats.AvgDiscountPerOrder.ToString("N2")</span>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        // Revenue Trend Chart
+        const revenueTrendCtx = document.getElementById('revenueTrendChart').getContext('2d');
+        new Chart(revenueTrendCtx, {
+            type: 'line',
+            data: {
+                labels: @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(Model.RevenueTrendLabels)),
+                datasets: [{
+                    label: 'Revenue',
+                    data: @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(Model.RevenueTrendData)),
+                    borderColor: '#4CAF50',
+                    backgroundColor: 'rgba(76, 175, 80, 0.1)',
+                    tension: 0.4,
+                    fill: true
+                }, {
+                    label: 'Orders',
+                    data: @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(Model.OrdersTrendData)),
+                    borderColor: '#2196F3',
+                    backgroundColor: 'rgba(33, 150, 243, 0.1)',
+                    tension: 0.4,
+                    fill: true,
+                    yAxisID: 'y1'
+                }]
+            },
+            options: {
+                responsive: true,
+                interaction: {
+                    mode: 'index',
+                    intersect: false
+                },
+                scales: {
+                    y: {
+                        type: 'linear',
+                        display: true,
+                        position: 'left',
+                        title: { display: true, text: 'Revenue (R)' }
+                    },
+                    y1: {
+                        type: 'linear',
+                        display: true,
+                        position: 'right',
+                        title: { display: true, text: 'Orders' },
+                        grid: { drawOnChartArea: false }
+                    }
+                }
+            }
+        });
+
+        // Category Pie Chart
+        const categoryCtx = document.getElementById('categoryChart').getContext('2d');
+        new Chart(categoryCtx, {
+            type: 'doughnut',
+            data: {
+                labels: @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(Model.CategoryBreakdown.Take(5).Select(c => c.Category).ToList())),
+                datasets: [{
+                    data: @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(Model.CategoryBreakdown.Take(5).Select(c => c.Revenue).ToList())),
+                    backgroundColor: ['#4CAF50', '#2196F3', '#FF9800', '#9C27B0', '#F44336']
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: { position: 'bottom' }
+                }
+            }
+        });
+    </script>
+}

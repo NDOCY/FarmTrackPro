@@ -5,16 +5,184 @@
     var googleApiKey = System.Configuration.ConfigurationManager.AppSettings["GoogleMapsApiKey"];
 }
 
-<!-- IMPORTANT: Add this in the <head> section or before closing </body> -->
 <script src="https://maps.googleapis.com/maps/api/js?key=@googleApiKey&callback=initMap&libraries=geometry" async defer></script>
+
+<style>
+    :root {
+        --color-earth: #8B7355;
+        --color-soil: #654321;
+        --color-foliage: #4CAF50;
+        --color-wheat: #F5DEB3;
+        --color-hay: #DAA520;
+        --border-radius: 12px;
+        --card-shadow: 0 6px 18px rgba(0,0,0,0.1);
+    }
+
+    body {
+        background-color: #F9F7F4;
+    }
+
+    /* Cards */
+    .tracking-card {
+        background: white;
+        border-radius: var(--border-radius);
+        box-shadow: var(--card-shadow);
+        overflow: hidden;
+        margin-bottom: 20px;
+    }
+
+    .card-header-custom {
+        padding: 20px 25px;
+        font-weight: 600;
+        color: white;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .header-success {
+        background: linear-gradient(135deg, var(--color-foliage), #45a049);
+    }
+
+    .header-primary {
+        background: linear-gradient(135deg, #3498db, #2980b9);
+    }
+
+    .header-warning {
+        background: linear-gradient(135deg, var(--color-hay), #f0ad4e);
+    }
+
+    .card-header-custom h4,
+    .card-header-custom h5 {
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    /* Badges */
+    .badge {
+        padding: 6px 12px;
+        border-radius: 12px;
+        font-size: 0.8rem;
+        font-weight: 600;
+    }
+
+    .blink {
+        animation: blink 1.5s infinite;
+    }
+
+    @@keyframes blink {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.3; }
+    }
+
+    /* Buttons */
+    .btn {
+        padding: 8px 16px;
+        border-radius: 8px;
+        font-weight: 600;
+        font-size: 0.85rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        border: none;
+        transition: all 0.3s;
+        text-decoration: none;
+    }
+
+    .btn-sm {
+        padding: 6px 12px;
+        font-size: 0.8rem;
+    }
+
+    .btn-outline-primary {
+        background: white;
+        border: 2px solid #3498db;
+        color: #3498db;
+    }
+
+    .btn-outline-info {
+        background: white;
+        border: 2px solid #17a2b8;
+        color: #17a2b8;
+    }
+
+    .btn-outline-success {
+        background: white;
+        border: 2px solid var(--color-foliage);
+        color: var(--color-foliage);
+    }
+
+    .btn-outline-warning {
+        background: white;
+        border: 2px solid var(--color-hay);
+        color: var(--color-hay);
+    }
+
+    .btn-outline-secondary {
+        background: white;
+        border: 2px solid #9e9e9e;
+        color: #9e9e9e;
+    }
+
+    .btn:hover {
+        transform: translateY(-2px);
+    }
+
+    /* Progress Bar */
+    .progress {
+        height: 10px;
+        background-color: #e9ecef;
+        border-radius: 10px;
+        overflow: hidden;
+    }
+
+    .progress-bar {
+        background: linear-gradient(90deg, var(--color-foliage), #45a049);
+        border-radius: 10px;
+        transition: width 0.6s ease;
+    }
+
+    /* Map */
+    #deliveryMap {
+        height: 500px;
+        width: 100%;
+        border-radius: 0;
+    }
+
+    .card-footer-custom {
+        background: rgba(139, 115, 85, 0.03);
+        padding: 15px 20px;
+        border-top: 1px solid #f0f0f0;
+    }
+
+    @@media (max-width: 768px) {
+        #deliveryMap {
+            height: 300px !important;
+        }
+
+        .btn-group {
+            flex-direction: column;
+            width: 100%;
+        }
+
+        .btn-group .btn {
+            margin-bottom: 5px;
+            border-radius: 8px !important;
+        }
+    }
+</style>
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 
 <div class="container-fluid mt-4">
     <div class="row">
         <!-- Map Section -->
         <div class="col-md-8">
-            <div class="card">
-                <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
-                    <h4 class="mb-0">
+            <div class="tracking-card">
+                <div class="card-header-custom header-success">
+                    <h4>
                         <i class="fas fa-map-marked-alt"></i> Live Delivery Tracking
                         <small class="ms-2">Order #@Model.SaleId</small>
                     </h4>
@@ -23,45 +191,36 @@
                             <i class="fas fa-circle text-success blink"></i>
                             <span id="trackingStatus">LOADING...</span>
                         </span>
-                        <span class="badge bg-info" id="lastUpdate">
-                            Connecting...
-                        </span>
+                        <span class="badge bg-info" id="lastUpdate">Connecting...</span>
                     </div>
                 </div>
-                <div class="card-body p-0">
-                    <!-- Google Map Container -->
-                    <div id="deliveryMap" style="height: 500px; width: 100%; border-radius: 0 0 8px 8px;">
-                        <div class="d-flex justify-content-center align-items-center h-100">
-                            <div class="text-center">
-                                <div class="spinner-border text-primary" role="status">
-                                    <span class="visually-hidden">Loading map...</span>
-                                </div>
-                                <p class="mt-2">Loading tracking map...</p>
-                            </div>
+                <div id="deliveryMap">
+                    <div class="d-flex justify-content-center align-items-center h-100">
+                        <div class="text-center">
+                            <div class="spinner-border text-success" role="status"></div>
+                            <p class="mt-2">Loading tracking map...</p>
                         </div>
                     </div>
-
-                    <!-- Map Controls -->
-                    <div class="card-footer bg-light">
-                        <div class="row">
-                            <div class="col-md-6">
-                                <small class="text-muted">
-                                    <i class="fas fa-info-circle"></i>
-                                    <span id="mapStatus">Loading delivery information...</span>
-                                </small>
-                            </div>
-                            <div class="col-md-6 text-end">
-                                <div class="btn-group btn-group-sm">
-                                    <button class="btn btn-outline-primary" onclick="refreshMap()">
-                                        <i class="fas fa-sync-alt"></i> Refresh
-                                    </button>
-                                    <button class="btn btn-outline-info" onclick="centerOnDriver()">
-                                        <i class="fas fa-location-arrow"></i> Find Driver
-                                    </button>
-                                    <button class="btn btn-outline-success" onclick="shareTracking()">
-                                        <i class="fas fa-share"></i> Share
-                                    </button>
-                                </div>
+                </div>
+                <div class="card-footer-custom">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <small class="text-muted">
+                                <i class="fas fa-info-circle"></i>
+                                <span id="mapStatus">Loading delivery information...</span>
+                            </small>
+                        </div>
+                        <div class="col-md-6 text-end">
+                            <div class="btn-group btn-group-sm">
+                                <button class="btn btn-outline-primary" onclick="refreshMap()">
+                                    <i class="fas fa-sync-alt"></i> Refresh
+                                </button>
+                                <button class="btn btn-outline-info" onclick="centerOnDriver()">
+                                    <i class="fas fa-location-arrow"></i> Find Driver
+                                </button>
+                                <button class="btn btn-outline-success" onclick="shareTracking()">
+                                    <i class="fas fa-share"></i> Share
+                                </button>
                             </div>
                         </div>
                     </div>
@@ -69,19 +228,19 @@
             </div>
         </div>
 
-        <!-- Tracking Information Panel (right side) -->
+        <!-- Info Panel -->
         <div class="col-md-4">
             <!-- Order Details -->
-            <div class="card mb-3">
-                <div class="card-header bg-primary text-white">
-                    <h5 class="mb-0"><i class="fas fa-info-circle"></i> Order Details</h5>
+            <div class="tracking-card">
+                <div class="card-header-custom header-primary">
+                    <h5><i class="fas fa-info-circle"></i> Order Details</h5>
                 </div>
                 <div class="card-body">
                     <p><strong>Order #:</strong> @Model.SaleId</p>
-                    <p><strong>Status:</strong> <span class="badge bg-info" id="orderStatus">@Model.Status</span></p>
+                    <p><strong>Status:</strong> <span class="badge bg-@GetStatusColor(Model.Status)" id="orderStatus">@Model.Status</span></p>
                     <p><strong>Tracking #:</strong> <code>@Model.TrackingNumber</code></p>
                     <p><strong>Placed:</strong> @Model.SaleDate.ToString("f")</p>
-                    <p><strong>Total:</strong> R@Model.TotalAmount.ToString("N2")</p>
+                    <p><strong>Total:</strong> R @Model.TotalAmount.ToString("N2")</p>
                     <hr>
                     <p><strong>Customer:</strong> @Model.CustomerName</p>
                     <p>
@@ -91,31 +250,27 @@
                 </div>
             </div>
 
-            <!-- Driver Information -->
-            <div class="card mb-3">
-                <div class="card-header bg-warning text-dark">
-                    <h5 class="mb-0"><i class="fas fa-user-tie"></i> Delivery Driver</h5>
+            <!-- Driver Info -->
+            <div class="tracking-card">
+                <div class="card-header-custom header-warning">
+                    <h5><i class="fas fa-user-tie"></i> Delivery Driver</h5>
                 </div>
                 <div class="card-body text-center">
                     <div class="mb-2">
-                        <i class="fas fa-user-circle fa-3x text-warning"></i>
+                        <i class="fas fa-user-circle fa-3x" style="color: var(--color-hay);"></i>
                     </div>
                     <h5 id="driverName">@(Model.DeliveryDriver ?? "Assigning driver...")</h5>
                     <p class="mb-1" id="vehicleInfo">
-                        <i class="fas fa-car"></i>
+                        <i class="fas fa-@GetVehicleIcon(Model.VehicleType)"></i>
                         @(Model.VehicleType ?? "Vehicle") • @(Model.VehicleNumber ?? "TBD")
                     </p>
                     <p class="mb-2">
                         <i class="fas fa-phone"></i>
                         <span id="driverPhone">@(Model.DriverPhone ?? "Contact pending")</span>
                     </p>
-
                     <div class="mb-3">
-                        <span class="badge bg-secondary" id="driverActiveStatus">
-                            WAITING FOR DRIVER
-                        </span>
+                        <span class="badge bg-secondary" id="driverActiveStatus">WAITING FOR DRIVER</span>
                     </div>
-
                     <div class="d-grid gap-2 mt-3">
                         <a href="tel:@Model.DriverPhone" class="btn btn-sm btn-outline-primary" id="callDriverBtn"
                            style="@(string.IsNullOrEmpty(Model.DriverPhone) ? "display:none" : "")">
@@ -133,15 +288,14 @@
             </div>
 
             <!-- Delivery Progress -->
-            <div class="card mb-3">
-                <div class="card-header">
-                    <h5 class="mb-0"><i class="fas fa-road"></i> Delivery Progress</h5>
+            <div class="tracking-card">
+                <div class="card-header-custom" style="background: linear-gradient(135deg, var(--color-earth), var(--color-soil));">
+                    <h5><i class="fas fa-road"></i> Delivery Progress</h5>
                 </div>
                 <div class="card-body">
-                    <div class="progress mb-2" style="height: 10px;">
-                        <div class="progress-bar bg-success" role="progressbar" id="deliveryProgressBar"
-                             style="width: @GetDeliveryProgress(Model.Status)%"
-                             aria-valuenow="@GetDeliveryProgress(Model.Status)" aria-valuemin="0" aria-valuemax="100">
+                    <div class="progress mb-2">
+                        <div class="progress-bar" role="progressbar" id="deliveryProgressBar"
+                             style="width: @GetDeliveryProgress(Model.Status)%">
                         </div>
                     </div>
                     <div class="d-flex justify-content-between small">
@@ -149,7 +303,6 @@
                         <span id="progressText">@GetProgressText(Model.Status)</span>
                         <span>Delivered</span>
                     </div>
-
                     <div class="mt-3 text-center">
                         <small class="text-muted">
                             <i class="fas fa-clock"></i>
@@ -196,494 +349,200 @@
 </div>
 
 @section Scripts {
-    <!-- Include the fixed tracking JavaScript here -->
-    <!-- Copy the JavaScript from the previous artifact "fixed_tracking_map_js" -->
     <script>
-        // Paste the complete JavaScript code from fixed_tracking_map_js artifact here
-    </script>
+    let map, driverMarker, destinationMarker, deliveryPath, updateInterval;
 
-    <style>
-        .blink {
-            animation: blink 1.5s infinite;
-        }
-
-        @@keyframes blink {
-            0% {
-                opacity: 1;
+function initMap() {
+    const defaultLocation = { lat: -29.8587, lng: 31.0218 }; // Durban center
+    map = new google.maps.Map(document.getElementById('deliveryMap'), {
+        zoom: 15, // Increased zoom for better accuracy
+        center: defaultLocation,
+        mapTypeControl: true,
+        streetViewControl: false,
+        fullscreenControl: true,
+        styles: [
+            {
+                featureType: "poi",
+                elementType: "labels",
+                stylers: [{ visibility: "off" }]
             }
-
-            50% {
-                opacity: 0.3;
-            }
-
-            100% {
-                opacity: 1;
-            }
-        }
-
-        #deliveryMap {
-            min-height: 500px;
-        }
-
-        @@media (max-width: 768px) {
-            #deliveryMap {
-                height: 300px !important;
-            }
-        }
-    </style>
-}
-
-@functions {
-    public string GetStatusColor(string status)
-    {
-        switch (status)
-        {
-            case "Pending": return "warning";
-            case "Confirmed": return "info";
-            case "Shipped": return "primary";
-            case "Out for Delivery": return "primary";
-            case "Assigned to Driver": return "info";
-            case "Delivered": return "success";
-            case "Cancelled": return "danger";
-            default: return "secondary";
-        }
-    }
-
-    public int GetDeliveryProgress(string status)
-    {
-        switch (status)
-        {
-            case "Pending": return 10;
-            case "Confirmed": return 25;
-            case "Assigned to Driver": return 40;
-            case "Out for Delivery": return 75;
-            case "Delivered": return 100;
-            case "Cancelled": return 0;
-            default: return 10;
-        }
-    }
-
-    public string GetProgressText(string status)
-    {
-        switch (status)
-        {
-            case "Pending": return "Order Received";
-            case "Confirmed": return "Order Confirmed";
-            case "Assigned to Driver": return "Driver Assigned";
-            case "Out for Delivery": return "On the Way";
-            case "Delivered": return "Delivered!";
-            case "Cancelled": return "Cancelled";
-            default: return "Processing";
-        }
-    }
-}
-
-@section Scripts {
-    <script>
-    // Global variables
-    // FIXED: Real delivery tracking JavaScript
-
-    let map;
-    let driverMarker;
-    let destinationMarker;
-    let deliveryPath;
-    let updateInterval;
-    let driverLocationHistory = [];
-
-    function initMap() {
-        // Default center - will be updated when data loads
-        const defaultLocation = { lat: -25.7479, lng: 28.2293 };
-
-        map = new google.maps.Map(document.getElementById('deliveryMap'), {
-            zoom: 13,
-            center: defaultLocation,
-            mapTypeControl: true,
-            streetViewControl: false,
-            fullscreenControl: true,
-            styles: [
-                {
-                    featureType: "poi",
-                    elementType: "labels",
-                    stylers: [{ visibility: "off" }]
-                }
-            ]
-        });
-
-        loadDeliveryData();
-        startLiveUpdates();
-    }
-
-    function loadDeliveryData() {
-        $.get('@Url.Action("GetRealDeliveryData", "Products")', { saleId: @Model.SaleId })
-            .done(function(response) {
-                if (response.success) {
-                    updateMapWithRealDriver(response.deliveryData);
-                    updateDriverInfo(response.deliveryData);
-                    updateLastUpdateTime();
-
-                    // Update tracking status
-                    if (response.deliveryData.isActive) {
-                        $('#trackingStatus').text('LIVE TRACKING');
-                        $('#mapStatus').html('<i class="fas fa-circle text-success"></i> Driver is actively delivering your order');
-                    } else if (response.deliveryData.hasDriver) {
-                        $('#trackingStatus').text('ASSIGNED');
-                        $('#mapStatus').html('<i class="fas fa-clock text-warning"></i> Driver assigned - waiting for delivery to start');
-                    } else {
-                        $('#trackingStatus').text('WAITING');
-                        $('#mapStatus').html('<i class="fas fa-hourglass-half text-info"></i> Waiting for driver assignment');
-                    }
-                } else {
-                    showError('Failed to load delivery data: ' + (response.error || 'Unknown error'));
-                }
-            })
-            .fail(function(xhr, status, error) {
-                showError('Connection error. Please check your internet and refresh.');
-                console.error('AJAX Error:', status, error);
-            });
-    }
-
-    function updateMapWithRealDriver(deliveryData) {
-        console.log('Updating map with data:', deliveryData);
-
-        const driverLocation = {
-            lat: parseFloat(deliveryData.currentLat),
-            lng: parseFloat(deliveryData.currentLng)
-        };
-
-        const destinationLocation = {
-            lat: parseFloat(deliveryData.destinationLat),
-            lng: parseFloat(deliveryData.destinationLng)
-        };
-
-        console.log('Driver location:', driverLocation);
-        console.log('Destination:', destinationLocation);
-
-        // Validate coordinates
-        if (isNaN(driverLocation.lat) || isNaN(driverLocation.lng)) {
-            console.error('Invalid driver coordinates');
-            return;
-        }
-
-        if (isNaN(destinationLocation.lat) || isNaN(destinationLocation.lng)) {
-            console.error('Invalid destination coordinates');
-            return;
-        }
-
-        // Add to location history
-        driverLocationHistory.push(driverLocation);
-        if (driverLocationHistory.length > 50) {
-            driverLocationHistory.shift();
-        }
-
-        // Update or create driver marker
-        if (driverMarker) {
-            driverMarker.setPosition(driverLocation);
-        } else {
-            driverMarker = new google.maps.Marker({
-                position: driverLocation,
-                map: map,
-                icon: {
-                    path: google.maps.SymbolPath.CIRCLE,
-                    scale: 12,
-                    fillColor: deliveryData.isActive ? "#4285F4" : "#999",
-                    fillOpacity: 1,
-                    strokeColor: "#fff",
-                    strokeWeight: 3
-                },
-                title: deliveryData.driverName || "Delivery Driver",
-                animation: google.maps.Animation.DROP
-            });
-
-            // Info window for driver
-            const driverInfoWindow = new google.maps.InfoWindow({
-                content: `
-                    <div class="p-2" style="min-width: 200px;">
-                        <h6><i class="fas fa-user-tie"></i> ${deliveryData.driverName}</h6>
-                        <p class="mb-1"><i class="fas fa-car"></i> ${deliveryData.vehicleType} • ${deliveryData.vehicleNumber}</p>
-                        <p class="mb-1"><i class="fas fa-phone"></i> ${deliveryData.driverPhone}</p>
-                        <p class="mb-0 small text-muted">Last update: ${deliveryData.lastUpdate}</p>
-                        ${deliveryData.isActive ? '<span class="badge bg-success">ACTIVE</span>' : '<span class="badge bg-secondary">OFFLINE</span>'}
-                    </div>
-                `
-            });
-
-            driverMarker.addListener('click', () => {
-                driverInfoWindow.open(map, driverMarker);
-            });
-        }
-
-        // Update or create destination marker
-        if (destinationMarker) {
-            destinationMarker.setPosition(destinationLocation);
-        } else {
-            destinationMarker = new google.maps.Marker({
-                position: destinationLocation,
-                map: map,
-                icon: {
-                    url: 'https://maps.google.com/mapfiles/ms/icons/red-dot.png',
-                    scaledSize: new google.maps.Size(40, 40)
-                },
-                title: 'Delivery Destination'
-            });
-
-            // Info window for destination
-            const destInfoWindow = new google.maps.InfoWindow({
-                content: `
-                    <div class="p-2">
-                        <h6><i class="fas fa-map-marker-alt"></i> Delivery Address</h6>
-                        <p class="mb-0">${deliveryData.deliveryAddress}</p>
-                    </div>
-                `
-            });
-
-            destinationMarker.addListener('click', () => {
-                destInfoWindow.open(map, destinationMarker);
-            });
-        }
-
-        // Draw path between driver and destination
-        if (deliveryPath) {
-            deliveryPath.setMap(null);
-        }
-
-        deliveryPath = new google.maps.Polyline({
-            path: [driverLocation, destinationLocation],
-            geodesic: true,
-            strokeColor: "#4285F4",
-            strokeOpacity: 0.7,
-            strokeWeight: 3,
-            map: map
-        });
-
-        // Draw driver's historical path
-        if (driverLocationHistory.length > 1) {
-            new google.maps.Polyline({
-                path: driverLocationHistory,
-                geodesic: true,
-                strokeColor: "#34A853",
-                strokeOpacity: 0.4,
-                strokeWeight: 2,
-                map: map
-            });
-        }
-
-        // Fit map to show both markers
-        const bounds = new google.maps.LatLngBounds();
-        bounds.extend(driverLocation);
-        bounds.extend(destinationLocation);
-        map.fitBounds(bounds);
-
-        // Add some padding
-        setTimeout(() => {
-            if (map.getZoom() > 15) {
-                map.setZoom(15);
-            }
-        }, 100);
-    }
-
-    function updateDriverInfo(deliveryData) {
-        $('#driverName').text(deliveryData.driverName || "Not assigned yet");
-        $('#vehicleInfo').html(
-            `<i class="fas fa-car"></i> ${deliveryData.vehicleType} • ${deliveryData.vehicleNumber}`
-        );
-        $('#driverPhone').text(deliveryData.driverPhone || "Contact pending");
-
-        const statusBadge = $('#orderStatus');
-        statusBadge.text(deliveryData.status);
-        statusBadge.removeClass().addClass('badge bg-' + getStatusColor(deliveryData.status));
-
-        const driverStatus = $('#driverActiveStatus');
-        if (deliveryData.isActive && deliveryData.driverIsOnline) {
-            driverStatus.removeClass('bg-secondary').addClass('bg-success').text('ACTIVE NOW');
-        } else if (deliveryData.hasDriver && deliveryData.driverIsOnline) {
-            driverStatus.removeClass('bg-secondary bg-success').addClass('bg-warning').text('ONLINE');
-        } else {
-            driverStatus.removeClass('bg-success bg-warning').addClass('bg-secondary').text('OFFLINE');
-        }
-
-        // Show/hide call buttons
-        const callBtn = $('#callDriverBtn');
-        const messageBtn = $('#messageDriverBtn');
-        if (deliveryData.driverPhone && deliveryData.driverPhone !== 'Contact pending') {
-            callBtn.attr('href', 'tel:' + deliveryData.driverPhone).show();
-            messageBtn.show();
-        } else {
-            callBtn.hide();
-            messageBtn.hide();
-        }
-    }
-
-    function startLiveUpdates() {
-        // Update every 5 seconds for live tracking
-        updateInterval = setInterval(loadDeliveryData, 5000);
-    }
-
-    function centerOnDriver() {
-        if (driverMarker) {
-            map.setCenter(driverMarker.getPosition());
-            map.setZoom(16);
-            driverMarker.setAnimation(google.maps.Animation.BOUNCE);
-            setTimeout(() => driverMarker.setAnimation(null), 2000);
-        }
-    }
-
-    function refreshMap() {
-        console.log('Refreshing map data...');
-        loadDeliveryData();
-        if (driverMarker) {
-            driverMarker.setAnimation(google.maps.Animation.BOUNCE);
-            setTimeout(() => driverMarker.setAnimation(null), 1000);
-        }
-    }
-
-    function shareTracking() {
-        const trackingUrl = window.location.href;
-        const shareText = `Track my FarmTrack delivery: ${trackingUrl}`;
-
-        if (navigator.share) {
-            navigator.share({
-                title: 'FarmTrack Delivery Tracking',
-                text: shareText,
-                url: trackingUrl
-            });
-        } else if (navigator.clipboard) {
-            navigator.clipboard.writeText(trackingUrl).then(() => {
-                alert('Tracking link copied to clipboard!');
-            });
-        } else {
-            prompt('Copy this tracking link:', trackingUrl);
-        }
-    }
-
-    function sendMessageToDriver() {
-        const driverPhone = $('#driverPhone').text();
-        if (driverPhone && driverPhone !== 'Contact pending') {
-            const message = `Hi, checking on order #@Model.SaleId delivery. Can you provide an update?`;
-            const whatsappUrl = `https://wa.me/${driverPhone.replace(/\D/g, '')}?text=${encodeURIComponent(message)}`;
-            window.open(whatsappUrl, '_blank');
-        } else {
-            alert('Driver contact not available yet.');
-        }
-    }
-
-    function updateLastUpdateTime() {
-        $('#lastUpdate').text('Updated: ' + new Date().toLocaleTimeString());
-    }
-
-    function showError(message) {
-        $('#mapStatus').html(`<i class="fas fa-exclamation-triangle text-danger"></i> ${message}`);
-        console.error(message);
-    }
-
-    function getStatusColor(status) {
-        const colors = {
-            'Pending': 'warning',
-            'Confirmed': 'info',
-            'Shipped': 'primary',
-            'Out for Delivery': 'primary',
-            'Assigned to Driver': 'info',
-            'Delivered': 'success',
-            'Cancelled': 'danger'
-        };
-        return colors[status] || 'secondary';
-    }
-
-    // Cleanup on page unload
-    $(window).on('beforeunload', function() {
-        if (updateInterval) clearInterval(updateInterval);
+        ]
     });
 
-    // Initialize when page loads
-    window.initMap = initMap;
+    loadDeliveryData();
+    startLiveUpdates();
+}
 
-    // Handle Google Maps API errors
-    window.gm_authFailure = function() {
-        alert('Google Maps failed to load. Please check your API key.');
-    };
-    </script>
+function updateMapWithRealDriver(data) {
+    console.log("Updating map with data:", data);
 
-    <style>
-        .blink {
-            animation: blink 1.5s infinite;
-        }
+    const driverLoc = { lat: parseFloat(data.currentLat), lng: parseFloat(data.currentLng) };
+    const destLoc = { lat: parseFloat(data.destinationLat), lng: parseFloat(data.destinationLng) };
 
-        @@keyframes blink {
-            0% {
-                opacity: 1;
-            }
+    // **FIX: Always show driver marker with proper styling**
+    if (!driverMarker) {
+        driverMarker = new google.maps.Marker({
+            position: driverLoc,
+            map: map,
+            icon: {
+                url: data.hasRealLocation ?
+                    'https://maps.google.com/mapfiles/ms/icons/blue-dot.png' :
+                    'https://maps.google.com/mapfiles/ms/icons/gray-dot.png',
+                scaledSize: new google.maps.Size(40, 40)
+            },
+            title: data.driverName + (data.hasRealLocation ? ' (Live GPS)' : ' (Estimated)'),
+            animation: data.hasRealLocation ? google.maps.Animation.BOUNCE : null
+        });
 
-            50% {
-                opacity: 0.3;
-            }
+        const infoWindow = new google.maps.InfoWindow({
+            content: `<div style="padding:8px; min-width:200px">
+                <strong>${data.driverName}</strong><br>
+                ${data.vehicleType} • ${data.vehicleNumber}<br>
+                <small style="color: ${data.hasRealLocation ? 'green' : 'orange'}">
+                    <i class="fas fa-${data.hasRealLocation ? 'satellite' : 'map-marker'}"></i>
+                    ${data.hasRealLocation ? 'Live GPS Location' : 'Estimated Location'}
+                </small><br>
+                <small>Coordinates: ${data.currentLat.toFixed(6)}, ${data.currentLng.toFixed(6)}</small>
+            </div>`
+        });
 
-            100% {
-                opacity: 1;
-            }
-        }
+        driverMarker.addListener('click', function() {
+            infoWindow.open(map, driverMarker);
+        });
+    } else {
+        // Smooth transition to new position
+        driverMarker.setPosition(driverLoc);
 
-        #deliveryMap {
-            min-height: 500px;
-        }
+        // Update icon based on location source
+        driverMarker.setIcon({
+            url: data.hasRealLocation ?
+                'https://maps.google.com/mapfiles/ms/icons/blue-dot.png' :
+                'https://maps.google.com/mapfiles/ms/icons/gray-dot.png',
+            scaledSize: new google.maps.Size(40, 40)
+        });
 
-        .gm-style .gm-style-iw {
-            font-weight: 400;
-            font-size: 14px;
-        }
+        driverMarker.setAnimation(data.hasRealLocation ? google.maps.Animation.BOUNCE : null);
+    }
 
-        /* Custom marker animations */
-        .marker-bounce {
-            animation: bounce 0.5s infinite alternate;
-        }
+    // Update destination marker
+    if (!destinationMarker) {
+        destinationMarker = new google.maps.Marker({
+            position: destLoc,
+            map: map,
+            icon: {
+                url: 'https://maps.google.com/mapfiles/ms/icons/red-dot.png',
+                scaledSize: new google.maps.Size(40, 40)
+            },
+            title: 'Delivery Destination: ' + data.deliveryAddress
+        });
 
-        @@keyframes bounce {
-            from {
-                transform: translateY(0px);
-            }
+        const destInfoWindow = new google.maps.InfoWindow({
+            content: `<div style="padding:8px; min-width:250px">
+                <strong>Delivery Destination</strong><br>
+                ${data.deliveryAddress}<br>
+                <small>Coordinates: ${data.destinationLat.toFixed(6)}, ${data.destinationLng.toFixed(6)}</small>
+            </div>`
+        });
 
-            to {
-                transform: translateY(-10px);
-            }
-        }
+        destinationMarker.addListener('click', function() {
+            destInfoWindow.open(map, destinationMarker);
+        });
+    }
 
-        /* Responsive adjustments */
-        @@media (max-width: 768px) {
-            #deliveryMap {
-                height: 300px !important;
-            }
+    // **FIX: Clear existing path and only draw if we have meaningful locations**
+    if (deliveryPath) {
+        deliveryPath.setMap(null);
+    }
 
-            .btn-group {
-                flex-direction: column;
-            }
+    // Calculate distance and only draw path if it makes sense
+    const distance = google.maps.geometry.spherical.computeDistanceBetween(
+        new google.maps.LatLng(driverLoc.lat, driverLoc.lng),
+        new google.maps.LatLng(destLoc.lat, destLoc.lng)
+    );
+    const distanceKm = (distance / 1000).toFixed(2);
 
-                .btn-group .btn {
-                    margin-bottom: 5px;
-                    border-radius: 5px !important;
+    // Only draw path if distance is reasonable (not showing driver at destination when they're not)
+    if (distance > 100 && data.hasRealLocation) { // At least 100 meters apart
+        deliveryPath = new google.maps.Polyline({
+            path: [driverLoc, destLoc],
+            geodesic: true,
+            strokeColor: data.hasRealLocation ? "#4285F4" : "#999",
+            strokeOpacity: 0.7,
+            strokeWeight: 4,
+            map: map
+        });
+    }
+
+    // Update status display with accurate information
+    let statusMessage = '';
+    if (data.hasRealLocation) {
+        statusMessage = `<i class="fas fa-satellite text-success"></i> Live GPS - ${distanceKm} km from destination`;
+    } else if (data.driverIsOnline) {
+        statusMessage = `<i class="fas fa-clock text-warning"></i> Driver online - waiting for GPS signal`;
+    } else if (data.hasDriver) {
+        statusMessage = `<i class="fas fa-map-marker text-info"></i> Estimated location - ${distanceKm} km from destination`;
+    } else {
+        statusMessage = `<i class="fas fa-hourglass-half text-secondary"></i> Awaiting driver assignment`;
+    }
+
+    $('#mapStatus').html(statusMessage);
+
+    // **FIX: Smart bounds adjustment**
+    const bounds = new google.maps.LatLngBounds();
+    bounds.extend(driverLoc);
+    bounds.extend(destLoc);
+
+    // Add some padding
+    const padding = 0.02; // ~2km padding
+    bounds.extend({lat: driverLoc.lat + padding, lng: driverLoc.lng + padding});
+    bounds.extend({lat: driverLoc.lat - padding, lng: driverLoc.lng - padding});
+
+    map.fitBounds(bounds);
+
+    // Don't zoom in too far if locations are very close
+    const currentZoom = map.getZoom();
+    if (currentZoom > 18) {
+        map.setZoom(18);
+    }
+}
+
+// Add this function to show coordinate debug info
+function showCoordinateDebug(data) {
+    console.log("=== COORDINATE DEBUG ===");
+    console.log("Driver Coordinates:", data.currentLat, data.currentLng);
+    console.log("Destination Coordinates:", data.destinationLat, data.destinationLng);
+    console.log("Location Source:", data.locationSource);
+    console.log("Has Real Location:", data.hasRealLocation);
+    console.log("Driver Online:", data.driverIsOnline);
+    console.log("========================");
+}
+
+// Update the loadDeliveryData function to include debug info
+function loadDeliveryData() {
+    $.get('@Url.Action("GetRealDeliveryData", "Products")', { saleId: @Model.SaleId })
+        .done(function(response) {
+            if (response.success) {
+                showCoordinateDebug(response.deliveryData); // Debug output
+                updateMapWithRealDriver(response.deliveryData);
+                updateDriverInfo(response.deliveryData);
+                updateLastUpdateTime();
+
+                // Update tracking status
+                if (response.deliveryData.hasRealLocation) {
+                    $('#trackingStatus').html('<i class="fas fa-satellite"></i> LIVE GPS TRACKING');
+                } else if (response.deliveryData.driverIsOnline) {
+                    $('#trackingStatus').html('<i class="fas fa-clock"></i> DRIVER ONLINE');
+                } else {
+                    $('#trackingStatus').html('<i class="fas fa-map-marker"></i> ESTIMATED LOCATION');
                 }
-
-            .card-body {
-                padding: 1rem;
             }
-        }
-
-        /* Custom scrollbar for updates */
-        #liveUpdates::-webkit-scrollbar {
-            width: 6px;
-        }
-
-        #liveUpdates::-webkit-scrollbar-track {
-            background: #f1f1f1;
-            border-radius: 3px;
-        }
-
-        #liveUpdates::-webkit-scrollbar-thumb {
-            background: #c1c1c1;
-            border-radius: 3px;
-        }
-
-            #liveUpdates::-webkit-scrollbar-thumb:hover {
-                background: #a8a8a8;
-            }
-    </style>
+        })
+        .fail(function(xhr, status, error) {
+            console.error("Failed to load delivery data:", error);
+            showError('Connection error. Please refresh.');
+        });
+}
+    </script>
 }
 
 @functions {
@@ -693,9 +552,7 @@
         {
             case "Pending": return "warning";
             case "Confirmed": return "info";
-            case "Shipped": return "primary";
             case "Out for Delivery": return "primary";
-            case "Assigned to Driver": return "info";
             case "Delivered": return "success";
             case "Cancelled": return "danger";
             default: return "secondary";
@@ -707,10 +564,8 @@
         switch (vehicleType)
         {
             case "Bike": return "motorcycle";
-            case "Car": return "car";
             case "Truck": return "truck";
             case "Van": return "shuttle-van";
-            case "Scooter": return "motorcycle";
             default: return "car";
         }
     }
@@ -724,7 +579,6 @@
             case "Assigned to Driver": return 40;
             case "Out for Delivery": return 75;
             case "Delivered": return 100;
-            case "Cancelled": return 0;
             default: return 10;
         }
     }
@@ -733,12 +587,11 @@
     {
         switch (status)
         {
-            case "Pending": return "Order Received";
-            case "Confirmed": return "Order Confirmed";
-            case "Assigned to Driver": return "Driver Assigned";
+            case "Pending": return "Received";
+            case "Confirmed": return "Confirmed";
+            case "Assigned to Driver": return "Assigned";
             case "Out for Delivery": return "On the Way";
             case "Delivered": return "Delivered!";
-            case "Cancelled": return "Cancelled";
             default: return "Processing";
         }
     }

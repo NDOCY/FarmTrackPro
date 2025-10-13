@@ -1,107 +1,699 @@
 ﻿@model FarmTrack.Models.Product
 
 @{
-    ViewBag.Title = "Create";
+    ViewBag.Title = "Create New Product";
 }
 
-<h2>Create</h2>
+<style>
+    :root {
+        --color-earth: #8B7355;
+        --color-soil: #654321;
+        --color-foliage: #4CAF50;
+        --color-wheat: #F5DEB3;
+        --color-hay: #DAA520;
+        --color-danger: #FF6B6B;
+        --color-white: #FFFFFF;
+        --border-radius: 12px;
+        --card-shadow: 0 6px 18px rgba(0,0,0,0.1);
+    }
 
-@using (Html.BeginForm()) 
-{
-    @Html.AntiForgeryToken()
-    
-    <div class="form-horizontal">
-        <h4>Product</h4>
-        <hr />
-        @Html.ValidationSummary(true, "", new { @class = "text-danger" })
-        <div class="form-group">
-            @Html.LabelFor(model => model.Name, htmlAttributes: new { @class = "control-label col-md-2" })
-            <div class="col-md-10">
-                @Html.EditorFor(model => model.Name, new { htmlAttributes = new { @class = "form-control" } })
-                @Html.ValidationMessageFor(model => model.Name, "", new { @class = "text-danger" })
-            </div>
-        </div>
+    body {
+        background-color: #F9F7F4;
+    }
 
-        <div class="form-group">
-            @Html.LabelFor(model => model.ProductType, htmlAttributes: new { @class = "control-label col-md-2" })
-            <div class="col-md-10">
-                @Html.EditorFor(model => model.ProductType, new { htmlAttributes = new { @class = "form-control" } })
-                @Html.ValidationMessageFor(model => model.ProductType, "", new { @class = "text-danger" })
-            </div>
-        </div>
+    /* Page Header */
+    .page-header {
+        background: linear-gradient(135deg, var(--color-foliage) 0%, #45a049 100%);
+        border-radius: var(--border-radius);
+        padding: 30px;
+        margin-bottom: 30px;
+        position: relative;
+        overflow: hidden;
+        box-shadow: var(--card-shadow);
+    }
 
-        <div class="form-group">
-            @Html.LabelFor(model => model.Category, htmlAttributes: new { @class = "control-label col-md-2" })
-            <div class="col-md-10">
-                @Html.EditorFor(model => model.Category, new { htmlAttributes = new { @class = "form-control" } })
-                @Html.ValidationMessageFor(model => model.Category, "", new { @class = "text-danger" })
-            </div>
-        </div>
+    .page-header::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        right: 0;
+        width: 250px;
+        height: 100%;
+        background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23FFFFFF" opacity="0.1"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>');
+        background-repeat: no-repeat;
+        background-position: right center;
+        background-size: 180px;
+        opacity: 0.2;
+    }
 
-        <div class="form-group">
-            @Html.LabelFor(model => model.Unit, htmlAttributes: new { @class = "control-label col-md-2" })
-            <div class="col-md-10">
-                @Html.EditorFor(model => model.Unit, new { htmlAttributes = new { @class = "form-control" } })
-                @Html.ValidationMessageFor(model => model.Unit, "", new { @class = "text-danger" })
-            </div>
-        </div>
+    .page-header h1 {
+        color: var(--color-white);
+        font-weight: 700;
+        margin-bottom: 10px;
+        font-size: 2rem;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
 
-        <div class="form-group">
-            @Html.LabelFor(model => model.Quantity, htmlAttributes: new { @class = "control-label col-md-2" })
-            <div class="col-md-10">
-                @Html.EditorFor(model => model.Quantity, new { htmlAttributes = new { @class = "form-control" } })
-                @Html.ValidationMessageFor(model => model.Quantity, "", new { @class = "text-danger" })
-            </div>
-        </div>
+    .page-header h1 i {
+        font-size: 1.8rem;
+    }
 
-        <div class="form-group">
-            @Html.LabelFor(model => model.PricePerUnit, htmlAttributes: new { @class = "control-label col-md-2" })
-            <div class="col-md-10">
-                @Html.EditorFor(model => model.PricePerUnit, new { htmlAttributes = new { @class = "form-control" } })
-                @Html.ValidationMessageFor(model => model.PricePerUnit, "", new { @class = "text-danger" })
-            </div>
-        </div>
+    .page-header .lead {
+        color: rgba(255, 255, 255, 0.9);
+        font-size: 1rem;
+        margin: 0;
+    }
 
-        <div class="form-group">
-            @Html.LabelFor(model => model.HarvestOutcomeId, "HarvestOutcomeId", htmlAttributes: new { @class = "control-label col-md-2" })
-            <div class="col-md-10">
-                @Html.DropDownList("HarvestOutcomeId", null, htmlAttributes: new { @class = "form-control" })
-                @Html.ValidationMessageFor(model => model.HarvestOutcomeId, "", new { @class = "text-danger" })
-            </div>
-        </div>
+    /* Form Container */
+    .form-container {
+        background: white;
+        border-radius: var(--border-radius);
+        padding: 30px;
+        box-shadow: var(--card-shadow);
+    }
 
-        <div class="form-group">
-            @Html.LabelFor(model => model.LivestockId, "LivestockId", htmlAttributes: new { @class = "control-label col-md-2" })
-            <div class="col-md-10">
-                @Html.DropDownList("LivestockId", null, htmlAttributes: new { @class = "form-control" })
-                @Html.ValidationMessageFor(model => model.LivestockId, "", new { @class = "text-danger" })
-            </div>
-        </div>
+    /* Form Sections */
+    .form-section {
+        margin-bottom: 30px;
+    }
 
-        <div class="form-group">
-            @Html.LabelFor(model => model.InventoryId, "InventoryId", htmlAttributes: new { @class = "control-label col-md-2" })
-            <div class="col-md-10">
-                @Html.DropDownList("InventoryId", null, htmlAttributes: new { @class = "form-control" })
-                @Html.ValidationMessageFor(model => model.InventoryId, "", new { @class = "text-danger" })
-            </div>
-        </div>
+    .form-section-title {
+        color: var(--color-soil);
+        font-size: 1.3rem;
+        font-weight: 600;
+        margin-bottom: 20px;
+        padding-bottom: 10px;
+        border-bottom: 2px solid var(--color-wheat);
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
 
-        <div class="form-group">
-            @Html.LabelFor(model => model.CreatedAt, htmlAttributes: new { @class = "control-label col-md-2" })
-            <div class="col-md-10">
-                @Html.EditorFor(model => model.CreatedAt, new { htmlAttributes = new { @class = "form-control" } })
-                @Html.ValidationMessageFor(model => model.CreatedAt, "", new { @class = "text-danger" })
-            </div>
-        </div>
+    .section-divider {
+        height: 2px;
+        background: linear-gradient(90deg, var(--color-wheat), transparent);
+        margin: 30px 0;
+    }
 
-        <div class="form-group">
-            <div class="col-md-offset-2 col-md-10">
-                <input type="submit" value="Create" class="btn btn-default" />
-            </div>
-        </div>
+    /* Form Groups */
+    .form-group {
+        margin-bottom: 20px;
+    }
+
+    .control-label {
+        display: block;
+        color: var(--color-soil);
+        font-weight: 600;
+        font-size: 0.9rem;
+        margin-bottom: 8px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .form-control {
+        width: 100%;
+        padding: 10px 15px;
+        border: 2px solid #e0e0e0;
+        border-radius: 8px;
+        font-size: 0.95rem;
+        transition: all 0.3s ease;
+        background: white;
+    }
+
+    .form-control:focus {
+        border-color: var(--color-foliage);
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.1);
+    }
+
+    textarea.form-control {
+        resize: vertical;
+        min-height: 100px;
+    }
+
+    .form-text {
+        display: block;
+        margin-top: 5px;
+        color: #666;
+        font-size: 0.85rem;
+    }
+
+    .text-danger {
+        color: var(--color-danger);
+        font-size: 0.85rem;
+        display: block;
+        margin-top: 5px;
+    }
+
+    /* Input Group */
+    .input-group {
+        display: flex;
+        width: 100%;
+    }
+
+    .input-group-prepend {
+        display: flex;
+    }
+
+    .input-group-text {
+        background: var(--color-wheat);
+        color: var(--color-soil);
+        border: 2px solid #e0e0e0;
+        border-right: none;
+        padding: 10px 15px;
+        font-weight: 600;
+        border-radius: 8px 0 0 8px;
+    }
+
+    .input-group .form-control {
+        border-radius: 0 8px 8px 0;
+    }
+
+    /* Image Upload Area */
+    .image-upload-area {
+        border: 2px dashed #ddd;
+        border-radius: 8px;
+        padding: 30px;
+        text-align: center;
+        background-color: #fafafa;
+        transition: all 0.3s;
+        cursor: pointer;
+    }
+
+    .image-upload-area:hover {
+        border-color: var(--color-foliage);
+        background-color: rgba(76, 175, 80, 0.05);
+    }
+
+    .image-upload-area.dragover {
+        border-color: var(--color-foliage);
+        background-color: rgba(76, 175, 80, 0.1);
+        transform: scale(1.02);
+    }
+
+    .upload-icon {
+        font-size: 48px;
+        color: var(--color-foliage);
+        margin-bottom: 10px;
+    }
+
+    .upload-icon i {
+        opacity: 0.7;
+    }
+
+    .image-upload-area p {
+        margin: 10px 0 5px;
+        color: var(--color-soil);
+        font-weight: 500;
+    }
+
+    .image-preview {
+        max-width: 100%;
+        max-height: 300px;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        display: none;
+    }
+
+    #noImage {
+        padding: 40px;
+        background: rgba(245, 222, 179, 0.1);
+        border-radius: 8px;
+        color: #999;
+    }
+
+    #noImage i {
+        color: var(--color-wheat);
+    }
+
+    .upload-progress {
+        display: none;
+        margin-top: 15px;
+    }
+
+    .progress {
+        height: 8px;
+        background-color: #e0e0e0;
+        border-radius: 4px;
+        overflow: hidden;
+        margin-bottom: 5px;
+    }
+
+    .progress-bar {
+        height: 100%;
+        background: linear-gradient(90deg, var(--color-foliage), #45a049);
+        transition: width 0.3s ease;
+    }
+
+    /* Checkbox Group */
+    .checkbox-group {
+        display: flex;
+        gap: 30px;
+        margin-bottom: 15px;
+    }
+
+    .checkbox-container {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .form-check-input {
+        width: 20px;
+        height: 20px;
+        cursor: pointer;
+        accent-color: var(--color-foliage);
+    }
+
+    .form-check-label {
+        cursor: pointer;
+        margin: 0;
+        color: #333;
+        font-size: 0.95rem;
+    }
+
+    /* Buttons */
+    .btn {
+        padding: 12px 24px;
+        border-radius: 8px;
+        font-weight: 600;
+        font-size: 0.95rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        border: none;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        text-decoration: none;
+    }
+
+    .btn-primary {
+        background: linear-gradient(135deg, var(--color-foliage), #45a049);
+        color: white;
+        box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3);
+    }
+
+    .btn-primary:hover:not(:disabled) {
+        background: linear-gradient(135deg, #45a049, var(--color-foliage));
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(76, 175, 80, 0.4);
+        color: white;
+    }
+
+    .btn-primary:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+
+    .btn-secondary {
+        background: linear-gradient(135deg, #9e9e9e, #757575);
+        color: white;
+        box-shadow: 0 4px 15px rgba(158, 158, 158, 0.3);
+    }
+
+    .btn-secondary:hover {
+        background: linear-gradient(135deg, #757575, #616161);
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(158, 158, 158, 0.4);
+        color: white;
+    }
+
+    .btn i {
+        font-size: 1.1rem;
+    }
+
+    /* Responsive */
+    @@media (max-width: 768px) {
+        .page-header {
+            padding: 20px;
+        }
+
+        .page-header h1 {
+            font-size: 1.5rem;
+        }
+
+        .form-container {
+            padding: 20px;
+        }
+
+        .checkbox-group {
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .d-flex {
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .btn {
+            width: 100%;
+            justify-content: center;
+        }
+    }
+</style>
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
+<div class="container-fluid mt-4">
+    <div class="page-header">
+        <h1><i class="fas fa-plus-circle"></i> Create New Product</h1>
+        <p class="lead">Add a new product to your store inventory</p>
     </div>
-}
 
-<div>
-    @Html.ActionLink("Back to List", "Index")
+    <div class="form-container">
+        @using (Html.BeginForm("Create", "Products", FormMethod.Post, new { enctype = "multipart/form-data", id = "createForm" }))
+        {
+            @Html.AntiForgeryToken()
+
+            <!-- Basic Information Section -->
+            <div class="form-section">
+                <h4 class="form-section-title"><i class="fas fa-info-circle"></i> Basic Information</h4>
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            @Html.LabelFor(model => model.Name, htmlAttributes: new { @class = "control-label" })
+                            @Html.EditorFor(model => model.Name, new { htmlAttributes = new { @class = "form-control", placeholder = "Enter product name", required = "required" } })
+                            @Html.ValidationMessageFor(model => model.Name, "", new { @class = "text-danger" })
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            @Html.LabelFor(model => model.ProductType, htmlAttributes: new { @class = "control-label" })
+                            @Html.DropDownListFor(model => model.ProductType,
+                                new SelectList(new[]
+                                {
+                                    "Crop",
+                                    "Livestock",
+                                    "Inventory",
+                                    "Equipment",
+                                    "Seed",
+                                    "Fertilizer"
+                                }),
+                                "Select Product Type",
+                                new { @class = "form-control", required = "required" })
+                            @Html.ValidationMessageFor(model => model.ProductType, "", new { @class = "text-danger" })
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            @Html.LabelFor(model => model.Category, htmlAttributes: new { @class = "control-label" })
+                            @Html.EditorFor(model => model.Category, new { htmlAttributes = new { @class = "form-control", placeholder = "e.g., Vegetables, Dairy, Tools" } })
+                            @Html.ValidationMessageFor(model => model.Category, "", new { @class = "text-danger" })
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            @Html.LabelFor(model => model.Unit, htmlAttributes: new { @class = "control-label" })
+                            @Html.DropDownListFor(model => model.Unit,
+                                new SelectList(new[]
+                                {
+                                    "kg", "g", "lbs",
+                                    "liters", "ml", "gallons",
+                                    "pieces", "units", "bundles",
+                                    "boxes", "bags", "crates"
+                                }),
+                                "Select Unit",
+                                new { @class = "form-control", required = "required" })
+                            @Html.ValidationMessageFor(model => model.Unit, "", new { @class = "text-danger" })
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    @Html.LabelFor(model => model.Description, htmlAttributes: new { @class = "control-label" })
+                    @Html.TextAreaFor(model => model.Description, new { @class = "form-control", rows = 4, placeholder = "Describe the product features, quality, uses, etc." })
+                    @Html.ValidationMessageFor(model => model.Description, "", new { @class = "text-danger" })
+                    <small class="form-text">This description will be shown to customers in the store.</small>
+                </div>
+            </div>
+
+            <div class="section-divider"></div>
+
+            <!-- Pricing & Inventory Section -->
+            <div class="form-section">
+                <h4 class="form-section-title"><i class="fas fa-dollar-sign"></i> Pricing & Inventory</h4>
+
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            @Html.LabelFor(model => model.PricePerUnit, htmlAttributes: new { @class = "control-label" })
+                            <div class="input-group">
+                                <div class="input-group-prepend">
+                                    <span class="input-group-text">R</span>
+                                </div>
+                                @Html.EditorFor(model => model.PricePerUnit, new { htmlAttributes = new { @class = "form-control", placeholder = "0.00", step = "0.01", min = "0", required = "required" } })
+                            </div>
+                            @Html.ValidationMessageFor(model => model.PricePerUnit, "", new { @class = "text-danger" })
+                            <small class="form-text">Price per unit (kg, liter, piece, etc.)</small>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            @Html.LabelFor(model => model.Quantity, htmlAttributes: new { @class = "control-label" })
+                            @Html.EditorFor(model => model.Quantity, new { htmlAttributes = new { @class = "form-control", min = "0", value = "0" } })
+                            @Html.ValidationMessageFor(model => model.Quantity, "", new { @class = "text-danger" })
+                            <small class="form-text">Available stock quantity</small>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            @Html.LabelFor(model => model.MinimumOrder, htmlAttributes: new { @class = "control-label" })
+                            @Html.EditorFor(model => model.MinimumOrder, new { htmlAttributes = new { @class = "form-control", min = "1", value = "1" } })
+                            @Html.ValidationMessageFor(model => model.MinimumOrder, "", new { @class = "text-danger" })
+                            <small class="form-text">Minimum order quantity for customers</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section-divider"></div>
+
+            <!-- Product Image Section -->
+            <div class="form-section">
+                <h4 class="form-section-title"><i class="fas fa-image"></i> Product Image</h4>
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label class="control-label">Upload Product Image</label>
+                            <div class="image-upload-area" id="imageUploadArea">
+                                <div class="upload-icon">
+                                    <i class="fas fa-cloud-upload-alt"></i>
+                                </div>
+                                <p>Click to browse or drag & drop an image</p>
+                                <small class="text-muted">Supported formats: JPG, PNG, GIF (Max 5MB)</small>
+                                <input type="file" name="imageFile" id="imageFile" accept="image/*" style="display: none;" />
+                                <div class="upload-progress" id="uploadProgress">
+                                    <div class="progress">
+                                        <div class="progress-bar" role="progressbar" style="width: 0%"></div>
+                                    </div>
+                                    <small>Uploading...</small>
+                                </div>
+                            </div>
+                            @Html.ValidationMessage("imageFile", "", new { @class = "text-danger" })
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label class="control-label">Image Preview</label>
+                            <div>
+                                <img id="imagePreview" class="image-preview" alt="Product image preview" />
+                                <div id="noImage" class="text-muted text-center">
+                                    <i class="fas fa-image fa-3x mb-2"></i>
+                                    <p>No image selected</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section-divider"></div>
+
+            <!-- Product Settings Section -->
+            <div class="form-section">
+                <h4 class="form-section-title"><i class="fas fa-cog"></i> Product Settings</h4>
+
+                <div class="checkbox-group">
+                    <div class="checkbox-container">
+                        @Html.CheckBoxFor(model => model.IsAvailable, new { @class = "form-check-input", @checked = "checked" })
+                        @Html.LabelFor(model => model.IsAvailable, "Available for Sale", new { @class = "form-check-label" })
+                    </div>
+                    <div class="checkbox-container">
+                        @Html.CheckBoxFor(model => model.IsFeatured, new { @class = "form-check-input" })
+                        @Html.LabelFor(model => model.IsFeatured, "Featured Product", new { @class = "form-check-label" })
+                    </div>
+                </div>
+                <small class="form-text">
+                    • <strong>Available for Sale:</strong> Show this product in the store<br>
+                    • <strong>Featured Product:</strong> Highlight this product on the homepage
+                </small>
+            </div>
+
+            <div class="section-divider"></div>
+
+            <!-- Source References (Optional) -->
+            <div class="form-section">
+                <h4 class="form-section-title"><i class="fas fa-link"></i> Source References (Optional)</h4>
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            @Html.LabelFor(model => model.HarvestOutcomeId, "Harvest Outcome", new { @class = "control-label" })
+                            @Html.DropDownList("HarvestOutcomeId", null, "Select Harvest Outcome", new { @class = "form-control" })
+                            @Html.ValidationMessageFor(model => model.HarvestOutcomeId, "", new { @class = "text-danger" })
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            @Html.LabelFor(model => model.LivestockId, "Livestock", new { @class = "control-label" })
+                            @Html.DropDownList("LivestockId", null, "Select Livestock", new { @class = "form-control" })
+                            @Html.ValidationMessageFor(model => model.LivestockId, "", new { @class = "text-danger" })
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            @Html.LabelFor(model => model.InventoryId, "Inventory", new { @class = "control-label" })
+                            @Html.DropDownList("InventoryId", null, "Select Inventory", new { @class = "form-control" })
+                            @Html.ValidationMessageFor(model => model.InventoryId, "", new { @class = "text-danger" })
+                        </div>
+                    </div>
+                </div>
+                <small class="form-text">Link this product to existing farm data (optional)</small>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="form-group mt-4">
+                <div class="d-flex justify-content-between">
+                    <a href="@Url.Action("Index")" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left"></i> Back to List
+                    </a>
+                    <button type="submit" class="btn btn-primary" id="submitBtn">
+                        <i class="fas fa-save"></i> Create Product
+                    </button>
+                </div>
+            </div>
+        }
+    </div>
 </div>
+
+@section Scripts {
+    @Scripts.Render("~/bundles/jqueryval")
+    <script>
+        $(document).ready(function () {
+            // Image upload area click handler
+            $('#imageUploadArea').click(function () {
+                $('#imageFile').click();
+            });
+
+            // File input change handler
+            $('#imageFile').change(function (e) {
+                if (this.files && this.files[0]) {
+                    var file = this.files[0];
+
+                    // Validate file
+                    if (!validateFile(file)) {
+                        return;
+                    }
+
+                    // Show preview
+                    var reader = new FileReader();
+                    reader.onload = function (e) {
+                        $('#imagePreview').attr('src', e.target.result).show();
+                        $('#noImage').hide();
+                    }
+                    reader.readAsDataURL(file);
+                }
+            });
+
+            // Drag and drop functionality
+            $('#imageUploadArea').on('dragover', function (e) {
+                e.preventDefault();
+                e.stopPropagation();
+                $(this).addClass('dragover');
+            });
+
+            $('#imageUploadArea').on('dragleave', function (e) {
+                e.preventDefault();
+                e.stopPropagation();
+                $(this).removeClass('dragover');
+            });
+
+            $('#imageUploadArea').on('drop', function (e) {
+                e.preventDefault();
+                e.stopPropagation();
+                $(this).removeClass('dragover');
+
+                var files = e.originalEvent.dataTransfer.files;
+                if (files.length > 0) {
+                    var file = files[0];
+
+                    if (!validateFile(file)) {
+                        return;
+                    }
+
+                    // Create a new FileList object and set it to the file input
+                    var dataTransfer = new DataTransfer();
+                    dataTransfer.items.add(file);
+                    $('#imageFile')[0].files = dataTransfer.files;
+
+                    // Trigger change event
+                    $('#imageFile').trigger('change');
+                }
+            });
+
+            // File validation
+            function validateFile(file) {
+                var maxSize = 5 * 1024 * 1024; // 5MB
+                var allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/bmp'];
+
+                if (file.size > maxSize) {
+                    alert('File size must be less than 5MB');
+                    return false;
+                }
+
+                if (!allowedTypes.includes(file.type)) {
+                    alert('Please select a valid image file (JPG, PNG, GIF, BMP)');
+                    return false;
+                }
+
+                return true;
+            }
+
+            // Form submission
+            $('#createForm').submit(function () {
+                // Basic validation
+                var price = $('#PricePerUnit').val();
+                if (!price || parseFloat(price) <= 0) {
+                    alert('Please enter a valid price greater than 0.');
+                    return false;
+                }
+
+                var productName = $('#Name').val();
+                if (!productName || productName.trim() === '') {
+                    alert('Please enter a product name.');
+                    return false;
+                }
+
+                // Show loading state
+                $('#submitBtn').prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Creating...');
+
+                return true;
+            });
+
+            // Auto-format price input
+            $('#PricePerUnit').on('blur', function () {
+                var value = parseFloat($(this).val());
+                if (!isNaN(value) && value >= 0) {
+                    $(this).val(value.toFixed(2));
+                }
+            });
+        });
+    </script>
+}

@@ -12,6 +12,7 @@ namespace FarmTrack.Models
         public string Unit { get; set; }
         public double PricePerUnit { get; set; }
         public int Quantity { get; set; }
+        public string Category { get; set; } // ADD THIS PROPERTY
 
         public double Total => PricePerUnit * Quantity;
     }

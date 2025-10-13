@@ -5,14 +5,307 @@
     var grandTotal = Model.CartItems.Sum(i => i.Total);
 }
 
-<h2><i class="fas fa-credit-card"></i> Checkout</h2>
+<style>
+    :root {
+        --color-earth: #8B7355;
+        --color-soil: #654321;
+        --color-foliage: #4CAF50;
+        --color-wheat: #F5DEB3;
+        --color-hay: #DAA520;
+        --color-danger: #FF6B6B;
+        --color-white: #FFFFFF;
+        --border-radius: 12px;
+        --card-shadow: 0 6px 18px rgba(0,0,0,0.1);
+    }
+
+    body {
+        background-color: #F9F7F4;
+    }
+
+    /* Page Header */
+    .page-header {
+        background: linear-gradient(135deg, var(--color-foliage) 0%, #45a049 100%);
+        border-radius: var(--border-radius);
+        padding: 30px;
+        margin-bottom: 30px;
+        color: white;
+        box-shadow: var(--card-shadow);
+    }
+
+        .page-header h2 {
+            font-size: 2rem;
+            font-weight: 700;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+    /* Cards */
+    .checkout-card {
+        background: white;
+        border-radius: var(--border-radius);
+        box-shadow: var(--card-shadow);
+        margin-bottom: 25px;
+        overflow: hidden;
+    }
+
+    .card-header-custom {
+        padding: 20px 25px;
+        font-weight: 600;
+        color: white;
+    }
+
+    .header-info {
+        background: linear-gradient(135deg, #17a2b8, #138496);
+    }
+
+    .header-success {
+        background: linear-gradient(135deg, var(--color-foliage), #45a049);
+    }
+
+    .header-warning {
+        background: linear-gradient(135deg, var(--color-hay), #f0ad4e);
+    }
+
+    .header-primary {
+        background: linear-gradient(135deg, #3498db, #2980b9);
+    }
+
+    .card-header-custom h4 {
+        margin: 0 0 5px 0;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .card-header-custom small {
+        opacity: 0.9;
+    }
+
+    .card-body-custom {
+        padding: 25px;
+    }
+
+    /* Form Elements */
+    .form-label {
+        font-weight: 600;
+        color: var(--color-soil);
+        font-size: 0.9rem;
+        margin-bottom: 8px;
+    }
+
+    .form-control, textarea.form-control {
+        border: 2px solid #e0e0e0;
+        border-radius: 8px;
+        padding: 10px 15px;
+        transition: all 0.3s;
+    }
+
+        .form-control:focus {
+            border-color: var(--color-foliage);
+            box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.1);
+        }
+
+    .form-check-input {
+        width: 18px;
+        height: 18px;
+        cursor: pointer;
+        accent-color: var(--color-foliage);
+    }
+
+    .form-check-label {
+        cursor: pointer;
+        margin-left: 8px;
+    }
+
+    .text-danger {
+        color: var(--color-danger);
+        font-size: 0.85rem;
+    }
+
+    .form-text {
+        color: #999;
+        font-size: 0.85rem;
+    }
+
+    /* Input Group */
+    .input-group {
+        display: flex;
+    }
+
+        .input-group .form-control {
+            border-radius: 8px 0 0 8px;
+        }
+
+        .input-group .btn {
+            border-radius: 0 8px 8px 0;
+        }
+
+    /* Buttons */
+    .btn {
+        padding: 10px 20px;
+        border-radius: 8px;
+        font-weight: 600;
+        font-size: 0.9rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        border: none;
+        transition: all 0.3s ease;
+        text-decoration: none;
+    }
+
+    .btn-success {
+        background: linear-gradient(135deg, var(--color-foliage), #45a049);
+        color: white;
+        box-shadow: 0 4px 12px rgba(76, 175, 80, 0.3);
+    }
+
+        .btn-success:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(76, 175, 80, 0.4);
+        }
+
+        .btn-success:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+    .btn-lg {
+        padding: 14px 28px;
+        font-size: 1.05rem;
+    }
+
+    .btn-sm {
+        padding: 6px 12px;
+        font-size: 0.85rem;
+    }
+
+    /* Alerts */
+    .alert {
+        border-radius: 8px;
+        border: none;
+        padding: 15px 20px;
+    }
+
+    .alert-warning {
+        background: rgba(218, 165, 32, 0.1);
+        color: var(--color-soil);
+        border-left: 4px solid var(--color-hay);
+    }
+
+    .alert-info {
+        background: rgba(23, 162, 184, 0.1);
+        color: #0c5460;
+        border-left: 4px solid #17a2b8;
+    }
+
+    .alert-success {
+        background: rgba(76, 175, 80, 0.1);
+        color: #155724;
+        border-left: 4px solid var(--color-foliage);
+    }
+
+    .alert-danger {
+        background: rgba(255, 107, 107, 0.1);
+        color: #721c24;
+        border-left: 4px solid var(--color-danger);
+    }
+
+    .alert-secondary {
+        background: rgba(139, 115, 85, 0.05);
+        color: var(--color-soil);
+        border-left: 4px solid var(--color-earth);
+    }
+
+    /* Order Summary */
+    .order-summary {
+        position: sticky;
+        top: 20px;
+    }
+
+    .summary-item {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 8px;
+        font-size: 0.9rem;
+    }
+
+    .summary-total {
+        font-size: 1.3rem;
+        font-weight: 700;
+        color: var(--color-foliage);
+    }
+
+    .items-list {
+        max-height: 200px;
+        overflow-y: auto;
+        margin-bottom: 15px;
+    }
+
+    /* Support Card */
+    .support-card {
+        background: white;
+        border-radius: var(--border-radius);
+        box-shadow: var(--card-shadow);
+        padding: 20px;
+        text-align: center;
+        margin-top: 20px;
+    }
+
+        .support-card h6 {
+            color: var(--color-soil);
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+
+    /* Empty Cart */
+    .empty-cart {
+        text-align: center;
+        padding: 60px 20px;
+        background: white;
+        border-radius: var(--border-radius);
+        box-shadow: var(--card-shadow);
+    }
+
+        .empty-cart i {
+            font-size: 4rem;
+            color: var(--color-wheat);
+            margin-bottom: 20px;
+        }
+
+        .empty-cart h4 {
+            color: var(--color-soil);
+            margin-bottom: 20px;
+        }
+
+    /* Responsive */
+    @@media (max-width: 768px) {
+        .page-header h2 {
+            font-size: 1.5rem;
+        }
+
+        .order-summary {
+            position: relative;
+            top: 0;
+            margin-top: 30px;
+        }
+    }
+</style>
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
+<div class="page-header">
+    <h2><i class="fas fa-credit-card"></i> Checkout</h2>
+</div>
 
 @if (!Model.CartItems.Any())
 {
-    <div class="alert alert-warning text-center">
-        <i class="fas fa-shopping-cart fa-2x mb-3"></i>
+    <div class="empty-cart">
+        <i class="fas fa-shopping-cart"></i>
         <h4>Your cart is empty</h4>
-        <a href="@Url.Action("Store")" class="btn btn-primary">
+        <a href="@Url.Action("Store")" class="btn btn-success btn-lg">
             <i class="fas fa-store"></i> Continue Shopping
         </a>
     </div>
@@ -24,55 +317,71 @@ else
         @Html.AntiForgeryToken()
 
         <div class="row">
-            <!-- Left Column: Customer Info + Payment -->
+            <!-- Left Column -->
             <div class="col-md-8">
                 <!-- Customer Information -->
-                <div class="card mb-4">
-                    <div class="card-header bg-info text-white">
+                <div class="checkout-card">
+                    <div class="card-header-custom header-info">
                         <h4><i class="fas fa-user"></i> Delivery Information</h4>
-                        <small class="fst-italic">Pre-filled from your profile - you can edit if needed</small>
+                        <small>Pre-filled from your profile - you can edit if needed</small>
                     </div>
-                    <div class="card-body">
+                    <div class="card-body-custom">
                         <div class="row">
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    @Html.LabelFor(m => m.CustomerName, new { @class = "form-label" })
-                                    @Html.TextBoxFor(m => m.CustomerName, new { @class = "form-control", placeholder = "Enter your full name", required = "required" })
-                                    @Html.ValidationMessageFor(m => m.CustomerName, "", new { @class = "text-danger small" })
-                                </div>
+                            <div class="col-md-6 mb-3">
+                                @Html.LabelFor(m => m.CustomerName, new { @class = "form-label" })
+                                @Html.TextBoxFor(m => m.CustomerName, new { @class = "form-control", placeholder = "Enter your full name", required = "required" })
+                                @Html.ValidationMessageFor(m => m.CustomerName, "", new { @class = "text-danger" })
                             </div>
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    @Html.LabelFor(m => m.CustomerPhone, new { @class = "form-label" })
-                                    @Html.TextBoxFor(m => m.CustomerPhone, new { @class = "form-control", placeholder = "Enter your phone number", required = "required" })
-                                    @Html.ValidationMessageFor(m => m.CustomerPhone, "", new { @class = "text-danger small" })
-                                </div>
+                            <div class="col-md-6 mb-3">
+                                @Html.LabelFor(m => m.CustomerPhone, new { @class = "form-label" })
+                                @Html.TextBoxFor(m => m.CustomerPhone, new { @class = "form-control", placeholder = "Enter phone number", required = "required" })
+                                @Html.ValidationMessageFor(m => m.CustomerPhone, "", new { @class = "text-danger" })
                             </div>
                         </div>
                         <div class="mb-3">
                             @Html.LabelFor(m => m.CustomerEmail, new { @class = "form-label" })
-                            @Html.TextBoxFor(m => m.CustomerEmail, new { @class = "form-control", placeholder = "Enter your email", type = "email", required = "required" })
-                            @Html.ValidationMessageFor(m => m.CustomerEmail, "", new { @class = "text-danger small" })
+                            @Html.TextBoxFor(m => m.CustomerEmail, new { @class = "form-control", placeholder = "Enter email", type = "email", required = "required" })
+                            @Html.ValidationMessageFor(m => m.CustomerEmail, "", new { @class = "text-danger" })
                         </div>
                         <div class="mb-3">
                             @Html.LabelFor(m => m.DeliveryAddress, new { @class = "form-label" })
-                            @Html.TextAreaFor(m => m.DeliveryAddress, new { @class = "form-control", rows = "3", placeholder = "Enter full delivery address", required = "required" })
-                            @Html.ValidationMessageFor(m => m.DeliveryAddress, "", new { @class = "text-danger small" })
+                            @Html.TextAreaFor(m => m.DeliveryAddress, new { @class = "form-control", rows = "3", placeholder = "Full delivery address", required = "required" })
+                            @Html.ValidationMessageFor(m => m.DeliveryAddress, "", new { @class = "text-danger" })
                         </div>
                         <div class="mb-3">
                             @Html.LabelFor(m => m.DeliveryInstructions, new { @class = "form-label" })
-                            @Html.TextAreaFor(m => m.DeliveryInstructions, new { @class = "form-control", rows = "2", placeholder = "Any special delivery instructions?" })
+                            @Html.TextAreaFor(m => m.DeliveryInstructions, new { @class = "form-control", rows = "2", placeholder = "Special delivery instructions" })
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Discount Voucher -->
+                <div class="checkout-card">
+                    <div class="card-header-custom header-success">
+                        <h4><i class="fas fa-tag"></i> Discount Voucher</h4>
+                    </div>
+                    <div class="card-body-custom">
+                        <div class="row">
+                            <div class="col-md-8">
+                                <div class="input-group mb-2">
+                                    <input type="text" id="voucherCode" class="form-control" placeholder="Enter voucher code" />
+                                    <button type="button" class="btn btn-success" id="applyVoucherBtn">
+                                        <i class="fas fa-check"></i> Apply
+                                    </button>
+                                </div>
+                                <small class="form-text">Enter your discount code above</small>
+                                <div id="voucherMessage" class="mt-2"></div>
+                            </div>
                         </div>
                     </div>
                 </div>
 
                 <!-- Payment Method -->
-                <div class="card mb-4">
-                    <div class="card-header bg-warning text-dark">
+                <div class="checkout-card">
+                    <div class="card-header-custom header-warning">
                         <h4><i class="fas fa-credit-card"></i> Payment Method</h4>
                     </div>
-                    <div class="card-body">
-                        <!-- Payment Method Selection -->
+                    <div class="card-body-custom">
                         <div class="mb-3">
                             <label class="form-label">Select Payment Method *</label>
                             <div class="form-check mb-2">
@@ -93,29 +402,23 @@ else
                                     <i class="fas fa-university"></i> Bank Transfer
                                 </label>
                             </div>
-                            @Html.ValidationMessageFor(m => m.PaymentMethod, "", new { @class = "text-danger small" })
+                            @Html.ValidationMessageFor(m => m.PaymentMethod, "", new { @class = "text-danger" })
                         </div>
 
-                        <!-- Card Details (Hidden by default) -->
+                        <!-- Card Details -->
                         <div id="cardDetails" style="display: none;">
                             <div class="row">
-                                <div class="col-md-6">
-                                    <div class="mb-3">
-                                        <label class="form-label">Card Number</label>
-                                        <input type="text" name="cardNumber" class="form-control" placeholder="1234 5678 9012 3456" maxlength="19">
-                                    </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Card Number</label>
+                                    <input type="text" name="cardNumber" class="form-control" placeholder="1234 5678 9012 3456" maxlength="19">
                                 </div>
-                                <div class="col-md-3">
-                                    <div class="mb-3">
-                                        <label class="form-label">Expiry Date</label>
-                                        <input type="text" name="expiryDate" class="form-control" placeholder="MM/YY" maxlength="5">
-                                    </div>
+                                <div class="col-md-3 mb-3">
+                                    <label class="form-label">Expiry</label>
+                                    <input type="text" name="expiryDate" class="form-control" placeholder="MM/YY" maxlength="5">
                                 </div>
-                                <div class="col-md-3">
-                                    <div class="mb-3">
-                                        <label class="form-label">CVV</label>
-                                        <input type="text" name="cvv" class="form-control" placeholder="123" maxlength="3">
-                                    </div>
+                                <div class="col-md-3 mb-3">
+                                    <label class="form-label">CVV</label>
+                                    <input type="text" name="cvv" class="form-control" placeholder="123" maxlength="3">
                                 </div>
                             </div>
                             <div class="mb-3">
@@ -123,7 +426,7 @@ else
                                 <input type="text" name="nameOnCard" class="form-control" placeholder="As shown on card">
                             </div>
                             <div class="alert alert-info">
-                                <small><i class="fas fa-info-circle"></i> This is a simulated payment. No real transactions will occur.</small>
+                                <small><i class="fas fa-info-circle"></i> Simulated payment - no real transaction</small>
                             </div>
                         </div>
 
@@ -131,12 +434,12 @@ else
                         <div id="transferDetails" style="display: none;">
                             <div class="alert alert-info">
                                 <h6><i class="fas fa-university"></i> Bank Transfer Instructions</h6>
-                                <p>
+                                <p class="mb-0">
                                     <strong>Bank:</strong> FarmTrack Bank<br>
                                     <strong>Account:</strong> 1234 5678 9012<br>
-                                    <strong>Reference:</strong> Your Name + Order #
+                                    <strong>Reference:</strong> Your Name + Order #<br>
+                                    <small>Send proof to payments@farmtrack.com</small>
                                 </p>
-                                <small>Please send proof of payment to payments@farmtrack.com</small>
                             </div>
                         </div>
                     </div>
@@ -145,69 +448,83 @@ else
 
             <!-- Right Column: Order Summary -->
             <div class="col-md-4">
-                <div class="card sticky-top" style="top: 20px;">
-                    <div class="card-header bg-success text-white">
-                        <h4><i class="fas fa-receipt"></i> Order Summary</h4>
-                    </div>
-                    <div class="card-body">
-                        <!-- Order Items -->
-                        <div class="mb-3">
-                            <h6>Items (@Model.CartItems.Sum(i => i.Quantity))</h6>
-                            @foreach (var item in Model.CartItems)
-                            {
-                                <div class="d-flex justify-content-between small mb-1">
-                                    <span>@item.Name x @item.Quantity</span>
-                                    <span>R@(item.Total.ToString("F2"))</span>
+                <div class="order-summary">
+                    <div class="checkout-card">
+                        <div class="card-header-custom header-primary">
+                            <h4><i class="fas fa-receipt"></i> Order Summary</h4>
+                        </div>
+                        <div class="card-body-custom">
+                            <!-- Items -->
+                            <div class="mb-3">
+                                <h6>Items (@Model.CartItems.Sum(i => i.Quantity))</h6>
+                                <div class="items-list">
+                                    @foreach (var item in Model.CartItems)
+                                    {
+                                        <div class="summary-item">
+                                            <span>@item.Name x @item.Quantity</span>
+                                            <span>R@(item.Total.ToString("F2"))</span>
+                                        </div>
+                                    }
                                 </div>
-                            }
-                        </div>
+                            </div>
 
-                        <hr>
+                            <hr>
 
-                        <!-- Pricing Breakdown -->
-                        <div class="d-flex justify-content-between mb-1">
-                            <span>Subtotal:</span>
-                            <span>R@(grandTotal.ToString("F2"))</span>
-                        </div>
-                        <div class="d-flex justify-content-between mb-1">
-                            <span>Delivery Fee:</span>
-                            <span>R0.00</span>
-                        </div>
-                        <div class="d-flex justify-content-between mb-1">
-                            <span>Tax:</span>
-                            <span>R0.00</span>
-                        </div>
-                        <hr>
-                        <div class="d-flex justify-content-between fw-bold fs-5">
-                            <span>Total:</span>
-                            <span class="text-success">R@(grandTotal.ToString("F2"))</span>
-                        </div>
+                            <!-- Pricing -->
+                            <div class="summary-item">
+                                <span>Subtotal:</span>
+                                <span id="subtotalAmount">R@(grandTotal.ToString("F2"))</span>
+                            </div>
+                            <div class="summary-item text-success" id="discountRow" style="display: none;">
+                                <span>Discount:</span>
+                                <span id="discountAmount">-R0.00</span>
+                            </div>
+                            <div class="summary-item">
+                                <span>Delivery Fee:</span>
+                                <span>R0.00</span>
+                            </div>
+                            <div class="summary-item">
+                                <span>Tax:</span>
+                                <span>R0.00</span>
+                            </div>
 
-                        <!-- Delivery Estimate -->
-                        <div class="alert alert-secondary mt-3">
-                            <i class="fas fa-shipping-fast"></i>
-                            <strong>Estimated Delivery:</strong><br>
-                            <span id="deliveryEstimate">2-3 business days</span>
-                        </div>
+                            <hr>
 
-                        <!-- Submit Button -->
-                        <button type="submit" class="btn btn-success btn-lg w-100">
-                            <i class="fas fa-lock"></i> Place Order
-                        </button>
+                            <div class="d-flex justify-content-between">
+                                <span class="fw-bold">Total:</span>
+                                <span class="summary-total" id="finalTotal">R@(grandTotal.ToString("F2"))</span>
+                            </div>
 
-                        <div class="text-center mt-2">
-                            <small class="text-muted">
-                                <i class="fas fa-shield-alt"></i> Secure checkout
-                            </small>
+                            <!-- Delivery Estimate -->
+                            <div class="alert alert-secondary mt-3">
+                                <i class="fas fa-shipping-fast"></i>
+                                <strong>Estimated Delivery:</strong><br>
+                                <span id="deliveryEstimate">2-3 business days</span>
+                            </div>
+
+                            <!-- Hidden Fields -->
+                            <input type="hidden" name="voucherCode" id="voucherCodeField" />
+
+                            <!-- Submit Button -->
+                            <button type="submit" class="btn btn-success btn-lg w-100" id="submitBtn">
+                                <i class="fas fa-lock"></i> Place Order
+                            </button>
+
+                            <div class="text-center mt-2">
+                                <small class="text-muted">
+                                    <i class="fas fa-shield-alt"></i> Secure checkout
+                                </small>
+                            </div>
                         </div>
                     </div>
-                </div>
 
-                <!-- Support Info -->
-                <div class="card mt-3">
-                    <div class="card-body text-center">
+                    <!-- Support -->
+                    <div class="support-card">
                         <h6><i class="fas fa-headset"></i> Need Help?</h6>
-                        <small class="text-muted">Call: (012) 345-6789<br>Email: support@farmtrack.com</small>
+                        <small class="text-muted">
+                            Call: (012) 345-6789<br>
+                            Email: support@farmtrack.com
+                        </small>
                     </div>
                 </div>
             </div>
@@ -217,37 +534,85 @@ else
 
 @section Scripts {
     @Scripts.Render("~/bundles/jqueryval")
-
     <script>
-        // Show/hide payment details based on selection
-        $('input[name="PaymentMethod"]').change(function () {
-            $('#cardDetails').hide();
-            $('#transferDetails').hide();
+        $('#applyVoucherBtn').click(function() {
+            var voucherCode = $('#voucherCode').val();
+            var cartTotal = @grandTotal;
 
-            if ($(this).val() === 'Card') {
-                $('#cardDetails').show();
-            } else if ($(this).val() === 'Transfer') {
-                $('#transferDetails').show();
+            if (!voucherCode) {
+                showVoucherMessage('Please enter a voucher code', 'danger');
+                return;
             }
+
+            $('#applyVoucherBtn').prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Applying...');
+
+            $.post('@Url.Action("ValidateVoucher", "DiscountVouchers")', {
+                code: voucherCode,
+                cartTotal: cartTotal
+            }).done(function(response) {
+                if (response.success) {
+                    showVoucherMessage(
+                        '<strong>' + response.message + '</strong><br><small>' + response.voucherDescription + '</small>',
+                        'success'
+                    );
+                    $('#voucherCodeField').val(voucherCode);
+                    updateOrderSummary(cartTotal, response.discountAmount, response.newTotal);
+                    $('#applyVoucherBtn').hide();
+                    $('#voucherCode').prop('disabled', true);
+                    $('#voucherMessage').append(
+                        '<button type="button" class="btn btn-sm btn-outline-danger mt-2" onclick="removeVoucher()">' +
+                        '<i class="fas fa-times"></i> Remove</button>'
+                    );
+                } else {
+                    showVoucherMessage(response.message, 'danger');
+                    $('#applyVoucherBtn').prop('disabled', false).html('<i class="fas fa-check"></i> Apply');
+                }
+            }).fail(function() {
+                showVoucherMessage('Error applying voucher', 'danger');
+                $('#applyVoucherBtn').prop('disabled', false).html('<i class="fas fa-check"></i> Apply');
+            });
         });
 
-        // Format card number input
+        function showVoucherMessage(message, type) {
+            var alertClass = type === 'success' ? 'alert-success' : 'alert-danger';
+            $('#voucherMessage').html('<div class="alert ' + alertClass + ' alert-dismissible fade show">' +
+                message + '<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>');
+        }
+
+        function updateOrderSummary(subtotal, discount, newTotal) {
+            $('#subtotalAmount').text('R' + subtotal.toFixed(2));
+            $('#discountAmount').text('-R' + discount.toFixed(2));
+            $('#finalTotal').text('R' + newTotal.toFixed(2));
+            $('#discountRow').show();
+        }
+
+        function removeVoucher() {
+            $('#voucherCode').val('').prop('disabled', false);
+            $('#voucherCodeField').val('');
+            $('#voucherMessage').empty();
+            $('#applyVoucherBtn').show().prop('disabled', false).html('<i class="fas fa-check"></i> Apply');
+            $('#discountRow').hide();
+            updateOrderSummary(@grandTotal, 0, @grandTotal);
+        }
+
+        $('input[name="PaymentMethod"]').change(function () {
+            $('#cardDetails, #transferDetails').hide();
+            if ($(this).val() === 'Card') $('#cardDetails').show();
+            if ($(this).val() === 'Transfer') $('#transferDetails').show();
+        });
+
         $('input[name="cardNumber"]').on('input', function () {
             var value = $(this).val().replace(/\s+/g, '').replace(/[^0-9]/gi, '');
-            var matches = value.match(/\d{4,16}/g);
-            var match = matches ? matches[0] : '';
+            var match = value.match(/\d{4,16}/g);
             var parts = [];
-
-            for (var i = 0; i < match.length; i += 4) {
-                parts.push(match.substring(i, i + 4));
-            }
-
-            if (parts.length) {
+            if (match) {
+                for (var i = 0; i < match[0].length; i += 4) {
+                    parts.push(match[0].substring(i, i + 4));
+                }
                 $(this).val(parts.join(' '));
             }
         });
 
-        // Format expiry date input
         $('input[name="expiryDate"]').on('input', function () {
             var value = $(this).val().replace(/\//g, '');
             if (value.length >= 2) {
@@ -256,22 +621,23 @@ else
             $(this).val(value);
         });
 
-        // Simple form validation
         $('#checkoutForm').on('submit', function () {
             var paymentMethod = $('input[name="PaymentMethod"]:checked').val();
-
             if (paymentMethod === 'Card') {
-                var cardNumber = $('input[name="cardNumber"]').val();
-                var expiryDate = $('input[name="expiryDate"]').val();
-                var cvv = $('input[name="cvv"]').val();
-
-                if (!cardNumber || !expiryDate || !cvv) {
+                if (!$('input[name="cardNumber"]').val() || !$('input[name="expiryDate"]').val() || !$('input[name="cvv"]').val()) {
                     alert('Please complete all card details');
                     return false;
                 }
             }
-
+            $('#submitBtn').prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Processing...');
             return true;
+        });
+
+        $('#voucherCode').keypress(function(e) {
+            if (e.which === 13) {
+                e.preventDefault();
+                $('#applyVoucherBtn').click();
+            }
         });
     </script>
 }

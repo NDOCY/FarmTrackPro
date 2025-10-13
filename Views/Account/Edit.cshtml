@@ -504,14 +504,14 @@
             });
 
             // Vehicle number formatting
-            $('#VehicleNumber').on('blur', function () {
-                let value = $(this).val().toUpperCase().trim();
+            //$('#VehicleNumber').on('blur', function () {
+              //  let value = $(this).val().toUpperCase().trim();
                 // Basic South African plate format validation
-                if (value && !value.match(/^[A-Z]{2}\s?\d{3}[- ]?\d{3}$/)) {
-                    alert('Please use South African license plate format: CA 123-456 or GP789012');
-                }
-                $(this).val(value);
-            });
+                //if (value && !value.match(/^[A-Z]{2}\s?\d{3}[- ]?\d{3}$/)) {
+                  //  alert('Please use South African license plate format: CA 123-456 or GP789012');
+               // }
+                //$(this).val(value);
+            //});
 
             // Phone number formatting
             $('#PhoneNumber').on('blur', function () {
