@@ -778,7 +778,9 @@ namespace FarmTrack.Controllers
             db.SaveChanges();
 
             TempData["Success"] = "Harvest successfully sent to Products.";
-            return RedirectToAction("Details", "Harvest", new { plotCropId = model.PlotCropId });
+
+            // ✅ CORRECT
+            return RedirectToAction("Dashboard", "PlotCrops", new { id = model.PlotCropId });
         }
 
 

@@ -2,6 +2,14 @@
 
 @{
     ViewBag.Title = "Order Tracking";
+    if (Session["Role"] != null && (Session["Role"].ToString() == "Admin" || Session["Role"].ToString() == "Owner"))
+    {
+        Layout = "~/Views/Shared/_Layout.cshtml";
+    }
+    else
+    {
+        Layout = "~/Views/Shared/_Layout - User.cshtml";
+    }
 }
 
 <style>
@@ -613,6 +621,10 @@
                 </a>
                 <a href="@Url.Action("Index", "Home")" class="btn btn-secondary">
                     <i class="fas fa-home"></i> Back to Home
+                </a>
+                <a href="@Url.Action("MyOrders", "Products")" class="nav-link">
+                    <i class="fas fa-shopping-bag"></i> Back to My Orders
+                    
                 </a>
                 <button onclick="window.print()" class="btn btn-info">
                     <i class="fas fa-print"></i> Print Receipt

@@ -1,4 +1,15 @@
 ﻿@model List<FarmTrack.Models.CartItem>
+@{ 
+    if (Session["Role"] != null && (Session["Role"].ToString() == "Admin" || Session["Role"].ToString() == "Owner"))
+    {
+        Layout = "~/Views/Shared/_Layout.cshtml";
+    }
+    else
+    {
+        Layout = "~/Views/Shared/_Layout - User.cshtml";
+    }
+}
+
 
 <style>
     :root {
@@ -296,7 +307,7 @@ else
                         <td>@item.Unit</td>
                         <td>R@(item.PricePerUnit.ToString("F2"))</td>
                         <td>@item.Quantity</td>
-                        <td><strong>R@(item.Total.ToString("F2"))</strong></td>
+                        <td><strong>R @(item.Total.ToString("F2"))</strong></td>
                         <td>
                             <a href="@Url.Action("RemoveFromCart", new { productId = item.ProductId })"
                                class="btn btn-danger btn-sm" title="Remove item">
@@ -309,7 +320,7 @@ else
             <tfoot>
                 <tr>
                     <td colspan="4" class="text-end"><strong>Grand Total</strong></td>
-                    <td colspan="2"><strong>R@(Model.Sum(i => i.Total).ToString("F2"))</strong></td>
+                    <td colspan="2"><strong>R @(Model.Sum(i => i.Total).ToString("F2"))</strong></td>
                 </tr>
             </tfoot>
         </table>

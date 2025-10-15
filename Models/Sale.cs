@@ -26,7 +26,7 @@ namespace FarmTrack.Models
         public string CustomerPhone { get; set; }
         public string DeliveryAddress { get; set; }
 
-        // **CRITICAL: Add destination coordinates**
+        // Coordinates
         public decimal? DestinationLatitude { get; set; }
         public decimal? DestinationLongitude { get; set; }
 
@@ -45,16 +45,20 @@ namespace FarmTrack.Models
         public string VehicleType { get; set; }
         public string VehicleNumber { get; set; }
 
-        // Real-time Location Tracking (Driver's current position)
+        // Real-time Location Tracking
         public decimal? CurrentLatitude { get; set; }
         public decimal? CurrentLongitude { get; set; }
         public DateTime? LastLocationUpdate { get; set; }
         public bool IsActiveDelivery { get; set; }
+
         // Discount Voucher Properties
         public int? AppliedVoucherId { get; set; }
         public string AppliedVoucherCode { get; set; }
         public decimal DiscountAmount { get; set; }
-        public decimal Subtotal { get; set; } // Total before discount
+        public decimal Subtotal { get; set; }
+
+        // ✅ NEW: Shipping Fee
+        public decimal ShippingFee { get; set; }
 
         [ForeignKey("AppliedVoucherId")]
         public virtual DiscountVoucher AppliedVoucher { get; set; }

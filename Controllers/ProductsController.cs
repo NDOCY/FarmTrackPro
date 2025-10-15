@@ -202,10 +202,153 @@ namespace FarmTrack.Controllers
             return (null, null);
         }*/
 
+        // Calculate shipping fee based on distance and cart weight
+        private decimal CalculateShippingFee(decimal? destinationLat, decimal? destinationLng, List<CartItem> cart)
+        {
+            try
+            {
+                // Base shipping fee
+                decimal baseShippingFee = 50m; // R50 base fee
+
+                // Calculate distance if coordinates available
+                if (destinationLat.HasValue && destinationLng.HasValue)
+                {
+                    // Farm/warehouse location (update to your actual farm coordinates)
+                    decimal farmLat = -29.8587m; // Durban example
+                    decimal farmLng = 31.0218m;
+
+                    double distance = CalculateDistance(farmLat, farmLng, destinationLat.Value, destinationLng.Value);
+
+                    // Distance-based fee: R2 per km beyond 10km
+                    if (distance > 10)
+                    {
+                        decimal distanceFee = (decimal)(distance - 10) * 2m;
+                        baseShippingFee += distanceFee;
+                    }
+
+                    System.Diagnostics.Debug.WriteLine($"Distance: {distance:F2}km, Distance Fee: R{(decimal)(Math.Max(0, distance - 10) * 2):F2}");
+                }
+
+                // Weight-based fee (based on quantity)
+                int totalItems = cart.Sum(c => c.Quantity);
+
+                // Add R5 per item beyond 5 items
+                if (totalItems > 5)
+                {
+                    decimal weightFee = (totalItems - 5) * 5m;
+                    baseShippingFee += weightFee;
+                }
+
+                // Free shipping for orders over R500
+                decimal cartTotal = (decimal)cart.Sum(c => c.Total);
+                if (cartTotal >= 500m)
+                {
+                    baseShippingFee = 0m; // Free shipping!
+                }
+
+                // Cap maximum shipping fee at R200
+                baseShippingFee = Math.Min(baseShippingFee, 200m);
+
+                System.Diagnostics.Debug.WriteLine($"Final Shipping Fee: R{baseShippingFee:F2}");
+
+                return Math.Round(baseShippingFee, 2);
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Shipping calculation error: {ex.Message}");
+                return 50m; // Default to R50 if calculation fails
+            }
+        }
+
+        // Calculate distance between two points (Haversine formula)
+        private double CalculateDistance(decimal lat1, decimal lon1, decimal lat2, decimal lon2)
+        {
+            const double R = 6371; // Earth's radius in kilometers
+
+            double dLat = ToRadians((double)(lat2 - lat1));
+            double dLon = ToRadians((double)(lon2 - lon1));
+
+            double a = Math.Sin(dLat / 2) * Math.Sin(dLat / 2) +
+                       Math.Cos(ToRadians((double)lat1)) * Math.Cos(ToRadians((double)lat2)) *
+                       Math.Sin(dLon / 2) * Math.Sin(dLon / 2);
+
+            double c = 2 * Math.Atan2(Math.Sqrt(a), Math.Sqrt(1 - a));
+            double distance = R * c;
+
+            return distance;
+        }
+
+        private double ToRadians(double degrees)
+        {
+            return degrees * Math.PI / 180.0;
+        }
+
+        // NEW: AJAX endpoint to calculate shipping fee
+        [HttpPost]
+        public JsonResult CalculateShipping(string deliveryAddress)
+        {
+            try
+            {
+                var cart = Session["Cart"] as List<CartItem> ?? new List<CartItem>();
+
+                if (!cart.Any())
+                {
+                    return Json(new { success = false, message = "Cart is empty" });
+                }
+
+                // Geocode the address
+                var (destLat, destLng) = GeocodeAddress(deliveryAddress);
+
+                if (!destLat.HasValue || !destLng.HasValue)
+                {
+                    // Default shipping if geocoding fails
+                    return Json(new
+                    {
+                        success = true,
+                        shippingFee = 50.00m,
+                        distance = 0,
+                        freeShippingThreshold = 500m,
+                        message = "Standard shipping rate applied"
+                    });
+                }
+
+                // Calculate shipping
+                decimal shippingFee = CalculateShippingFee(destLat, destLng, cart);
+
+                // Calculate distance for display
+                decimal farmLat = -29.8587m;
+                decimal farmLng = 31.0218m;
+                double distance = CalculateDistance(farmLat, farmLng, destLat.Value, destLng.Value);
+
+                decimal cartTotal = (decimal)cart.Sum(c => c.Total);
+                bool isFreeShipping = cartTotal >= 500m;
+
+                return Json(new
+                {
+                    success = true,
+                    shippingFee = shippingFee,
+                    distance = Math.Round(distance, 2),
+                    freeShippingThreshold = 500m,
+                    currentTotal = cartTotal,
+                    isFreeShipping = isFreeShipping,
+                    message = isFreeShipping ? "🎉 Free shipping applied!" : $"Delivery distance: {distance:F1}km"
+                });
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Calculate shipping error: {ex.Message}");
+                return Json(new { success = false, message = "Error calculating shipping" });
+            }
+        }
+
+        // ========================================
+        // UPDATE YOUR ProcessCheckout METHOD
+        // ========================================
+
         [HttpPost]
         [ValidateAntiForgeryToken]
         public ActionResult ProcessCheckout(string CustomerName, string CustomerEmail, string CustomerPhone,
-    string DeliveryAddress, string PaymentMethod, string voucherCode = null, string DeliveryInstructions = "")
+            string DeliveryAddress, string PaymentMethod, string voucherCode = null, string DeliveryInstructions = "")
         {
             if (Session["UserId"] == null)
             {
@@ -225,7 +368,7 @@ namespace FarmTrack.Controllers
             {
                 int userId = (int)Session["UserId"];
 
-                // **FIX: Geocode the delivery address**
+                // Geocode the delivery address
                 var (destLat, destLng) = GeocodeAddress(DeliveryAddress);
 
                 if (!destLat.HasValue || !destLng.HasValue)
@@ -234,8 +377,12 @@ namespace FarmTrack.Controllers
                     return RedirectToAction("Checkout");
                 }
 
-                // Calculate totals and apply voucher
+                // Calculate subtotal
                 decimal subtotal = (decimal)cart.Sum(item => item.Total);
+
+                // ✅ Calculate shipping fee
+                decimal shippingFee = CalculateShippingFee(destLat, destLng, cart);
+
                 decimal discountAmount = 0;
                 DiscountVoucher appliedVoucher = null;
 
@@ -247,14 +394,12 @@ namespace FarmTrack.Controllers
 
                     if (appliedVoucher != null && appliedVoucher.IsValid)
                     {
-                        // Check if voucher is applicable to cart
                         if (!IsVoucherApplicableToCart(appliedVoucher, cart))
                         {
                             TempData["Error"] = "Voucher is not applicable to items in your cart.";
                             return RedirectToAction("Checkout");
                         }
 
-                        // Check minimum order amount
                         if (appliedVoucher.MinimumOrderAmount.HasValue && subtotal < appliedVoucher.MinimumOrderAmount.Value)
                         {
                             TempData["Error"] = $"Voucher requires minimum order of R{appliedVoucher.MinimumOrderAmount.Value:0.##}";
@@ -262,8 +407,6 @@ namespace FarmTrack.Controllers
                         }
 
                         discountAmount = CalculateDiscount(appliedVoucher, subtotal);
-
-                        // Update voucher usage
                         appliedVoucher.UsedCount++;
                     }
                     else
@@ -273,16 +416,22 @@ namespace FarmTrack.Controllers
                     }
                 }
 
-                decimal totalAmount = subtotal - discountAmount;
+                // ✅ Calculate total with shipping
+                decimal totalAmount = subtotal - discountAmount + shippingFee;
 
                 var trackingNumber = "FT" + DateTime.Now.ToString("yyyyMMddHHmmss");
-                var estimatedDelivery = DateTime.Now.AddDays(new Random().Next(2, 4));
+
+                // Calculate delivery estimate based on distance
+                double distance = CalculateDistance(-29.8587m, 31.0218m, destLat.Value, destLng.Value);
+                int deliveryDays = distance < 20 ? 1 : (distance < 50 ? 2 : 3);
+                var estimatedDelivery = DateTime.Now.AddDays(deliveryDays);
 
                 var sale = new Sale
                 {
                     SaleDate = DateTime.Now,
                     Subtotal = subtotal,
                     DiscountAmount = discountAmount,
+                    ShippingFee = shippingFee, // ✅ NEW
                     TotalAmount = totalAmount,
                     UserId = userId,
                     Status = PaymentMethod == "Cash" ? "Confirmed" : "Pending",
@@ -294,15 +443,10 @@ namespace FarmTrack.Controllers
                     DeliveryAddress = DeliveryAddress,
                     PaymentMethod = PaymentMethod,
                     PaymentStatus = PaymentMethod == "Cash" ? "Pending" : "Simulated",
-
-                    // **FIX: Store geocoded destination coordinates**
                     DestinationLatitude = destLat.Value,
                     DestinationLongitude = destLng.Value,
-
-                    // Voucher information
                     AppliedVoucherId = appliedVoucher?.VoucherId,
                     AppliedVoucherCode = appliedVoucher?.Code,
-
                     Items = new List<SaleItem>()
                 };
 
@@ -341,6 +485,16 @@ namespace FarmTrack.Controllers
                 }
 
                 // Payment processing
+                string statusNote = $"Payment received. Preparing your order. Shipping: R{shippingFee:F2}";
+                if (shippingFee == 0)
+                {
+                    statusNote += " (Free shipping applied!)";
+                }
+                if (appliedVoucher != null)
+                {
+                    statusNote += $" Voucher '{appliedVoucher.Code}' applied.";
+                }
+
                 if (PaymentMethod != "Cash")
                 {
                     System.Threading.Thread.Sleep(2000);
@@ -351,20 +505,17 @@ namespace FarmTrack.Controllers
                     {
                         SaleId = sale.SaleId,
                         Status = "Order Confirmed",
-                        Notes = "Payment received. Preparing your order." +
-                               (appliedVoucher != null ? $" Voucher '{appliedVoucher.Code}' applied." : ""),
+                        Notes = statusNote,
                         UpdateTime = DateTime.Now
                     });
                 }
                 else
                 {
-                    // Add initial status update for cash orders
                     db.OrderStatusUpdates.Add(new OrderStatusUpdate
                     {
                         SaleId = sale.SaleId,
                         Status = "Order Confirmed",
-                        Notes = "Order confirmed. Awaiting payment on delivery." +
-                               (appliedVoucher != null ? $" Voucher '{appliedVoucher.Code}' applied." : ""),
+                        Notes = "Order confirmed. " + statusNote,
                         UpdateTime = DateTime.Now
                     });
                 }
@@ -377,7 +528,11 @@ namespace FarmTrack.Controllers
                 string successMessage = $"Order #{sale.SaleId} placed successfully! ";
                 if (discountAmount > 0)
                 {
-                    successMessage += $"You saved R{discountAmount:0.##}! ";
+                    successMessage += $"You saved R{discountAmount:F2}! ";
+                }
+                if (shippingFee == 0)
+                {
+                    successMessage += "Free shipping! ";
                 }
                 successMessage += $"Tracking: {trackingNumber}";
 
@@ -579,6 +734,9 @@ namespace FarmTrack.Controllers
                     return Json(new { success = false, error = "Not logged in" }, JsonRequestBehavior.AllowGet);
                 }
 
+                string userRole = Session["Role"]?.ToString();
+                bool isAdmin = userRole == "Admin" || userRole == "Owner";
+
                 var sale = db.Sales
                     .Include(s => s.AssignedDriver)
                     .FirstOrDefault(s => s.SaleId == saleId);
@@ -588,18 +746,16 @@ namespace FarmTrack.Controllers
                     return Json(new { success = false, error = "Order not found" }, JsonRequestBehavior.AllowGet);
                 }
 
-                // Verify permissions
-                string userRole = Session["Role"]?.ToString();
+                // ✅ FIX: Verify permissions - allow admin, customer, or driver
                 bool isCustomer = sale.UserId == userId.Value;
                 bool isDriver = sale.AssignedDriverId == userId.Value;
-                bool isAdmin = userRole == "Admin" || userRole == "Owner";
 
-                if (!isCustomer && !isDriver && !isAdmin)
+                if (!isAdmin && !isCustomer && !isDriver)
                 {
                     return Json(new { success = false, error = "Access denied" }, JsonRequestBehavior.AllowGet);
                 }
 
-                // **CRITICAL FIX: Get REAL-TIME driver location from User table**
+                // **Get REAL-TIME driver location from User table**
                 decimal? currentLat = null;
                 decimal? currentLng = null;
                 bool hasRealLocation = false;
@@ -608,7 +764,7 @@ namespace FarmTrack.Controllers
                 {
                     var driver = db.Users.Find(sale.AssignedDriverId.Value);
 
-                    // **Check if driver is online AND has recent location (within 2 minutes)**
+                    // Check if driver is online AND has recent location (within 2 minutes)
                     if (driver != null && driver.IsOnlineAsDriver &&
                         driver.CurrentLatitude.HasValue && driver.CurrentLongitude.HasValue &&
                         driver.LastOnlineTime.HasValue &&
@@ -636,19 +792,17 @@ namespace FarmTrack.Controllers
                 decimal destinationLat = sale.DestinationLatitude ?? -29.8587m;
                 decimal destinationLng = sale.DestinationLongitude ?? 31.0218m;
 
-                // **FIX: Only use fallback if no real location available**
+                // Only use fallback if no real location available
                 if (!hasRealLocation)
                 {
                     if (sale.AssignedDriverId.HasValue && sale.CurrentLatitude.HasValue && sale.CurrentLongitude.HasValue)
                     {
-                        // Use last known location from sale record
                         currentLat = sale.CurrentLatitude;
                         currentLng = sale.CurrentLongitude;
                         System.Diagnostics.Debug.WriteLine($"USING LAST KNOWN LOCATION: {currentLat}, {currentLng}");
                     }
                     else
                     {
-                        // No driver or no location - use destination as placeholder
                         currentLat = destinationLat;
                         currentLng = destinationLng;
                         System.Diagnostics.Debug.WriteLine($"USING DESTINATION AS PLACEHOLDER: {currentLat}, {currentLng}");
@@ -672,10 +826,13 @@ namespace FarmTrack.Controllers
                     hasDriver = sale.AssignedDriverId.HasValue,
                     driverIsOnline = sale.AssignedDriver?.IsOnlineAsDriver ?? false,
                     hasRealLocation = hasRealLocation,
-                    locationSource = hasRealLocation ? "real-time-gps" : (sale.AssignedDriverId.HasValue ? "last-known" : "destination")
+                    locationSource = hasRealLocation ? "real-time-gps" : (sale.AssignedDriverId.HasValue ? "last-known" : "destination"),
+
+                    // ✅ NEW: Pass user role info to frontend
+                    viewerRole = isAdmin ? "admin" : (isDriver ? "driver" : "customer")
                 };
 
-                System.Diagnostics.Debug.WriteLine($"Delivery Data - Source: {deliveryData.locationSource}, RealLocation: {hasRealLocation}");
+                System.Diagnostics.Debug.WriteLine($"Delivery Data - Source: {deliveryData.locationSource}, RealLocation: {hasRealLocation}, Viewer: {deliveryData.viewerRole}");
 
                 return Json(new { success = true, deliveryData }, JsonRequestBehavior.AllowGet);
             }
@@ -1637,22 +1794,34 @@ namespace FarmTrack.Controllers
             }
 
             int userId = (int)Session["UserId"];
+            string userRole = Session["Role"]?.ToString();
 
-            var sale = db.Sales
-                .Where(s => s.SaleId == id && s.UserId == userId) // Only allow access to user's own orders
-                .Include(s => s.Items)
-                .Include(s => s.Items.Select(i => i.Product))
-                .FirstOrDefault();
+            // ✅ FIX: Check if user is admin/owner
+            bool isAdmin = userRole == "Admin" || userRole == "Owner";
+
+            // ✅ FIX: Get sale without user restriction if admin
+            var sale = isAdmin
+                ? db.Sales
+                    .Where(s => s.SaleId == id)
+                    .Include(s => s.Items)
+                    .Include(s => s.Items.Select(i => i.Product))
+                    .FirstOrDefault()
+                : db.Sales
+                    .Where(s => s.SaleId == id && s.UserId == userId)
+                    .Include(s => s.Items)
+                    .Include(s => s.Items.Select(i => i.Product))
+                    .FirstOrDefault();
 
             if (sale == null)
             {
                 TempData["Error"] = "Order not found or you don't have permission to view this order.";
-                return RedirectToAction("MyOrders");
+                return RedirectToAction(isAdmin ? "SalesList" : "MyOrders");
             }
+
+            ViewBag.IsAdmin = isAdmin;
 
             return View(sale);
         }
-
         public ActionResult OrderTrackingLive(int id)
         {
             // Check if user is logged in
@@ -1662,21 +1831,47 @@ namespace FarmTrack.Controllers
             }
 
             int userId = (int)Session["UserId"];
+            string userRole = Session["Role"]?.ToString();
 
-            var sale = db.Sales
-                .Where(s => s.SaleId == id && s.UserId == userId) // Only allow access to user's own orders
-                .Include(s => s.Items)
-                .Include(s => s.Items.Select(i => i.Product))
-                .Include(s => s.OrderStatusUpdates)
-                .FirstOrDefault();
+            // ✅ FIX: Check if user is admin/owner
+            bool isAdmin = userRole == "Admin" || userRole == "Owner";
+
+            // ✅ FIX: Get sale without user restriction if admin
+            var sale = isAdmin
+                ? db.Sales
+                    .Where(s => s.SaleId == id)
+                    .Include(s => s.Items)
+                    .Include(s => s.Items.Select(i => i.Product))
+                    .Include(s => s.OrderStatusUpdates)
+                    .FirstOrDefault()
+                : db.Sales
+                    .Where(s => s.SaleId == id && s.UserId == userId)
+                    .Include(s => s.Items)
+                    .Include(s => s.Items.Select(i => i.Product))
+                    .Include(s => s.OrderStatusUpdates)
+                    .FirstOrDefault();
 
             if (sale == null)
             {
                 return Json(new { error = "Order not found" }, JsonRequestBehavior.AllowGet);
             }
 
+            // ✅ FIX: Permission check - allow admin, customer, or driver
+            bool isCustomer = sale.UserId == userId;
+            bool isAssignedDriver = sale.AssignedDriverId == userId;
+
+            if (!isAdmin && !isCustomer && !isAssignedDriver)
+            {
+                return Json(new { error = "Access denied" }, JsonRequestBehavior.AllowGet);
+            }
+
+            ViewBag.IsAdmin = isAdmin;
+            ViewBag.IsDriver = isAssignedDriver;
+            ViewBag.IsCustomer = isCustomer;
+
             return View(sale);
         }
+
 
         // AJAX endpoint for live updates - with user verification
         public JsonResult GetOrderStatus(int saleId)
@@ -1994,16 +2189,46 @@ namespace FarmTrack.Controllers
         }
 
         // Delivery Dashboard for Admins
-        
+
+        // REPLACE your existing DeliveryDashboard method with this fixed version:
+
         public ActionResult DeliveryDashboard()
         {
-            var deliveries = db.Sales
-                .Where(s => s.Status == "Confirmed" || s.Status == "Out for Delivery")
+            // Check if user is logged in
+            if (Session["UserId"] == null)
+            {
+                TempData["Error"] = "Please log in to access the delivery dashboard.";
+                return RedirectToAction("Login", "Account");
+            }
+
+            int currentUserId = (int)Session["UserId"];
+
+            // Get all deliveries that need driver assignment or are in progress
+            var allDeliveries = db.Sales
+                .Where(s => s.Status == "Confirmed" ||
+                           s.Status == "Assigned to Driver" ||
+                           s.Status == "Out for Delivery")
                 .Include(s => s.AssignedDriver)
+                .Include(s => s.Items)
                 .OrderBy(s => s.SaleDate)
                 .ToList();
 
-            return View(deliveries);
+            // Filter: My assigned deliveries (includes "Assigned to Driver" and "Out for Delivery")
+            var myAssignedDeliveries = allDeliveries
+                .Where(s => s.AssignedDriverId == currentUserId)
+                .ToList();
+
+            // Filter: Available deliveries (not assigned to anyone)
+            var availableDeliveries = allDeliveries
+                .Where(s => !s.AssignedDriverId.HasValue)
+                .ToList();
+
+            // Store both lists for the view
+            ViewBag.MyAssignedDeliveries = myAssignedDeliveries;
+            ViewBag.AvailableDeliveries = availableDeliveries;
+            ViewBag.CurrentUserId = currentUserId;
+
+            return View(allDeliveries);
         }
         /*
         // Go online as delivery driver
@@ -2144,18 +2369,36 @@ namespace FarmTrack.Controllers
             }
 
             int userId = (int)Session["UserId"];
+            string userRole = Session["Role"]?.ToString();
+
+            // ✅ FIX: Check if user is admin/owner OR driver OR customer
+            bool isAdmin = userRole == "Admin" || userRole == "Owner";
 
             var sale = db.Sales
                 .Include(s => s.AssignedDriver)
-                .FirstOrDefault(s => s.SaleId == id && s.UserId == userId); // ONLY show user's own orders
+                .FirstOrDefault(s => s.SaleId == id);
 
             if (sale == null)
             {
-                TempData["Error"] = "Order not found or you don't have permission to view this order.";
+                TempData["Error"] = "Order not found.";
+                return RedirectToAction(isAdmin ? "SalesList" : "MyOrders");
+            }
+
+            // ✅ FIX: Permission check - allow admin, customer, or assigned driver
+            bool isCustomer = sale.UserId == userId;
+            bool isAssignedDriver = sale.AssignedDriverId == userId;
+
+            if (!isAdmin && !isCustomer && !isAssignedDriver)
+            {
+                TempData["Error"] = "You don't have permission to view this order.";
                 return RedirectToAction("MyOrders");
             }
 
-            // NO PERMISSION CHECKS NEEDED - customer can only see their own orders
+            // Pass user role to view for conditional display
+            ViewBag.IsAdmin = isAdmin;
+            ViewBag.IsDriver = isAssignedDriver;
+            ViewBag.IsCustomer = isCustomer;
+
             return View(sale);
         }
 
@@ -2167,7 +2410,7 @@ namespace FarmTrack.Controllers
             if (Session["Role"]?.ToString() != "Admin" && Session["Role"]?.ToString() != "Owner")
             {
                 TempData["Error"] = "Access denied. Admin privileges required.";
-                return RedirectToAction("Index", "Home");
+                return RedirectToAction("Login", "Account");
             }
 
             // Determine date range based on period

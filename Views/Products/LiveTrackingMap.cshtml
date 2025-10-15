@@ -3,6 +3,14 @@
 @{
     ViewBag.Title = "Live Delivery Tracking - Order #" + Model.SaleId;
     var googleApiKey = System.Configuration.ConfigurationManager.AppSettings["GoogleMapsApiKey"];
+    if (Session["Role"] != null && (Session["Role"].ToString() == "Admin" || Session["Role"].ToString() == "Owner"))
+    {
+        Layout = "~/Views/Shared/_Layout.cshtml";
+    }
+    else
+    {
+        Layout = "~/Views/Shared/_Layout - User.cshtml";
+    }
 }
 
 <script src="https://maps.googleapis.com/maps/api/js?key=@googleApiKey&callback=initMap&libraries=geometry" async defer></script>

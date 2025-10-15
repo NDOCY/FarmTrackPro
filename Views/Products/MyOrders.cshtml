@@ -2,6 +2,14 @@
 
 @{
     ViewBag.Title = "My Orders";
+    if (Session["Role"] != null && (Session["Role"].ToString() == "Admin" || Session["Role"].ToString() == "Owner"))
+    {
+        Layout = "~/Views/Shared/_Layout.cshtml";
+    }
+    else
+    {
+        Layout = "~/Views/Shared/_Layout - User.cshtml";
+    }
 }
 
 <style>
@@ -516,10 +524,7 @@
                             <button class="btn btn-outline-info btn-sm" onclick="printReceipt(@order.SaleId)">
                                 <i class="fas fa-print"></i> Print Receipt
                             </button>
-                            <a href="@Url.Action("Reorder", new { id = order.SaleId })"
-                               class="btn btn-outline-warning btn-sm">
-                                <i class="fas fa-redo"></i> Reorder
-                            </a>
+                            
                         }
                         <a href="mailto:support@farmtrack.com?subject=Order @order.SaleId"
                            class="btn btn-outline-secondary btn-sm">
@@ -575,7 +580,7 @@
                                             <tfoot>
                                                 <tr>
                                                     <td colspan="3" class="text-end"><strong>Grand Total:</strong></td>
-                                                    <td><strong>R@order.TotalAmount.ToString("F2")</strong></td>
+                                                    <td><strong>R @order.TotalAmount.ToString("F2")</strong></td>
                                                     <td></td>
                                                 </tr>
                                             </tfoot>

@@ -446,7 +446,7 @@
                                 @foreach (var item in Model.Items)
                                 {
                                     <tr>
-                                        <td>@item.Product?.Name</td>
+                                        <td>@item.Product.Name</td>
                                         <td>@item.Quantity</td>
                                         <td>R @item.Price.ToString("N2")</td>
                                         <td>R@((item.Quantity * item.Price).ToString("N2"))</td>
@@ -456,7 +456,7 @@
                             <tfoot>
                                 <tr>
                                     <td colspan="3" class="text-end"><strong>Grand Total:</strong></td>
-                                    <td><strong>R@Model.TotalAmount.ToString("N2")</strong></td>
+                                    <td><strong>R @Model.TotalAmount.ToString("N2")</strong></td>
                                 </tr>
                             </tfoot>
                         </table>
@@ -492,6 +492,7 @@
 
         <!-- Management Actions -->
         <div class="col-md-4">
+            <!-- Driver Assignment -->
             <!-- Driver Assignment -->
             <div class="info-card">
                 <div class="card-header-custom header-info">
@@ -564,7 +565,8 @@
                                 <button type="button" class="btn btn-danger" onclick="unassignDriver()">
                                     <i class="fas fa-user-times"></i> Unassign Driver
                                 </button>
-                                <a href="@Url.Action("LiveTrackingMap", new { id = Model.SaleId })"
+                                @* ✅ FIXED URL *@
+                                <a href="@Url.Action("LiveTrackingMap", "Products", new { id = Model.SaleId })"
                                    class="btn btn-info" target="_blank">
                                     <i class="fas fa-map-marked-alt"></i> Live Tracking
                                 </a>
@@ -637,8 +639,9 @@
                         <a href="mailto:@Model.CustomerEmail?subject=Order @Model.SaleId Update" class="btn btn-outline-primary">
                             <i class="fas fa-envelope"></i> Email Customer
                         </a>
-                        <a href="@Url.Action("LiveTrackingMap", new { id = Model.SaleId })" class="btn btn-outline-success" target="_blank">
-                            <i class="fas fa-shipping-fast"></i> Live Tracking
+                        <a href="@Url.Action("LiveTrackingMap", "Products", new { id = Model.SaleId })"
+                           class="btn btn-info" target="_blank">
+                            <i class="fas fa-map-marked-alt"></i> Live Tracking
                         </a>
                         <button class="btn btn-outline-info" onclick="window.print()">
                             <i class="fas fa-print"></i> Print Details

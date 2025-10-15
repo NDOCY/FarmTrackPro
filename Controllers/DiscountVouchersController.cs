@@ -14,11 +14,11 @@ namespace FarmTrack.Controllers
         // GET: Admin - Voucher Management
         public ActionResult Index()
         {
-            if (Session["Role"]?.ToString() != "Admin" && Session["Role"]?.ToString() != "Owner")
-            {
-                TempData["Error"] = "Access denied. Admin privileges required.";
-                return RedirectToAction("Index", "Home");
-            }
+            //if (Session["Role"]?.ToString() != "Admin" && Session["Role"]?.ToString() != "Owner")
+            //{
+              //  TempData["Error"] = "Access denied. Admin privileges required.";
+                ///return RedirectToAction("Index", "DiscountVouchers");
+            //}
 
             var vouchers = db.DiscountVouchers
                 .Include(v => v.ApplicableProduct)
@@ -31,11 +31,11 @@ namespace FarmTrack.Controllers
         // GET: Create Voucher
         public ActionResult Create()
         {
-            if (Session["Role"]?.ToString() != "Admin" && Session["Role"]?.ToString() != "Owner")
-            {
-                TempData["Error"] = "Access denied.";
-                return RedirectToAction("Index");
-            }
+            //if (Session["Role"]?.ToString() != "Admin" && Session["Role"]?.ToString() != "Owner")
+            //{
+              //  TempData["Error"] = "Access denied.";
+                //return RedirectToAction("Index");
+            //}
 
             PopulateViewBagData();
             return View();
@@ -46,11 +46,7 @@ namespace FarmTrack.Controllers
         [ValidateAntiForgeryToken]
         public ActionResult Create(DiscountVoucher voucher)
         {
-            if (Session["Role"]?.ToString() != "Admin" && Session["Role"]?.ToString() != "Owner")
-            {
-                TempData["Error"] = "Access denied.";
-                return RedirectToAction("Index");
-            }
+           
 
             // Generate unique code if not provided
             if (string.IsNullOrWhiteSpace(voucher.Code))
@@ -136,11 +132,7 @@ namespace FarmTrack.Controllers
         // GET: Edit Voucher
         public ActionResult Edit(int? id)
         {
-            if (Session["Role"]?.ToString() != "Admin" && Session["Role"]?.ToString() != "Owner")
-            {
-                TempData["Error"] = "Access denied.";
-                return RedirectToAction("Index");
-            }
+            
 
             if (id == null)
             {
