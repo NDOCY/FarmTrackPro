@@ -629,38 +629,7 @@
                 </div>
             </div>
 
-            <!-- Quick Actions -->
-            <div class="info-card">
-                <div class="card-header-custom header-default">
-                    <h5><i class="fas fa-bolt"></i> Quick Actions</h5>
-                </div>
-                <div class="card-body-custom">
-                    <div class="d-grid gap-2">
-                        <a href="mailto:@Model.CustomerEmail?subject=Order @Model.SaleId Update" class="btn btn-outline-primary">
-                            <i class="fas fa-envelope"></i> Email Customer
-                        </a>
-                        <a href="@Url.Action("LiveTrackingMap", "Products", new { id = Model.SaleId })"
-                           class="btn btn-info" target="_blank">
-                            <i class="fas fa-map-marked-alt"></i> Live Tracking
-                        </a>
-                        <button class="btn btn-outline-info" onclick="window.print()">
-                            <i class="fas fa-print"></i> Print Details
-                        </button>
-                        @if (Model.PaymentStatus != "Completed")
-                        {
-                            <button class="btn btn-outline-warning" onclick="markAsPaid(@Model.SaleId)">
-                                <i class="fas fa-check-circle"></i> Mark as Paid
-                            </button>
-                        }
-                        <a href="@Url.Action("DeliveryDashboard")" class="btn btn-outline-dark">
-                            <i class="fas fa-truck"></i> Delivery Dashboard
-                        </a>
-                        <a href="@Url.Action("SalesList")" class="btn btn-secondary">
-                            <i class="fas fa-arrow-left"></i> Back to Sales
-                        </a>
-                    </div>
-                </div>
-            </div>
+            
         </div>
     </div>
 </div>

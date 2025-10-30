@@ -15,7 +15,7 @@ namespace FarmTrack.Models
         public FarmTrackContext() : base("Connection")
         {
             this.Configuration.LazyLoadingEnabled = false;
-
+             
             // Quick fix for production - allows automatic model changes
             // WARNING: This can cause data loss if not careful
             //Database.SetInitializer(new DropCreateDatabaseIfModelChanges<FarmTrackContext>());
@@ -81,7 +81,7 @@ namespace FarmTrack.Models
         public DbSet<DiscountVoucher> DiscountVouchers { get; set; }
         public DbSet<VoucherUsage> VoucherUsages { get; set; }
 
-
+        public DbSet<DeliveryVerification> DeliveryVerifications { get; set; }
 
 
 
@@ -171,6 +171,12 @@ namespace FarmTrack.Models
             .HasOptional(t => t.PlotCrop)
             .WithMany(pc => pc.Tasks)
             .HasForeignKey(t => t.PlotCropId);
+
+            modelBuilder.Entity<DeliveryVerification>()
+           .HasRequired(d => d.Sale)
+           .WithMany()
+           .HasForeignKey(d => d.SaleId)
+           .WillCascadeOnDelete(false);
 
         }
 

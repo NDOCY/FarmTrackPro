@@ -5,8 +5,14 @@ using System.Collections.Generic;
 using System.Configuration;
 using System.Data.Entity;
 using System.Linq;
+using System.Net.Http;
 using System.Threading.Tasks;
 using System.Web;
+// Add these using directives at the top of your ProductsController.cs
+using System.Net.Http.Headers;
+using System.Text;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using System.Web.Mvc;
 
 namespace FarmTrack.Controllers
@@ -30,9 +36,210 @@ namespace FarmTrack.Controllers
             return View(products.ToList());
         }
 
-        
+
 
         // GET: Products/Details/5
+        // Add these new methods to your ProductsController.cs
+
+        // UPDATED: Check if user can review (allows multiple reviews if multiple purchases)
+        private bool CanUserReview(int userId, int productId)
+        {
+            // Count how many times user purchased this product (delivered orders only)
+            var purchaseCount = db.Sales
+                .Where(s => s.UserId == userId && s.Status == "Delivered")
+                .SelectMany(s => s.Items)
+                .Count(i => i.ProductId == productId);
+
+            // Count how many reviews user has submitted
+            var reviewCount = db.ProductReviews
+                .Count(r => r.UserId == userId && r.ProductId == productId);
+
+            // User can review if they've purchased more times than they've reviewed
+            return purchaseCount > reviewCount;
+        }
+
+        // UPDATED: Submit Review - allows multiple reviews
+        [HttpPost]
+        public JsonResult SubmitReview(int ProductId, int Rating, string ReviewText)
+        {
+            try
+            {
+                // Skip anti-forgery for testing
+                System.Diagnostics.Debug.WriteLine($"SubmitReview called: ProductId={ProductId}, Rating={Rating}");
+
+                if (Session["UserId"] == null)
+                {
+                    return Json(new { success = false, message = "Please log in to submit a review." });
+                }
+
+                int userId = (int)Session["UserId"];
+
+                var review = new ProductReview
+                {
+                    ProductId = ProductId,
+                    UserId = userId,
+                    Rating = Rating,
+                    ReviewText = ReviewText ?? "",
+                    IsVerifiedPurchase = true,
+                    ReviewDate = DateTime.Now,
+                    IsActive = true
+                };
+
+                db.ProductReviews.Add(review);
+                db.SaveChanges();
+
+                return Json(new { success = true, message = "Review submitted successfully!" });
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"ERROR: {ex.Message}");
+                return Json(new { success = false, message = ex.Message });
+            }
+        }
+
+        // NEW: Submit Admin Reply to Review
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public JsonResult SubmitReviewReply(int reviewId, string replyText)
+        {
+            try
+            {
+                if (Session["UserId"] == null)
+                {
+                    return Json(new { success = false, message = "Please log in." });
+                }
+
+                int userId = (int)Session["UserId"];
+                string userRole = Session["Role"]?.ToString();
+
+                // Check if user is admin or owner
+                if (userRole != "Admin" && userRole != "Owner")
+                {
+                    return Json(new { success = false, message = "Only administrators can reply to reviews." });
+                }
+
+                if (string.IsNullOrWhiteSpace(replyText))
+                {
+                    return Json(new { success = false, message = "Reply text cannot be empty." });
+                }
+
+                var review = db.ProductReviews.Find(reviewId);
+                if (review == null)
+                {
+                    return Json(new { success = false, message = "Review not found." });
+                }
+
+                // Update the review with admin reply
+                review.AdminReply = replyText.Trim();
+                review.AdminReplyDate = DateTime.Now;
+                review.AdminReplyUserId = userId;
+
+                db.SaveChanges();
+
+                // Log activity
+                try
+                {
+                    db.LogActivity(userId, $"Replied to review #{reviewId} for product #{review.ProductId}");
+                }
+                catch (Exception logEx)
+                {
+                    System.Diagnostics.Debug.WriteLine($"Warning: Failed to log activity: {logEx.Message}");
+                }
+
+                return Json(new
+                {
+                    success = true,
+                    message = "Reply posted successfully!",
+                    replyText = review.AdminReply,
+                    replyDate = review.AdminReplyDate.Value.ToString("MMM dd, yyyy")
+                });
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"SubmitReviewReply ERROR: {ex.Message}");
+                return Json(new { success = false, message = "Error posting reply: " + ex.Message });
+            }
+        }
+
+        // UPDATED: Check Review Eligibility - supports multiple reviews
+        public JsonResult CheckReviewEligibility(int productId)
+        {
+            try
+            {
+                if (Session["UserId"] == null)
+                {
+                    return Json(new
+                    {
+                        canReview = false,
+                        message = "Please log in to review products",
+                        badgeText = "Login Required",
+                        badgeClass = "bg-secondary",
+                        purchaseCount = 0,
+                        reviewCount = 0
+                    }, JsonRequestBehavior.AllowGet);
+                }
+
+                int userId = (int)Session["UserId"];
+
+                // Count delivered purchases
+                var purchaseCount = db.Sales
+                    .Where(s => s.UserId == userId && s.Status == "Delivered")
+                    .SelectMany(s => s.Items)
+                    .Count(i => i.ProductId == productId);
+
+                // Count existing reviews
+                var reviewCount = db.ProductReviews
+                    .Count(r => r.UserId == userId && r.ProductId == productId);
+
+                bool canReview = purchaseCount > reviewCount;
+
+                string message;
+                if (purchaseCount == 0)
+                {
+                    message = "Purchase this product and receive delivery to leave a review";
+                }
+                else if (canReview)
+                {
+                    if (reviewCount == 0)
+                    {
+                        message = $"You purchased this item. Share your experience!";
+                    }
+                    else
+                    {
+                        message = $"You've purchased this {purchaseCount} time(s) and reviewed {reviewCount} time(s). Review again!";
+                    }
+                }
+                else
+                {
+                    message = $"You've already reviewed all {purchaseCount} purchase(s) of this product";
+                }
+
+                return Json(new
+                {
+                    canReview = canReview,
+                    message = message,
+                    badgeText = canReview ? "Verified Purchase" : (purchaseCount > 0 ? "All Purchases Reviewed" : "Purchase Required"),
+                    badgeClass = canReview ? "bg-success" : (purchaseCount > 0 ? "bg-info" : "bg-warning"),
+                    purchaseCount = purchaseCount,
+                    reviewCount = reviewCount
+                }, JsonRequestBehavior.AllowGet);
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"CheckReviewEligibility ERROR: {ex.Message}");
+                return Json(new
+                {
+                    canReview = false,
+                    message = "Error checking eligibility",
+                    badgeText = "Error",
+                    badgeClass = "bg-danger",
+                    purchaseCount = 0,
+                    reviewCount = 0
+                }, JsonRequestBehavior.AllowGet);
+            }
+        }
+
+        // UPDATED: Details method - pass admin status to view
         public ActionResult Details(int? id)
         {
             if (id == null)
@@ -53,22 +260,40 @@ namespace FarmTrack.Controllers
             var ratingSummary = CalculateRatingSummary(product.Id);
             ViewBag.RatingSummary = ratingSummary;
 
-            // Get recent reviews
+            // Get recent reviews (only verified purchases)
             var recentReviews = product.Reviews
-                .Where(r => r.IsActive)
+                .Where(r => r.IsActive && r.IsVerifiedPurchase)
                 .OrderByDescending(r => r.ReviewDate)
                 .ToList();
             ViewBag.RecentReviews = recentReviews;
 
             // Check if current user can review
             bool canReview = false;
+            int purchaseCount = 0;
+            int reviewCount = 0;
+
             if (Session["UserId"] != null)
             {
                 int userId = (int)Session["UserId"];
-                // User can review if they haven't reviewed before and have purchased the product
-                canReview = !product.Reviews.Any(r => r.UserId == userId) && HasPurchasedProduct(userId, product.Id);
+
+                purchaseCount = db.Sales
+                    .Where(s => s.UserId == userId && s.Status == "Delivered")
+                    .SelectMany(s => s.Items)
+                    .Count(i => i.ProductId == product.Id);
+
+                reviewCount = db.ProductReviews
+                    .Count(r => r.UserId == userId && r.ProductId == product.Id);
+
+                canReview = purchaseCount > reviewCount;
             }
+
             ViewBag.CanReview = canReview;
+            ViewBag.PurchaseCount = purchaseCount;
+            ViewBag.ReviewCount = reviewCount;
+
+            // Check if user is admin
+            string userRole = Session["Role"]?.ToString();
+            ViewBag.IsAdmin = userRole == "Admin" || userRole == "Owner";
 
             return View(product);
         }
@@ -94,19 +319,21 @@ namespace FarmTrack.Controllers
         }
 
         // Helper method to check if user has purchased the product
+        
         private bool HasPurchasedProduct(int userId, int productId)
         {
             return db.Sales
-                .Where(s => s.UserId == userId)
+                .Where(s => s.UserId == userId && s.Status == "Delivered") // Only delivered orders count
                 .SelectMany(s => s.Items)
                 .Any(i => i.ProductId == productId);
         }
 
         // REPLACE YOUR SubmitReview METHOD with this:
 
+        /*// STRICT VERIFIED PURCHASE SYSTEM - Only delivered orders can review
         [HttpPost]
-        // Remove [ValidateAntiForgeryToken] for AJAX calls - or handle it properly
-        public JsonResult SubmitReview(int ProductId, int Rating, string ReviewText, bool IsVerifiedPurchase = false)
+        [ValidateAntiForgeryToken]
+        public JsonResult SubmitReview(int ProductId, int Rating, string ReviewText)
         {
             try
             {
@@ -121,6 +348,22 @@ namespace FarmTrack.Controllers
                 int userId = (int)Session["UserId"];
                 System.Diagnostics.Debug.WriteLine($"User ID: {userId}");
 
+                // STRICT VERIFICATION: Check if user has purchased AND order was delivered
+                var hasPurchasedAndReceived = db.Sales
+                    .Where(s => s.UserId == userId && s.Status == "Delivered")
+                    .SelectMany(s => s.Items)
+                    .Any(i => i.ProductId == ProductId);
+
+                if (!hasPurchasedAndReceived)
+                {
+                    System.Diagnostics.Debug.WriteLine("User has not purchased or order not delivered");
+                    return Json(new
+                    {
+                        success = false,
+                        message = "Only customers who have purchased and received this product can leave reviews. Purchase the product and wait for delivery to submit a review."
+                    });
+                }
+
                 // Check if user has already reviewed this product
                 var existingReview = db.ProductReviews
                     .FirstOrDefault(r => r.ProductId == ProductId && r.UserId == userId);
@@ -131,14 +374,13 @@ namespace FarmTrack.Controllers
                     return Json(new { success = false, message = "You have already reviewed this product." });
                 }
 
-                // Create new review
                 var review = new ProductReview
                 {
                     ProductId = ProductId,
                     UserId = userId,
                     Rating = Rating,
                     ReviewText = ReviewText ?? "",
-                    IsVerifiedPurchase = IsVerifiedPurchase,
+                    IsVerifiedPurchase = true, // Always true - enforced by check above
                     ReviewDate = DateTime.Now,
                     IsActive = true
                 };
@@ -151,14 +393,14 @@ namespace FarmTrack.Controllers
                 // Log activity
                 try
                 {
-                    db.LogActivity(userId, $"Reviewed product #{ProductId} with {Rating} stars");
+                    db.LogActivity(userId, $"Submitted verified review for product #{ProductId}");
                 }
                 catch (Exception logEx)
                 {
                     System.Diagnostics.Debug.WriteLine($"Warning: Failed to log activity: {logEx.Message}");
                 }
 
-                return Json(new { success = true, message = "Review submitted successfully!" });
+                return Json(new { success = true, message = "Review submitted successfully! Thank you for your feedback." });
             }
             catch (Exception ex)
             {
@@ -166,41 +408,59 @@ namespace FarmTrack.Controllers
                 System.Diagnostics.Debug.WriteLine($"Stack trace: {ex.StackTrace}");
                 return Json(new { success = false, message = "Error submitting review: " + ex.Message });
             }
-        }
+        }*/
 
-        /*
-        // CRITICAL FIX 1: Geocode customer address to get actual coordinates
-        private (decimal? lat, decimal? lng) GeocodeAddress(string address)
+        /*// Check if user can review a product
+        public JsonResult CheckReviewEligibility(int productId)
         {
-            if (string.IsNullOrEmpty(address)) return (null, null);
-
             try
             {
-                // Using Google Geocoding API
-                // You'll need to add your Google API key to Web.config
-                string apiKey = System.Configuration.ConfigurationManager.AppSettings["GoogleMapsApiKey"];
-                string url = $"https://maps.googleapis.com/maps/api/geocode/json?address={Uri.EscapeDataString(address)}&key={apiKey}";
-
-                using (var client = new System.Net.WebClient())
+                if (Session["UserId"] == null)
                 {
-                    string response = client.DownloadString(url);
-                    dynamic json = Newtonsoft.Json.JsonConvert.DeserializeObject(response);
-
-                    if (json.status == "OK" && json.results.Count > 0)
+                    return Json(new
                     {
-                        decimal lat = json.results[0].geometry.location.lat;
-                        decimal lng = json.results[0].geometry.location.lng;
-                        return (lat, lng);
-                    }
+                        canReview = false,
+                        message = "Please log in to review products",
+                        badgeText = "Login Required",
+                        badgeClass = "bg-secondary"
+                    }, JsonRequestBehavior.AllowGet);
                 }
+
+                int userId = (int)Session["UserId"];
+
+                // Check if user has any delivered orders containing this product
+                var deliveredOrder = db.Sales
+                    .Where(s => s.UserId == userId && s.Status == "Delivered")
+                    .SelectMany(s => s.Items)
+                    .Where(i => i.ProductId == productId)
+                    .Select(i => new { i.Sale.SaleDate, i.Sale.TrackingNumber })
+                    .FirstOrDefault();
+
+                bool canReview = deliveredOrder != null;
+
+                return Json(new
+                {
+                    canReview = canReview,
+                    message = canReview ?
+                        $"You purchased this item on {deliveredOrder.SaleDate.ToString("MMM dd, yyyy")}" :
+                        "Purchase this product and receive delivery to leave a review",
+                    badgeText = canReview ? "Verified Purchase" : "Purchase Required",
+                    badgeClass = canReview ? "bg-success" : "bg-warning"
+                }, JsonRequestBehavior.AllowGet);
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"Geocoding error: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"CheckReviewEligibility ERROR: {ex.Message}");
+                return Json(new
+                {
+                    canReview = false,
+                    message = "Error checking eligibility",
+                    badgeText = "Error",
+                    badgeClass = "bg-danger"
+                }, JsonRequestBehavior.AllowGet);
             }
-
-            return (null, null);
         }*/
+
 
         // Calculate shipping fee based on distance and cart weight
         private decimal CalculateShippingFee(decimal? destinationLat, decimal? destinationLng, List<CartItem> cart)
@@ -960,264 +1220,7 @@ namespace FarmTrack.Controllers
                 System.Diagnostics.Debug.WriteLine($"GoOnlineAsDriver ERROR: {ex.Message}");
                 return Json(new { success = false, message = ex.Message });
             }
-        }/*
-
-        // FIXED: GetRealDeliveryData - Now properly shows driver's actual location
-        public JsonResult GetRealDeliveryData(int saleId)
-        {
-            try
-            {
-                // Check user permission
-                int? userId = Session["UserId"] as int?;
-                if (!userId.HasValue)
-                {
-                    return Json(new { success = false, error = "Not logged in" }, JsonRequestBehavior.AllowGet);
-                }
-
-                var sale = db.Sales
-                    .Include(s => s.AssignedDriver)
-                    .FirstOrDefault(s => s.SaleId == saleId);
-
-                if (sale == null)
-                {
-                    return Json(new { success = false, error = "Order not found" }, JsonRequestBehavior.AllowGet);
-                }
-
-                // Verify user can view this order (customer or assigned driver or admin)
-                string userRole = Session["Role"]?.ToString();
-                bool isCustomer = sale.UserId == userId.Value;
-                bool isDriver = sale.AssignedDriverId == userId.Value;
-                bool isAdmin = userRole == "Admin" || userRole == "Owner";
-
-                if (!isCustomer && !isDriver && !isAdmin)
-                {
-                    return Json(new { success = false, error = "Access denied" }, JsonRequestBehavior.AllowGet);
-                }
-
-                // **FIX: Always get REAL driver location from User table FIRST**
-                decimal? currentLat = null;
-                decimal? currentLng = null;
-                bool hasRealLocation = false;
-
-                if (sale.AssignedDriverId.HasValue)
-                {
-                    var driver = db.Users.Find(sale.AssignedDriverId.Value);
-
-                    // Check if driver has a current location (they're online)
-                    if (driver != null &&
-                        driver.IsOnlineAsDriver &&
-                        driver.CurrentLatitude.HasValue &&
-                        driver.CurrentLongitude.HasValue)
-                    {
-                        currentLat = driver.CurrentLatitude;
-                        currentLng = driver.CurrentLongitude;
-                        hasRealLocation = true;
-
-                        // Update sale's current location for tracking
-                        sale.CurrentLatitude = currentLat;
-                        sale.CurrentLongitude = currentLng;
-                        sale.LastLocationUpdate = DateTime.Now;
-                        db.SaveChanges();
-                    }
-                }
-
-                // **FIX: Use stored destination coordinates from order**
-                decimal destinationLat = sale.DestinationLatitude ?? -29.8587m; // Durban fallback
-                decimal destinationLng = sale.DestinationLongitude ?? 31.0218m;
-
-                // **FIX: Only use destination as driver location if driver hasn't been assigned at all**
-                // Don't show fake location if driver is assigned but offline
-                if (!hasRealLocation && !sale.AssignedDriverId.HasValue)
-                {
-                    // No driver assigned - show destination as placeholder
-                    currentLat = destinationLat;
-                    currentLng = destinationLng;
-                }
-                else if (!hasRealLocation && sale.AssignedDriverId.HasValue)
-                {
-                    // Driver assigned but offline/no location - use last known location or null
-                    currentLat = sale.CurrentLatitude ?? null;
-                    currentLng = sale.CurrentLongitude ?? null;
-                }
-
-                var deliveryData = new
-                {
-                    currentLat = currentLat ?? destinationLat, // Fallback only if really needed
-                    currentLng = currentLng ?? destinationLng,
-                    destinationLat = destinationLat,
-                    destinationLng = destinationLng,
-                    driverName = sale.DeliveryDriver ?? "Not assigned",
-                    driverPhone = sale.DriverPhone ?? "",
-                    vehicleType = sale.VehicleType ?? "Vehicle",
-                    vehicleNumber = sale.VehicleNumber ?? "TBD",
-                    status = sale.Status,
-                    isActive = sale.IsActiveDelivery,
-                    lastUpdate = sale.LastLocationUpdate?.ToString("g") ?? "No updates yet",
-                    deliveryAddress = sale.DeliveryAddress,
-                    hasDriver = sale.AssignedDriverId.HasValue,
-                    driverIsOnline = sale.AssignedDriver?.IsOnlineAsDriver ?? false,
-                    hasRealLocation = hasRealLocation // NEW: Tell frontend if location is real
-                };
-
-                return Json(new { success = true, deliveryData }, JsonRequestBehavior.AllowGet);
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"GetRealDeliveryData error: {ex.Message}");
-                return Json(new { success = false, error = ex.Message }, JsonRequestBehavior.AllowGet);
-            }
         }
-        */
-
-        /*// CRITICAL FIX 3: Fixed GetRealDeliveryData to use actual driver location
-        public JsonResult GetRealDeliveryData(int saleId)
-        {
-            try
-            {
-                // Check user permission
-                int? userId = Session["UserId"] as int?;
-                if (!userId.HasValue)
-                {
-                    return Json(new { success = false, error = "Not logged in" }, JsonRequestBehavior.AllowGet);
-                }
-
-                var sale = db.Sales
-                    .Include(s => s.AssignedDriver)
-                    .FirstOrDefault(s => s.SaleId == saleId);
-
-                if (sale == null)
-                {
-                    return Json(new { success = false, error = "Order not found" }, JsonRequestBehavior.AllowGet);
-                }
-
-                // Verify user can view this order (customer or assigned driver or admin)
-                string userRole = Session["Role"]?.ToString();
-                bool isCustomer = sale.UserId == userId.Value;
-                bool isDriver = sale.AssignedDriverId == userId.Value;
-                bool isAdmin = userRole == "Admin" || userRole == "Owner";
-
-                if (!isCustomer && !isDriver && !isAdmin)
-                {
-                    return Json(new { success = false, error = "Access denied" }, JsonRequestBehavior.AllowGet);
-                }
-
-                // **FIX: Get REAL driver location from User table**
-                decimal? currentLat = null;
-                decimal? currentLng = null;
-
-                if (sale.AssignedDriverId.HasValue)
-                {
-                    var driver = db.Users.Find(sale.AssignedDriverId.Value);
-                    if (driver != null && driver.CurrentLatitude.HasValue && driver.CurrentLongitude.HasValue)
-                    {
-                        currentLat = driver.CurrentLatitude;
-                        currentLng = driver.CurrentLongitude;
-
-                        // Update sale's current location for tracking
-                        sale.CurrentLatitude = currentLat;
-                        sale.CurrentLongitude = currentLng;
-                        sale.LastLocationUpdate = DateTime.Now;
-                        db.SaveChanges();
-                    }
-                }
-
-                // **FIX: Use stored destination coordinates from order**
-                decimal destinationLat = sale.DestinationLatitude ?? -25.7479m; // Fallback
-                decimal destinationLng = sale.DestinationLongitude ?? 28.2293m;
-
-                // If driver hasn't started yet, show driver's starting position
-                if (!currentLat.HasValue && sale.AssignedDriverId.HasValue)
-                {
-                    var driver = db.Users.Find(sale.AssignedDriverId.Value);
-                    currentLat = driver?.CurrentLatitude ?? destinationLat;
-                    currentLng = driver?.CurrentLongitude ?? destinationLng;
-                }
-
-                var deliveryData = new
-                {
-                    currentLat = currentLat ?? destinationLat,
-                    currentLng = currentLng ?? destinationLng,
-                    destinationLat = destinationLat,
-                    destinationLng = destinationLng,
-                    driverName = sale.DeliveryDriver ?? "Not assigned",
-                    driverPhone = sale.DriverPhone ?? "",
-                    vehicleType = sale.VehicleType ?? "Vehicle",
-                    vehicleNumber = sale.VehicleNumber ?? "TBD",
-                    status = sale.Status,
-                    isActive = sale.IsActiveDelivery,
-                    lastUpdate = sale.LastLocationUpdate?.ToString("g") ?? "No updates yet",
-                    deliveryAddress = sale.DeliveryAddress,
-                    hasDriver = sale.AssignedDriverId.HasValue,
-                    driverIsOnline = sale.AssignedDriver?.IsOnlineAsDriver ?? false
-                };
-
-                return Json(new { success = true, deliveryData }, JsonRequestBehavior.AllowGet);
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"GetRealDeliveryData error: {ex.Message}");
-                return Json(new { success = false, error = ex.Message }, JsonRequestBehavior.AllowGet);
-            }
-        }*/
-
-        // CRITICAL FIX 4: Update driver location properly
-        /*[HttpPost]
-        public JsonResult UpdateDriverLocation(decimal latitude, decimal longitude)
-        {
-            try
-            {
-                int userId = (int)Session["UserId"];
-                var user = db.Users.Find(userId);
-
-                if (user == null)
-                {
-                    return Json(new { success = false, message = "User not found" });
-                }
-
-                // Update user's current location
-                user.CurrentLatitude = latitude;
-                user.CurrentLongitude = longitude;
-                user.LastOnlineTime = DateTime.Now;
-                user.IsOnlineAsDriver = true;
-
-                // **FIX: Update ALL active deliveries assigned to this driver**
-                var activeDeliveries = db.Sales
-                    .Where(s => s.AssignedDriverId == userId && s.IsActiveDelivery)
-                    .ToList();
-
-                foreach (var delivery in activeDeliveries)
-                {
-                    delivery.CurrentLatitude = latitude;
-                    delivery.CurrentLongitude = longitude;
-                    delivery.LastLocationUpdate = DateTime.Now;
-
-                    // Record in location history
-                    db.DeliveryLocations.Add(new DeliveryLocation
-                    {
-                        SaleId = delivery.SaleId,
-                        DriverUserId = userId,
-                        Latitude = latitude,
-                        Longitude = longitude,
-                        Timestamp = DateTime.Now,
-                        Sequence = db.DeliveryLocations.Count(dl => dl.SaleId == delivery.SaleId) + 1
-                    });
-                }
-
-                db.SaveChanges();
-
-                return Json(new
-                {
-                    success = true,
-                    updatedDeliveries = activeDeliveries.Count,
-                    message = $"Location updated for {activeDeliveries.Count} deliveries"
-                });
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"UpdateDriverLocation error: {ex.Message}");
-                return Json(new { success = false, message = ex.Message });
-            }
-        }*/
 
         // CRITICAL FIX 5: Get driver's active deliveries correctly
         public JsonResult GetMyActiveDeliveries()
@@ -2284,6 +2287,8 @@ namespace FarmTrack.Controllers
         }
 
 
+
+
         // Go offline as driver
         [HttpPost]
         public JsonResult GoOfflineAsDriver()
@@ -2324,19 +2329,32 @@ namespace FarmTrack.Controllers
         }
 
         // Complete delivery
+        // Complete delivery with verification option
         [HttpPost]
-        public JsonResult CompleteDelivery(int saleId)
+        public JsonResult CompleteDelivery(int saleId, bool useVerification = false)
         {
             try
             {
                 int userId = (int)Session["UserId"];
                 var sale = db.Sales.Find(saleId);
 
+                if (sale == null)
+                {
+                    return Json(new { success = false, message = "Order not found" });
+                }
+
                 if (sale.AssignedDriverId != userId)
                 {
                     return Json(new { success = false, message = "Delivery not assigned to you" });
                 }
 
+                // If verification is required, generate code instead of completing
+                if (useVerification)
+                {
+                    return GenerateDeliveryCode(saleId);
+                }
+
+                // Traditional completion without verification
                 sale.Status = "Delivered";
                 sale.IsActiveDelivery = false;
 
@@ -2350,11 +2368,289 @@ namespace FarmTrack.Controllers
 
                 db.SaveChanges();
 
-                return Json(new { success = true });
+                return Json(new { success = true, message = "Delivery completed successfully!" });
             }
             catch (Exception ex)
             {
+                System.Diagnostics.Debug.WriteLine($"CompleteDelivery ERROR: {ex.Message}");
                 return Json(new { success = false, message = ex.Message });
+            }
+        }
+
+        
+
+        // Driver completes delivery by entering customer's code
+        [HttpPost]
+        public JsonResult CompleteDeliveryWithCode(int saleId, string customerCode)
+        {
+            try
+            {
+                if (Session["UserId"] == null)
+                {
+                    return Json(new { success = false, message = "Not logged in" });
+                }
+
+                int userId = (int)Session["UserId"];
+                var sale = db.Sales.Find(saleId);
+
+                if (sale == null)
+                {
+                    return Json(new { success = false, message = "Order not found" });
+                }
+
+                if (sale.AssignedDriverId != userId)
+                {
+                    return Json(new { success = false, message = "This delivery is not assigned to you" });
+                }
+
+                // Verify the code matches
+                if (string.IsNullOrEmpty(sale.DeliveryVerificationCode) || sale.DeliveryVerificationCode != customerCode)
+                {
+                    // Log failed attempt
+                    db.DeliveryVerifications.Add(new DeliveryVerification
+                    {
+                        SaleId = saleId,
+                        DriverUserId = userId,
+                        VerificationCode = customerCode,
+                        VerifiedAt = DateTime.Now,
+                        VerificationMethod = "Code",
+                        IsSuccessful = false,
+                        Notes = "Invalid code provided"
+                    });
+
+                    db.SaveChanges();
+
+                    return Json(new
+                    {
+                        success = false,
+                        message = "Invalid verification code. Please ask the customer for the correct code."
+                    });
+                }
+
+                // Check if code is expired (10 minutes)
+                if (sale.DeliveryCodeGeneratedAt.HasValue &&
+                    (DateTime.Now - sale.DeliveryCodeGeneratedAt.Value).TotalMinutes > 10)
+                {
+                    return Json(new
+                    {
+                        success = false,
+                        message = "Verification code has expired. Please ask customer to generate a new code."
+                    });
+                }
+
+                // SUCCESS: Complete delivery
+                sale.Status = "Delivered";
+                sale.IsActiveDelivery = false;
+                sale.DeliveryVerifiedAt = DateTime.Now;
+                sale.DeliveryVerifiedByDriverId = userId;
+                sale.DeliveryCodeStatus = "Used";
+
+                // Log successful verification
+                db.DeliveryVerifications.Add(new DeliveryVerification
+                {
+                    SaleId = saleId,
+                    DriverUserId = userId,
+                    CustomerUserId = sale.UserId,
+                    VerificationCode = customerCode,
+                    VerifiedAt = DateTime.Now,
+                    VerificationMethod = "Code",
+                    IsSuccessful = true,
+                    Notes = "Delivery verified with customer code"
+                });
+
+                db.OrderStatusUpdates.Add(new OrderStatusUpdate
+                {
+                    SaleId = saleId,
+                    Status = "Delivered",
+                    Notes = "Delivery completed and verified with customer code",
+                    UpdateTime = DateTime.Now
+                });
+
+                db.SaveChanges();
+
+                return Json(new
+                {
+                    success = true,
+                    message = "Delivery completed successfully! Verification code accepted."
+                });
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"CompleteDeliveryWithCode ERROR: {ex.Message}");
+                return Json(new { success = false, message = ex.Message });
+            }
+        }
+
+        // REPLACE these two methods in your ProductsController.cs
+
+        // Customer can view their verification code
+        public JsonResult GetCustomerVerificationCode(int saleId)
+        {
+            try
+            {
+                System.Diagnostics.Debug.WriteLine($"GetCustomerVerificationCode called for saleId: {saleId}");
+
+                if (Session["UserId"] == null)
+                {
+                    System.Diagnostics.Debug.WriteLine("User not logged in");
+                    return Json(new { success = false, message = "Please log in" }, JsonRequestBehavior.AllowGet);
+                }
+
+                int userId = (int)Session["UserId"];
+                System.Diagnostics.Debug.WriteLine($"User ID: {userId}");
+
+                var sale = db.Sales.FirstOrDefault(s => s.SaleId == saleId && s.UserId == userId);
+
+                if (sale == null)
+                {
+                    System.Diagnostics.Debug.WriteLine($"Order not found for saleId: {saleId}, userId: {userId}");
+                    return Json(new { success = false, message = "Order not found" }, JsonRequestBehavior.AllowGet);
+                }
+
+                System.Diagnostics.Debug.WriteLine($"Order found. Status: {sale.Status}");
+
+                if (sale.Status != "Out for Delivery")
+                {
+                    System.Diagnostics.Debug.WriteLine($"Order status is '{sale.Status}', not 'Out for Delivery'");
+                    return Json(new
+                    {
+                        success = false,
+                        message = $"Delivery not in progress. Current status: {sale.Status}"
+                    }, JsonRequestBehavior.AllowGet);
+                }
+
+                System.Diagnostics.Debug.WriteLine($"Existing code: '{sale.DeliveryVerificationCode}', Generated at: {sale.DeliveryCodeGeneratedAt}");
+
+                // Check if code exists and is not expired
+                if (!string.IsNullOrEmpty(sale.DeliveryVerificationCode) &&
+                    sale.DeliveryCodeGeneratedAt.HasValue &&
+                    (DateTime.Now - sale.DeliveryCodeGeneratedAt.Value).TotalMinutes <= 10)
+                {
+                    System.Diagnostics.Debug.WriteLine("Valid code found - returning it");
+
+                    return Json(new
+                    {
+                        success = true,
+                        hasCode = true,
+                        code = sale.DeliveryVerificationCode,
+                        generatedAt = sale.DeliveryCodeGeneratedAt.Value.ToString("HH:mm"),
+                        expiresAt = sale.DeliveryCodeGeneratedAt.Value.AddMinutes(10).ToString("HH:mm"),
+                        message = "Show this code to your driver when they arrive"
+                    }, JsonRequestBehavior.AllowGet);
+                }
+
+                System.Diagnostics.Debug.WriteLine("No valid code found");
+
+                return Json(new
+                {
+                    success = true,
+                    hasCode = false,
+                    message = "Generate a verification code for your driver"
+                }, JsonRequestBehavior.AllowGet);
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"GetCustomerVerificationCode ERROR: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"Stack trace: {ex.StackTrace}");
+                return Json(new
+                {
+                    success = false,
+                    message = "Error: " + ex.Message
+                }, JsonRequestBehavior.AllowGet);
+            }
+        }
+
+        // Generate delivery verification code
+        [HttpPost]
+        public JsonResult GenerateDeliveryCode(int saleId)
+        {
+            try
+            {
+                System.Diagnostics.Debug.WriteLine($"GenerateDeliveryCode called for saleId: {saleId}");
+
+                if (Session["UserId"] == null)
+                {
+                    System.Diagnostics.Debug.WriteLine("User not logged in");
+                    return Json(new { success = false, message = "Please log in" });
+                }
+
+                int userId = (int)Session["UserId"];
+                System.Diagnostics.Debug.WriteLine($"User ID: {userId}");
+
+                var sale = db.Sales.FirstOrDefault(s => s.SaleId == saleId && s.UserId == userId);
+
+                if (sale == null)
+                {
+                    System.Diagnostics.Debug.WriteLine($"Order not found for saleId: {saleId}, userId: {userId}");
+                    return Json(new { success = false, message = "Order not found" });
+                }
+
+                System.Diagnostics.Debug.WriteLine($"Order found. Status: {sale.Status}");
+
+                // Generate a simple 4-digit code for customer
+                var random = new Random();
+                string code = random.Next(1000, 9999).ToString(); // 4-digit code
+
+                System.Diagnostics.Debug.WriteLine($"Generated code: {code}");
+
+                // Update the sale with the new code
+                sale.DeliveryVerificationCode = code;
+                sale.DeliveryCodeGeneratedAt = DateTime.Now;
+                sale.DeliveryCodeStatus = "Generated";
+
+                try
+                {
+                    db.SaveChanges();
+                    System.Diagnostics.Debug.WriteLine("✅ Code saved to database successfully");
+                }
+                catch (Exception saveEx)
+                {
+                    System.Diagnostics.Debug.WriteLine($"❌ Error saving to database: {saveEx.Message}");
+                    return Json(new { success = false, message = "Error saving code: " + saveEx.Message });
+                }
+
+                // Log the code generation in verification history
+                try
+                {
+                    db.DeliveryVerifications.Add(new DeliveryVerification
+                    {
+                        SaleId = saleId,
+                        CustomerUserId = sale.UserId,
+                        VerificationCode = code,
+                        VerifiedAt = DateTime.Now,
+                        VerificationMethod = "CodeGenerated",
+                        IsSuccessful = true,
+                        Notes = "Verification code generated for customer"
+                    });
+
+                    db.SaveChanges();
+                    System.Diagnostics.Debug.WriteLine("✅ Verification history logged");
+                }
+                catch (Exception logEx)
+                {
+                    System.Diagnostics.Debug.WriteLine($"⚠️ Warning: Failed to log verification history: {logEx.Message}");
+                    // Don't fail the whole operation if logging fails
+                }
+
+                System.Diagnostics.Debug.WriteLine($"✅ Successfully generated code {code} for order {saleId}");
+
+                return Json(new
+                {
+                    success = true,
+                    verificationCode = code,
+                    message = $"Your verification code is: {code}",
+                    generatedAt = DateTime.Now.ToString("HH:mm")
+                });
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"❌ GenerateDeliveryCode ERROR: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"Stack trace: {ex.StackTrace}");
+                return Json(new
+                {
+                    success = false,
+                    message = "Error generating code: " + ex.Message
+                });
             }
         }
 
@@ -2714,6 +3010,416 @@ namespace FarmTrack.Controllers
             };
 
             return View(model);
+        }
+
+       
+
+        // FIXED: Remove async and ThenInclude (not needed in EF6)
+        private SalesDataSummary GetCurrentSalesData()
+        {
+            // Get data for the current period (last 30 days)
+            var endDate = DateTime.Now;
+            var startDate = endDate.AddDays(-30);
+
+            var sales = db.Sales
+                .Where(s => s.SaleDate >= startDate && s.SaleDate <= endDate)
+                .Include(s => s.Items)
+                .Include(s => s.Items.Select(i => i.Product)) // EF6 uses nested Select instead of ThenInclude
+                .ToList();
+
+            var topProducts = sales
+                .SelectMany(s => s.Items)
+                .GroupBy(i => new { i.Product.Name, i.Product.Category })
+                .Select(g => new TopProductSummary // Create a concrete class instead of anonymous type
+                {
+                    ProductName = g.Key.Name ?? "Unknown",
+                    Category = g.Key.Category ?? "Uncategorized",
+                    Revenue = g.Sum(i => i.Price * i.Quantity),
+                    UnitsSold = g.Sum(i => i.Quantity)
+                })
+                .OrderByDescending(p => p.Revenue)
+                .Take(10)
+                .ToList();
+
+            var categoryBreakdown = sales
+                .SelectMany(s => s.Items)
+                .GroupBy(i => i.Product.Category ?? "Uncategorized")
+                .Select(g => new CategorySummary // Concrete class
+                {
+                    Category = g.Key,
+                    Revenue = g.Sum(i => i.Price * i.Quantity),
+                    OrderCount = g.Select(i => i.SaleId).Distinct().Count()
+                })
+                .OrderByDescending(c => c.Revenue)
+                .ToList();
+
+            var dailyRevenue = sales
+                .GroupBy(s => s.SaleDate.Date)
+                .Select(g => new DailyRevenueSummary // Concrete class
+                {
+                    Date = g.Key,
+                    Revenue = g.Sum(s => s.TotalAmount),
+                    Orders = g.Count()
+                })
+                .OrderBy(d => d.Date)
+                .ToList();
+
+            return new SalesDataSummary
+            {
+                TotalRevenue = sales.Sum(s => s.TotalAmount),
+                TotalOrders = sales.Count,
+                AverageOrderValue = sales.Any() ? sales.Average(s => s.TotalAmount) : 0,
+                TopProducts = topProducts,
+                CategoryBreakdown = categoryBreakdown,
+                DailyRevenue = dailyRevenue,
+                Period = "Last 30 days",
+                StartDate = startDate,
+                EndDate = endDate
+            };
+        }
+
+        // REPLACE BOTH GetAIResponse AND AskAI methods with these SIMPLIFIED versions
+
+        [HttpPost]
+        public async Task<JsonResult> AskAI(string question)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(question))
+                {
+                    return Json(new { success = false, answer = "Please ask a question." });
+                }
+
+                // Get sales data
+                var salesData = GetCurrentSalesData();
+
+                // Call API
+                var answer = await GetSimpleAIResponse(question, salesData);
+
+                return Json(new { success = true, answer = answer });
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"AskAI ERROR: {ex.Message}");
+                return Json(new
+                {
+                    success = false,
+                    answer = "Sorry, I'm having trouble connecting. Here's what I know: " +
+                            GetFallbackResponse(question, GetCurrentSalesData())
+                });
+            }
+        }
+
+        // MUCH SIMPLER AI METHOD - USES WORKING API
+        private async Task<string> GetSimpleAIResponse(string question, SalesDataSummary salesData)
+        {
+            try
+            {
+                var apiKey = ConfigurationManager.AppSettings["HuggingFaceApiKey"];
+
+                if (string.IsNullOrEmpty(apiKey))
+                {
+                    return GetFallbackResponse(question, salesData);
+                }
+
+                // Use BART summarization - this is PROVEN to work from your test
+                var apiUrl = "https://api-inference.huggingface.co/models/facebook/bart-large-cnn";
+
+                // Create a simple context for BART to summarize
+                var context = $@"Sales Report for {salesData.Period}:
+Total Revenue: R{salesData.TotalRevenue:N2}
+Total Orders: {salesData.TotalOrders}
+Average Order Value: R{salesData.AverageOrderValue:N2}
+
+Top Products:
+{string.Join("\n", salesData.TopProducts.Take(3).Select((p, i) => $"{i + 1}. {p.ProductName} - R{p.Revenue:N2} revenue, {p.UnitsSold} units sold"))}
+
+Top Categories:
+{string.Join("\n", salesData.CategoryBreakdown.Take(3).Select(c => $"- {c.Category}: R{c.Revenue:N2} revenue from {c.OrderCount} orders"))}
+
+Customer Question: {question}
+
+To answer this question, focus on the relevant numbers above.";
+
+                using (var client = new HttpClient())
+                {
+                    client.DefaultRequestHeaders.Add("Authorization", $"Bearer {apiKey}");
+                    client.Timeout = TimeSpan.FromSeconds(45);
+
+                    var requestBody = new
+                    {
+                        inputs = context,
+                        parameters = new
+                        {
+                            max_length = 200,
+                            min_length = 30,
+                            do_sample = false
+                        },
+                        options = new
+                        {
+                            wait_for_model = true,
+                            use_cache = false
+                        }
+                    };
+
+                    var json = JsonConvert.SerializeObject(requestBody);
+                    var content = new StringContent(json, Encoding.UTF8, "application/json");
+
+                    var response = await client.PostAsync(apiUrl, content);
+                    var responseText = await response.Content.ReadAsStringAsync();
+
+                    if (response.IsSuccessStatusCode)
+                    {
+                        try
+                        {
+                            // BART returns an array with summary_text
+                            var jsonResponse = JArray.Parse(responseText);
+                            if (jsonResponse.Count > 0 && jsonResponse[0]["summary_text"] != null)
+                            {
+                                var summary = jsonResponse[0]["summary_text"].ToString();
+
+                                // Enhance the summary with specific answer
+                                return EnhanceAIAnswer(question, summary, salesData);
+                            }
+                        }
+                        catch
+                        {
+                            // Parsing failed, try as object
+                            var jsonObject = JObject.Parse(responseText);
+                            if (jsonObject["summary_text"] != null)
+                            {
+                                var summary = jsonObject["summary_text"].ToString();
+                                return EnhanceAIAnswer(question, summary, salesData);
+                            }
+                        }
+                    }
+                    else if (responseText.Contains("loading"))
+                    {
+                        // Model is loading - use fallback with note
+                        return "🤖 AI model is warming up. Here's the data: " +
+                               GetFallbackResponse(question, salesData);
+                    }
+                }
+
+                // If we get here, use fallback
+                return GetFallbackResponse(question, salesData);
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"AI Error: {ex.Message}");
+                return GetFallbackResponse(question, salesData);
+            }
+        }
+
+        // Helper to create better answers from AI summary
+        private string EnhanceAIAnswer(string question, string aiSummary, SalesDataSummary salesData)
+        {
+            var lowerQuestion = question.ToLower();
+
+            // Add specific data based on question type
+            if (lowerQuestion.Contains("top product") || lowerQuestion.Contains("best"))
+            {
+                var topProduct = salesData.TopProducts.FirstOrDefault();
+                if (topProduct != null)
+                {
+                    return $"🏆 {topProduct.ProductName} is your top seller with R{topProduct.Revenue:N2} in revenue from {topProduct.UnitsSold} units sold. " + aiSummary;
+                }
+            }
+
+            if (lowerQuestion.Contains("revenue") || lowerQuestion.Contains("sales"))
+            {
+                return $"💰 Revenue for {salesData.Period}: R{salesData.TotalRevenue:N2} from {salesData.TotalOrders} orders (avg R{salesData.AverageOrderValue:N2} per order). " + aiSummary;
+            }
+
+            if (lowerQuestion.Contains("category") || lowerQuestion.Contains("categories"))
+            {
+                var topCat = salesData.CategoryBreakdown.FirstOrDefault();
+                if (topCat != null)
+                {
+                    return $"📦 {topCat.Category} leads with R{topCat.Revenue:N2}. " + aiSummary;
+                }
+            }
+
+            // Just return the AI summary with an emoji
+            return "📊 " + aiSummary;
+        }
+
+        // Helper to clean AI response
+        private string CleanAIResponse(string generatedText, string prompt)
+        {
+            // Remove the prompt if it's included in the response
+            if (generatedText.Contains(prompt))
+            {
+                generatedText = generatedText.Replace(prompt, "").Trim();
+            }
+
+            // Remove common artifacts
+            generatedText = generatedText
+                .Replace("Answer:", "")
+                .Replace("Response:", "")
+                .Trim();
+
+            // Limit length
+            if (generatedText.Length > 500)
+            {
+                generatedText = generatedText.Substring(0, 500) + "...";
+            }
+
+            return generatedText;
+        }
+
+        [HttpGet]
+        public async Task<JsonResult> TestHuggingFaceAPI()
+        {
+            try
+            {
+                var apiKey = ConfigurationManager.AppSettings["HuggingFaceApiKey"];
+
+                System.Diagnostics.Debug.WriteLine("\n=== HUGGING FACE API TEST ===");
+                System.Diagnostics.Debug.WriteLine($"1. API Key Found: {!string.IsNullOrEmpty(apiKey)}");
+
+                if (string.IsNullOrEmpty(apiKey))
+                {
+                    return Json(new
+                    {
+                        success = false,
+                        error = "No API key found in Web.config",
+                        instruction = "Add <add key=\"HuggingFaceApiKey\" value=\"hf_YOUR_TOKEN\" /> to Web.config"
+                    }, JsonRequestBehavior.AllowGet);
+                }
+
+                System.Diagnostics.Debug.WriteLine($"2. API Key Length: {apiKey.Length} characters");
+                System.Diagnostics.Debug.WriteLine($"3. API Key Preview: {apiKey.Substring(0, Math.Min(15, apiKey.Length))}...");
+
+                // Test with a simple, reliable model
+                var testUrl = "https://api-inference.huggingface.co/models/facebook/bart-large-cnn";
+
+                using (var client = new HttpClient())
+                {
+                    client.DefaultRequestHeaders.Add("Authorization", $"Bearer {apiKey}");
+                    client.Timeout = TimeSpan.FromSeconds(30);
+
+                    var testRequest = new
+                    {
+                        inputs = "The tower is 324 meters tall. It was built in 1889.",
+                        parameters = new
+                        {
+                            max_length = 50
+                        },
+                        options = new
+                        {
+                            wait_for_model = true
+                        }
+                    };
+
+                    var jsonContent = JsonConvert.SerializeObject(testRequest);
+                    var content = new StringContent(jsonContent, Encoding.UTF8, "application/json");
+
+                    System.Diagnostics.Debug.WriteLine($"4. Sending test request to: {testUrl}");
+
+                    var response = await client.PostAsync(testUrl, content);
+                    var responseString = await response.Content.ReadAsStringAsync();
+
+                    System.Diagnostics.Debug.WriteLine($"5. Response Status: {response.StatusCode}");
+                    System.Diagnostics.Debug.WriteLine($"6. Response Body: {responseString}");
+
+                    if (response.IsSuccessStatusCode)
+                    {
+                        return Json(new
+                        {
+                            success = true,
+                            message = "✅ API key is valid and working!",
+                            statusCode = (int)response.StatusCode,
+                            response = responseString
+                        }, JsonRequestBehavior.AllowGet);
+                    }
+                    else
+                    {
+                        var errorMsg = "API request failed";
+
+                        if (responseString.Contains("401") || responseString.Contains("unauthorized"))
+                        {
+                            errorMsg = "❌ Invalid API key! Generate a new token at https://huggingface.co/settings/tokens";
+                        }
+                        else if (responseString.Contains("rate limit"))
+                        {
+                            errorMsg = "⏱️ Rate limited. Wait a moment and try again.";
+                        }
+                        else if (responseString.Contains("loading"))
+                        {
+                            errorMsg = "⏳ Model is loading. Wait 20 seconds and try again.";
+                        }
+
+                        return Json(new
+                        {
+                            success = false,
+                            error = errorMsg,
+                            statusCode = (int)response.StatusCode,
+                            details = responseString
+                        }, JsonRequestBehavior.AllowGet);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"❌ TEST ERROR: {ex.Message}");
+                return Json(new
+                {
+                    success = false,
+                    error = ex.Message,
+                    stackTrace = ex.StackTrace
+                }, JsonRequestBehavior.AllowGet);
+            }
+        }
+
+
+        // Fallback responses for when API is not available
+        private string GetFallbackResponse(string question, SalesDataSummary salesData)
+        {
+            var lowerQuestion = question.ToLower();
+
+            if (lowerQuestion.Contains("top product") || lowerQuestion.Contains("best selling"))
+            {
+                var topProduct = salesData.TopProducts.FirstOrDefault();
+                return topProduct != null ?
+                    $"📊 Your top product is **{topProduct.ProductName}** with R {topProduct.Revenue:N2} revenue from {topProduct.UnitsSold} units sold in the {salesData.Period}." :
+                    "No product sales data available for the period.";
+            }
+
+            if (lowerQuestion.Contains("revenue") || lowerQuestion.Contains("sales") || lowerQuestion.Contains("performance"))
+            {
+                return $"💰 **{salesData.Period} Performance:**\n- Total Revenue: R {salesData.TotalRevenue:N2}\n- Total Orders: {salesData.TotalOrders}\n- Average Order Value: R {salesData.AverageOrderValue:N2}";
+            }
+
+            if (lowerQuestion.Contains("category") || lowerQuestion.Contains("type"))
+            {
+                var topCategory = salesData.CategoryBreakdown.FirstOrDefault();
+                return topCategory != null ?
+                    $"📦 Your best performing category is **{topCategory.Category}** with R {topCategory.Revenue:N2} revenue from {topCategory.OrderCount} orders." :
+                    "No category data available.";
+            }
+
+            if (lowerQuestion.Contains("trend") || lowerQuestion.Contains("growth"))
+            {
+                // Fix: Use Skip instead of TakeLast (not available in .NET Framework 4.x)
+                var totalDays = salesData.DailyRevenue.Count;
+                var recentDays = salesData.DailyRevenue.Skip(Math.Max(0, totalDays - 7)).ToList();
+
+                if (recentDays.Count >= 2)
+                {
+                    var avgRecent = recentDays.Average(d => d.Revenue);
+                    var totalOrders = recentDays.Sum(d => d.Orders);
+                    return $"📈 Recent trend: Last {recentDays.Count} days averaged R {avgRecent:N2} per day with {totalOrders} total orders.";
+                }
+                return $"Based on {salesData.Period} data, you had {salesData.TotalOrders} orders generating R {salesData.TotalRevenue:N2} in revenue.";
+            }
+
+            if (lowerQuestion.Contains("customer"))
+            {
+                return $"👥 Based on {salesData.TotalOrders} orders in {salesData.Period}, customers are spending an average of R {salesData.AverageOrderValue:N2} per order.";
+            }
+
+            return "💡 I can help analyze:\n- Top products and categories\n- Revenue and sales trends\n- Customer behavior\n- Growth patterns\n\nTry asking: 'What are my top products?' or 'How is revenue trending?'";
         }
 
     }

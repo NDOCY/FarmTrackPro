@@ -730,24 +730,61 @@
             });
     } // ✅ THIS WAS MISSING!
 
+    // UPDATED: Complete delivery with code verification
     function completeDelivery(saleId) {
-        if (!confirm('Mark this delivery as completed?')) {
+        if (!confirm('Complete this delivery? You will need the verification code from the customer.')) {
             return;
         }
 
+        // Ask for the customer's code
+        const customerCode = prompt('Please ask the customer for their 4-digit verification code and enter it below:');
+
+        if (!customerCode) {
+            return; // User cancelled
+        }
+
+        if (customerCode.length !== 4 || !/^\d+$/.test(customerCode)) {
+            alert('Please enter a valid 4-digit verification code (numbers only).');
+            return;
+        }
+
+        // Submit the code for verification
+        $.post('@Url.Action("CompleteDeliveryWithCode", "Products")', {
+            saleId: saleId,
+            customerCode: customerCode
+        })
+        .done(function(response) {
+            if (response.success) {
+                alert('✅ ' + response.message);
+                activeDeliveries = activeDeliveries.filter(id => id !== saleId);
+                updateActiveDeliveriesCount();
+                location.reload();
+            } else {
+                alert('❌ ' + response.message);
+
+                // Option to try without verification
+                if (confirm('Verification failed. Complete delivery without verification?')) {
+                    completeDeliveryWithoutVerification(saleId);
+                }
+            }
+        })
+        .fail(function() {
+            alert('Error connecting to server. Please try again.');
+        });
+    }
+
+    // Fallback: Complete without verification
+    function completeDeliveryWithoutVerification(saleId) {
         $.post('@Url.Action("CompleteDelivery", "Products")', { saleId: saleId })
             .done(function(response) {
                 if (response.success) {
-                    alert('✅ Delivery marked as completed!');
+                    alert('✅ Delivery completed (without verification)!');
                     activeDeliveries = activeDeliveries.filter(id => id !== saleId);
                     updateActiveDeliveriesCount();
                     location.reload();
                 } else {
-                    alert('Error: ' + response.message);
+                    alert('❌ ' + response.message);
                 }
-            })
-            .fail(function() {
-                alert('Error connecting to server. Please try again.');
             });
     }
 

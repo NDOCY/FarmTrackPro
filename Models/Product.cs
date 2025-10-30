@@ -28,7 +28,6 @@ namespace FarmTrack.Models
         [Display(Name = "Price Per Unit")]
         public double? PricePerUnit { get; set; }
 
-        // ADD THESE NEW PROPERTIES:
         [StringLength(500)]
         [Display(Name = "Product Description")]
         public string Description { get; set; }
@@ -63,7 +62,7 @@ namespace FarmTrack.Models
         [Display(Name = "Last Updated")]
         public DateTime? LastUpdated { get; set; } = DateTime.Now;
 
-        // Add this navigation property
+        // Navigation property for reviews
         public virtual ICollection<ProductReview> Reviews { get; set; }
     }
 
@@ -93,12 +92,24 @@ namespace FarmTrack.Models
 
         public bool IsActive { get; set; } = true;
 
+        // NEW: Admin Reply Properties
+        [StringLength(1000)]
+        public string AdminReply { get; set; }
+
+        public DateTime? AdminReplyDate { get; set; }
+
+        public int? AdminReplyUserId { get; set; }
+
         // Navigation properties
         [ForeignKey("ProductId")]
         public virtual Product Product { get; set; }
 
         [ForeignKey("UserId")]
         public virtual User User { get; set; }
+
+        // NEW: Navigation property for admin who replied
+        [ForeignKey("AdminReplyUserId")]
+        public virtual User AdminReplyUser { get; set; }
     }
 
     // This is just for passing data to the view, not a database table

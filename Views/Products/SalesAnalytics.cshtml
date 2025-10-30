@@ -191,26 +191,6 @@
         padding: 8px 20px;
     }
 
-    .trend-indicator {
-        display: inline-flex;
-        align-items: center;
-        gap: 5px;
-        padding: 4px 10px;
-        border-radius: 12px;
-        font-size: 0.85rem;
-        font-weight: 600;
-    }
-
-        .trend-indicator.up {
-            background: rgba(76, 175, 80, 0.1);
-            color: #4CAF50;
-        }
-
-        .trend-indicator.down {
-            background: rgba(255, 82, 82, 0.1);
-            color: #FF5252;
-        }
-
     .stat-row {
         display: flex;
         justify-content: space-between;
@@ -431,6 +411,47 @@
                     </div>
                 </div>
             </div>
+
+            <!-- Peak Times -->
+            <div class="chart-card">
+                <h5><i class="fas fa-clock"></i> Peak Order Times</h5>
+                @foreach (var time in Model.PeakOrderTimes)
+                {
+                    <div class="stat-row">
+                        <span class="stat-label">@time.TimeLabel</span>
+                        <div class="d-flex align-items-center gap-2">
+                            <div class="progress progress-thin" style="width: 100px;">
+                                <div class="progress-bar bg-primary" style="width: @((time.OrderCount * 100.0 / Model.PeakOrderTimes.Max(t => t.OrderCount)))%"></div>
+                            </div>
+                            <span class="stat-value">@time.OrderCount</span>
+                        </div>
+                    </div>
+                }
+            </div>
+
+            <!-- Voucher Performance -->
+            @if (Model.VoucherStats.TotalVouchersUsed > 0)
+            {
+                <div class="chart-card">
+                    <h5><i class="fas fa-ticket-alt"></i> Voucher Performance</h5>
+                    <div class="stat-row">
+                        <span class="stat-label">Vouchers Used</span>
+                        <span class="stat-value">@Model.VoucherStats.TotalVouchersUsed</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">Total Discounts Given</span>
+                        <span class="stat-value text-danger">R @Model.VoucherStats.TotalDiscountAmount.ToString("N2")</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">Orders with Vouchers</span>
+                        <span class="stat-value">@Model.VoucherStats.OrdersWithVouchers (@Model.VoucherStats.VoucherUsageRate.ToString("N1")%)</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">Avg Discount per Order</span>
+                        <span class="stat-value">R @Model.VoucherStats.AvgDiscountPerOrder.ToString("N2")</span>
+                    </div>
+                </div>
+            }
         </div>
 
         <!-- Right Column -->
@@ -486,46 +507,6 @@
                 </div>
             </div>
 
-            <!-- Peak Times -->
-            <div class="chart-card">
-                <h5><i class="fas fa-clock"></i> Peak Order Times</h5>
-                @foreach (var time in Model.PeakOrderTimes)
-                {
-                    <div class="stat-row">
-                        <span class="stat-label">@time.TimeLabel</span>
-                        <div class="d-flex align-items-center gap-2">
-                            <div class="progress progress-thin" style="width: 100px;">
-                                <div class="progress-bar bg-primary" style="width: @((time.OrderCount * 100.0 / Model.PeakOrderTimes.Max(t => t.OrderCount)))%"></div>
-                            </div>
-                            <span class="stat-value">@time.OrderCount</span>
-                        </div>
-                    </div>
-                }
-            </div>
-
-            <!-- Voucher Performance -->
-            @if (Model.VoucherStats.TotalVouchersUsed > 0)
-            {
-                <div class="chart-card">
-                    <h5><i class="fas fa-ticket-alt"></i> Voucher Performance</h5>
-                    <div class="stat-row">
-                        <span class="stat-label">Vouchers Used</span>
-                        <span class="stat-value">@Model.VoucherStats.TotalVouchersUsed</span>
-                    </div>
-                    <div class="stat-row">
-                        <span class="stat-label">Total Discounts Given</span>
-                        <span class="stat-value text-danger">R @Model.VoucherStats.TotalDiscountAmount.ToString("N2")</span>
-                    </div>
-                    <div class="stat-row">
-                        <span class="stat-label">Orders with Vouchers</span>
-                        <span class="stat-value">@Model.VoucherStats.OrdersWithVouchers (@Model.VoucherStats.VoucherUsageRate.ToString("N1")%)</span>
-                    </div>
-                    <div class="stat-row">
-                        <span class="stat-label">Avg Discount per Order</span>
-                        <span class="stat-value">R @Model.VoucherStats.AvgDiscountPerOrder.ToString("N2")</span>
-                    </div>
-                </div>
-            }
         </div>
     </div>
 </div>
